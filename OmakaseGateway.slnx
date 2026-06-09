@@ -1,0 +1,22 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/Apis/">
+    <Project Path="OG.Dashboard.Api/OG.Dashboard.Api.csproj" />
+    <Project Path="OG.Gateway.Api\OG.Gateway.Api.csproj" />
+  </Folder>
+  <Folder Name="/src/App/">
+    <Project Path="OG.Dashboard/OG.Dashboard.csproj" />
+    <Project Path="OG.Gateway\OG.Gateway.csproj" />
+  </Folder>
+  <Folder Name="/src/Infra/">
+    <Project Path="Infrastructure/Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Shared/">
+    <Project Path="AppHost/AppHost.csproj" />
+    <Project Path="Domain/Domain.csproj" />
+    <Project Path="ServiceDefaults/ServiceDefaults.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="OG.Application.UnitTests/OG.Application.UnitTests.csproj" />
+  </Folder>
+</Solution>
