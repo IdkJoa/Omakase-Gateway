@@ -4,10 +4,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure;
 
-public class OmakaseDbContext : DbContext
+public class OmakaseDbContext(DbContextOptions<OmakaseDbContext> options) : DbContext(options)
 {
-    public OmakaseDbContext(DbContextOptions<OmakaseDbContext> options) : base(options) { }
-
     public DbSet<User> Users => Set<User>();
     public DbSet<AccessPolicy> AccessPolicies => Set<AccessPolicy>();
     public DbSet<UserBehaviorProfile> UserBehaviorProfiles => Set<UserBehaviorProfile>();
@@ -20,7 +18,6 @@ public class OmakaseDbContext : DbContext
     public DbSet<UserRole> UserRoles => Set<UserRole>();
 
     // Convencion. Se auto convierte cada TypedId struct a GUID y viceversa
-
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
         configurationBuilder.Conventions.Add(_ => new TypedIdConvention());
