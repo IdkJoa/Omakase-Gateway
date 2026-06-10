@@ -9,11 +9,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\OG.Gateway.Api\OG.Gateway.Api.csproj" />
+        <ProjectReference Include="..\OG.Gateway.Api\OG.Gateway.Api.csproj" />
+        <ProjectReference Include="..\OG.Dashboard.Api\OG.Dashboard.Api.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Aspire.Hosting.PostgreSQL" Version="13.4.3" />
+        <PackageReference Include="Aspire.Hosting.PostgreSQL" Version="13.4.3" />
+        <PackageReference Include="Aspire.Hosting.Redis"      Version="13.4.3" />
     </ItemGroup>
 
 </Project>

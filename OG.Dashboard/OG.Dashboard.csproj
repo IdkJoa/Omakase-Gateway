@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
@@ -7,14 +7,18 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Folder Include="Features\AuditLogs\" />
-      <Folder Include="Features\Metrics\" />
-      <Folder Include="Features\Policies\" />
-      <Folder Include="Features\RiskConfig\" />
-      <Folder Include="Features\Roles\" />
-      <Folder Include="Features\ServicePolicies\" />
-      <Folder Include="Features\Services\" />
-      <Folder Include="Features\Users\" />
+        <ProjectReference Include="..\Domain\Domain.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Folder Include="Features\AuditLogs\" />
+        <Folder Include="Features\Metrics\" />
+        <Folder Include="Features\Policies\" />
+        <Folder Include="Features\RiskConfig\" />
+        <Folder Include="Features\Roles\" />
+        <Folder Include="Features\ServicePolicies\" />
+        <Folder Include="Features\Services\" />
+        <Folder Include="Features\Users\" />
     </ItemGroup>
 
 </Project>
