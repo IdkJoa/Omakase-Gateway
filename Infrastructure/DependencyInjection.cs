@@ -1,3 +1,4 @@
+using Infrastructure.Persistence.Seeding;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Infrastructure;
@@ -17,6 +18,7 @@ public static class DependencyInjection
     ///   en el Program.cs de OG.Gateway.Api — no se registra aquí.
     ///
     /// Este método registra los servicios de infraestructura transversales:
+    ///   HU-006  → Seed data al arranque (IDbSeeder)
     ///   HU-005  → Redis helpers con TTLs (IRedisSessionStore, IRateLimitStore, IBlacklistStore)
     ///   HU-009  → GeoLocation HTTP client (IGeoLocationService)
     ///   HU-017+ → Azure Key Vault client (ISecretProvider)
@@ -24,6 +26,9 @@ public static class DependencyInjection
     public static IServiceCollection AddInfrastructure(
         this IServiceCollection services)
     {
+        // HU-006
+        services.AddScoped<IDbSeeder, OmakaseDbSeeder>();
+
         // HU-005: services.AddSingleton<IRedisSessionStore, RedisSessionStore>();
         //         services.AddSingleton<IRateLimitStore, RedisRateLimitStore>();
         //         services.AddSingleton<IBlacklistStore, RedisBlacklistStore>();

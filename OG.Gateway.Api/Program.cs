@@ -1,4 +1,5 @@
 using Infrastructure;
+using Infrastructure.Persistence.Seeding;
 using Microsoft.EntityFrameworkCore;
 using ServiceDefaults;
 
@@ -12,8 +13,7 @@ builder.AddNpgsqlDbContext<OmakaseDbContext>("Omakase");
 builder.AddRedisClient("redis");
 builder.Services.AddOpenApi();
 
-// ── Infrastructure (repositorios, etc.) — se completa en HU-003/004 ──────────
-// builder.Services.AddInfrastructure();
+builder.Services.AddInfrastructure();
 
 var app = builder.Build();
 
@@ -24,6 +24,9 @@ if (app.Environment.IsDevelopment())
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<OmakaseDbContext>();
     await db.Database.MigrateAsync();
+
+    var seeder = scope.ServiceProvider.GetRequiredService<IDbSeeder>();
+    await seeder.SeedAsync();
 }
 
 // Endpoints de diagnostico Aspire (/health y /alive) 
