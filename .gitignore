@@ -1,10 +1,30 @@
 [Bb]in/
 [Oo]bj/
 /packages/
+
+## Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## Rider / ReSharper
 riderModule.iml
 /_ReSharper.Caches/
 .idea/
 **/bin*/
 **/Debug*/
 
+## .NET
+*.nupkg
+*.snupkg
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+## Logs
+*.log
+
 docs/
+PLANIFICACION_HU.md
