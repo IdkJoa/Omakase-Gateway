@@ -1,6 +1,26 @@
+## Build output
 bin/
 obj/
 /packages/
+
+## Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## Rider / ReSharper
 riderModule.iml
 /_ReSharper.Caches/
 .idea/
+
+## .NET
+*.nupkg
+*.snupkg
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+## Logs
+*.log
