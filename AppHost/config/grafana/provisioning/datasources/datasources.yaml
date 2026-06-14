@@ -1,0 +1,13 @@
+apiVersion: 1
+datasources:
+  - name: Tempo
+    type: tempo
+    access: proxy
+    url: http://tempo:3200
+    isDefault: true
+    jsonData:
+      # HU-030: descomentar cuando Loki y Prometheus estén configurados
+      # tracesToLogsV2:
+      #   datasourceUid: loki
+      # serviceMap:
+      #   datasourceUid: prometheus

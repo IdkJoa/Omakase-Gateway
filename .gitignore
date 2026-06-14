@@ -1,6 +1,5 @@
-## Build output
-bin/
-obj/
+[Bb]in/
+[Oo]bj/
 /packages/
 
 ## Visual Studio
@@ -14,6 +13,8 @@ obj/
 riderModule.iml
 /_ReSharper.Caches/
 .idea/
+**/bin*/
+**/Debug*/
 
 ## .NET
 *.nupkg
@@ -24,3 +25,5 @@ artifacts/
 
 ## Logs
 *.log
+
+docs/
