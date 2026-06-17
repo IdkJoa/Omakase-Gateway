@@ -1,5 +1,6 @@
 using Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using OG.Dashboard.Api.Endpoints;
 using ServiceDefaults;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,5 +22,14 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
+
+// T-088: Contratos de API mock (Contract-First)
+app.MapAuditLogsEndpoints();
+app.MapMetricsEndpoints();
+app.MapPoliciesEndpoints();
+app.MapServicesEndpoints();
+app.MapUsersEndpoints();
+app.MapRolesEndpoints();
+app.MapRiskConfigEndpoints();
 
 await app.RunAsync();
