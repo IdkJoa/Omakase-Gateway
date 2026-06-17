@@ -1,4 +1,6 @@
+using Application.Common.Security;
 using Infrastructure.Persistence.Seeding;
+using Infrastructure.Redis;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Infrastructure;
@@ -29,9 +31,8 @@ public static class DependencyInjection
         // HU-006
         services.AddScoped<IDbSeeder, OmakaseDbSeeder>();
 
-        // HU-005: services.AddSingleton<IRedisSessionStore, RedisSessionStore>();
-        //         services.AddSingleton<IRateLimitStore, RedisRateLimitStore>();
-        //         services.AddSingleton<IBlacklistStore, RedisBlacklistStore>();
+        // HU-005 & T-012: Registro del servicio unificado de Redis
+        services.AddSingleton<IRedisService, RedisService>();
 
         // HU-009: services.AddHttpClient<IGeoLocationService, GeoLocationService>();
 
