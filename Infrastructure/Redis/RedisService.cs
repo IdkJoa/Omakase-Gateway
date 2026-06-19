@@ -2,6 +2,7 @@ using Application.Common.Security;
 using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -19,7 +20,68 @@ public sealed class RedisService : IRedisService
         _db = redis.GetDatabase();
     }
 
-    
+    #region Sesiones Activas (session:{userId} -> Hash, TTL: 15 min)
+    public async Task SetSessionAsync(string userId, string jti, string userType, TimeSpan ttl)
+    {
+        if (string.IsNullOrWhiteSpace(userId))
+            throw new ArgumentException("El ID de usuario no puede estar vacío.", nameof(userId));
+        if (string.IsNullOrWhiteSpace(jti))
+            throw new ArgumentException("El JTI del token no puede estar vacío.", nameof(jti));
+
+        string key = RedisKeyHelper.GetSessionKey(userId);
+
+        // La sesión se guarda como Hash con los tres campos de contexto del token activo.
+        var entries = new HashEntry[]
+        {
+            new HashEntry("jti", jti),
+            new HashEntry("user_type", userType),
+            new HashEntry("last_activity", DateTimeOffset.UtcNow.ToString("O"))
+        };
+
+        await _db.HashSetAsync(key, entries);
+
+        // El TTL se fija sobre la clave completa: toda la sesión expira a la vez (15 min).
+        await _db.KeyExpireAsync(key, ttl);
+    }
+
+    public async Task<SessionData?> GetSessionAsync(string userId)
+    {
+        if (string.IsNullOrWhiteSpace(userId))
+            return null;
+
+        string key = RedisKeyHelper.GetSessionKey(userId);
+        var entries = await _db.HashGetAllAsync(key);
+
+        // Si la clave no existe o ya expiró, Redis devuelve un Hash vacío.
+        if (entries.Length == 0)
+            return null;
+
+        var fields = entries.ToDictionary(e => e.Name.ToString(), e => e.Value.ToString());
+
+        fields.TryGetValue("jti", out var jti);
+        fields.TryGetValue("user_type", out var userType);
+        fields.TryGetValue("last_activity", out var lastActivityRaw);
+
+        // last_activity se almacenó en formato round-trip ("O"); se reconstruye sin perder el offset.
+        DateTimeOffset lastActivity = DateTimeOffset.TryParse(
+            lastActivityRaw,
+            CultureInfo.InvariantCulture,
+            DateTimeStyles.RoundtripKind,
+            out var parsed) ? parsed : DateTimeOffset.MinValue;
+
+        return new SessionData(jti ?? string.Empty, userType ?? string.Empty, lastActivity);
+    }
+
+    public async Task InvalidateSessionAsync(string userId)
+    {
+        if (string.IsNullOrWhiteSpace(userId))
+            return;
+
+        // Elimina la sesión de forma inmediata (logout o revocación de acceso).
+        string key = RedisKeyHelper.GetSessionKey(userId);
+        await _db.KeyDeleteAsync(key);
+    }
+    #endregion
 
     #region Lista Negra de Tokens (blacklist:{jti} -> String, TTL: Dinámico)
     public async Task AddToBlacklistAsync(string jti, TimeSpan expiration)
