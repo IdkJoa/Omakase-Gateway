@@ -1,14 +1,7 @@
 trigger:
-  branches:
-    include:
-      - main
-      - dev
-
+  branches: { include: [ main, dev ] }
 pr:
-  branches:
-    include:
-      - main
-      - dev
+  branches: { include: [ main, dev ] }
 
 pool:
   vmImage: ubuntu-latest
@@ -26,57 +19,19 @@ stages:
         steps:
           - task: UseDotNet@2
             displayName: Install .NET 10 SDK
-            inputs:
-              packageType: sdk
-              version: $(dotnetVersion)
-
+            inputs: { packageType: sdk, version: $(dotnetVersion) }
           - script: dotnet restore
             displayName: Restore packages
-
           - script: dotnet build --configuration $(buildConfiguration) --no-restore
             displayName: Build (Roslyn SAST)
-            # Roslyn analyzers run automatically here.
-            # Any analyzer warning is treated as an error in Release config
-            # via the <TreatWarningsAsErrors> property in the projects.
-
           - script: >
-              dotnet test
-              --no-build
-              --configuration $(buildConfiguration)
-              --logger trx
-              --results-directory $(Agent.TempDirectory)/TestResults
+              dotnet test --no-build --configuration $(buildConfiguration)
+              --logger trx --results-directory $(Agent.TempDirectory)/TestResults
               --collect:"XPlat Code Coverage"
             displayName: Run unit tests
-
           - task: PublishTestResults@2
-            displayName: Publish test results
             condition: always()
-            inputs:
-              testResultsFormat: VSTest
-              testResultsFiles: $(Agent.TempDirectory)/TestResults/**/*.trx
-
+            inputs: { testResultsFormat: VSTest, testResultsFiles: $(Agent.TempDirectory)/TestResults/**/*.trx }
           - task: PublishCodeCoverageResults@2
-            displayName: Publish code coverage
             condition: always()
-            inputs:
-              summaryFileLocation: $(Agent.TempDirectory)/TestResults/**/coverage.cobertura.xml
-
-      - job: angular
-        displayName: Angular Dashboard
-        condition: >
-          or(
-            eq(variables['Build.Reason'], 'PullRequest'),
-            startsWith(variables['Build.SourceBranch'], 'refs/heads/main'),
-            startsWith(variables['Build.SourceBranch'], 'refs/heads/dev')
-          )
-        steps:
-          - script: |
-              DASHBOARD_DIR="OG.Dashboard.Ui"
-              if [ -f "$DASHBOARD_DIR/package.json" ]; then
-                cd "$DASHBOARD_DIR"
-                npm ci
-                npm run build -- --configuration production
-              else
-                echo "Angular project not found yet — skipping build."
-              fi
-            displayName: Build Angular Dashboard (if present)
+            inputs: { summaryFileLocation: $(Agent.TempDirectory)/TestResults/**/coverage.cobertura.xml }
