@@ -33,6 +33,13 @@ public class RiskScoreConfig
     public decimal ColdStartPenalty { get; set; }
 
     /// <summary>
+    /// Access-count threshold (N) at which the cold-start penalty is fully extinguished.
+    /// Used in the linear decay: <c>ColdStartPenalty × max(0, 1 − AccessCount / N)</c>.
+    /// Default per SRS §7.6: 10.
+    /// </summary>
+    public int ColdStartN { get; set; }
+
+    /// <summary>
     /// Risk score threshold above which the verdict is <see cref="Verdict.Block"/>.
     /// </summary>
     public decimal BlockThreshold { get; set; }
