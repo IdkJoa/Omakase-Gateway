@@ -32,6 +32,7 @@ public sealed class OmakaseDbSeeder : IDbSeeder
             PolicyWeight       = 0.6m,
             AnomalyWeight      = 0.4m,
             ColdStartPenalty   = 30m,
+            ColdStartN         = 10,
             ChallengeThreshold = 40m,
             BlockThreshold     = 75m,
         });
