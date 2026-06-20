@@ -28,3 +28,6 @@ artifacts/
 
 docs/
 PLANIFICACION_HU.md
+
+## Claude Code (local, no versionar)
+.claude/
