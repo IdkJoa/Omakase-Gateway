@@ -1,4 +1,6 @@
+using Application.Common.RiskEngine.Rules;
 using Application.Common.Security;
+using Infrastructure.GeoLocation;
 using Infrastructure.Persistence.Seeding;
 using Infrastructure.Redis;
 using Microsoft.Extensions.DependencyInjection;
@@ -34,7 +36,16 @@ public static class DependencyInjection
         // HU-005 & T-012: Registro del servicio unificado de Redis
         services.AddSingleton<IRedisService, RedisService>();
 
-        // HU-009: services.AddHttpClient<IGeoLocationService, GeoLocationService>();
+        // HU-011 & T-021: GeoLocation (HTTP + caché en memoria, timeout 2s -> fail-safe null)
+        services.AddMemoryCache();
+        services.AddHttpClient<IGeoLocationService, GeoLocationService>(client =>
+        {
+            client.BaseAddress = new Uri("http://ip-api.com/");
+            client.Timeout = TimeSpan.FromSeconds(2);
+        });
+
+        // HU-011 & T-022: Evaluador de regla Geofencing (contrato IRuleEvaluator, O/C)
+        services.AddScoped<IRuleEvaluator, GeofenceRuleEvaluator>();
 
         // HU-017: services.AddSingleton<ISecretProvider, KeyVaultSecretProvider>();
 
