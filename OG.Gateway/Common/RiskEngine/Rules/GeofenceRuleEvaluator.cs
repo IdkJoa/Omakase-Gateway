@@ -40,34 +40,34 @@ public sealed class GeofenceRuleEvaluator : IRuleEvaluator
         AccessPolicy policy,
         CancellationToken cancellationToken = default)
     {
-        var geo = await _geo.ResolveAsync(context.SourceIp, cancellationToken);
+        var geoResult = await _geo.ResolveAsync(context.SourceIp, cancellationToken);
 
-        // Location unknown → cannot verify; contribute a small base risk.
-        if (geo is null || string.IsNullOrWhiteSpace(geo.CountryCode))
+        // Ubicación desconocida → no se puede verificar; aporta un riesgo base pequeño.
+        if (geoResult.IsFailure)
         {
             return new RuleEvaluationResult(
                 RuleName, GeoUnavailableScore, policy.Weight, Triggered: false, Detail: "geo_unavailable");
         }
 
-        var country = geo.CountryCode.Trim().ToUpperInvariant();
+        var country = geoResult.Value.CountryCode.Trim().ToUpperInvariant();
         var allowed = ReadCountryList(policy.Config, "allowed_countries");
         var denied = ReadCountryList(policy.Config, "denied_countries");
 
-        // Explicit deny wins over everything else.
+        // El deny explícito gana sobre todo lo demás.
         if (denied.Contains(country))
         {
             return new RuleEvaluationResult(
                 RuleName, SevereScore, policy.Weight, Triggered: true, Detail: $"denied:{country}");
         }
 
-        // Allow list present and country not in it → severe.
+        // Hay lista de permitidos y el país no está en ella → severo.
         if (allowed.Count > 0 && !allowed.Contains(country))
         {
             return new RuleEvaluationResult(
                 RuleName, SevereScore, policy.Weight, Triggered: true, Detail: $"not_allowed:{country}");
         }
 
-        // Allowed (or no restriction matched) → coherent.
+        // Permitido (o ninguna restricción aplicó) → coherente.
         return new RuleEvaluationResult(
             RuleName, CoherentScore, policy.Weight, Triggered: false, Detail: $"allowed:{country}");
     }
