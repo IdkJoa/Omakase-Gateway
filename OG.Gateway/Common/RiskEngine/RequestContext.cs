@@ -16,6 +16,12 @@ public sealed record RequestContext
     /// <summary>Identifier of the authenticated actor, when resolved.</summary>
     public string? UserId { get; init; }
 
+    /// <summary>Accept-Language header value from client request, when present.</summary>
+    public string? AcceptLanguage { get; init; }
+
+    /// <summary>Accept-Encoding header value from client request, when present.</summary>
+    public string? AcceptEncoding { get; init; }
+
     /// <summary>Instant at which the request was intercepted.</summary>
     public DateTimeOffset Timestamp { get; init; } = DateTimeOffset.UtcNow;
 }
