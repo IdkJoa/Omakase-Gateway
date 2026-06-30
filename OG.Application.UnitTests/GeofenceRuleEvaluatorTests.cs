@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Application.Common.RiskEngine;
 using Application.Common.RiskEngine.Rules;
 using Application.Common.Security;
+using Domain.Common;
 using Domain.Entities;
 using NSubstitute;
 using Xunit;
@@ -34,9 +35,9 @@ public class GeofenceRuleEvaluatorTests
     private void GeoReturns(string? countryCode)
     {
         _geo.ResolveAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(countryCode is null
-                ? Task.FromResult<GeoResult?>(null)
-                : Task.FromResult<GeoResult?>(new GeoResult(countryCode, "City", 0, 0)));
+            .Returns(Task.FromResult(countryCode is null
+                ? Result.Failure<GeoResult>(GeoErrors.Unavailable)
+                : Result.Success(new GeoResult(countryCode, "City", 0, 0))));
     }
 
     [Fact]
