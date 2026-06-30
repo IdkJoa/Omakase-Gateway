@@ -1,6 +1,9 @@
+using Application.Common.RiskEngine;
 using Application.Common.RiskEngine.Rules;
+using Application.Common.RiskEngine.Scoring;
 using Application.Common.Security;
 using Infrastructure.GeoLocation;
+using Infrastructure.Persistence;
 using Infrastructure.Persistence.Seeding;
 using Infrastructure.Redis;
 using Microsoft.Extensions.DependencyInjection;
@@ -46,6 +49,16 @@ public static class DependencyInjection
 
         // HU-011 & T-022: Evaluador de regla Geofencing (contrato IRuleEvaluator, O/C)
         services.AddScoped<IRuleEvaluator, GeofenceRuleEvaluator>();
+
+        // HU-015: Motor de scoring (Policy Score ponderado + Risk Score consolidado)
+        services.AddScoped<IPolicyScoreCalculator, PolicyScoreCalculator>();
+        services.AddScoped<IRiskScoreConsolidator, RiskScoreConsolidator>();
+        services.AddScoped<IRiskEvaluationService, RiskEvaluationService>();
+
+        // HU-015: Puertos de datos del motor (impl sobre DbContext)
+        services.AddScoped<IServicePolicyProvider, ServicePolicyProvider>();
+        services.AddScoped<IRiskConfigProvider, RiskConfigProvider>();
+        services.AddScoped<IAuditWriter, AuditWriter>();
 
         // HU-017: services.AddSingleton<ISecretProvider, KeyVaultSecretProvider>();
 
