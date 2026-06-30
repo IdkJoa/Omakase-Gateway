@@ -47,6 +47,9 @@ public static class DependencyInjection
         // HU-011 & T-022: Evaluador de regla Geofencing (contrato IRuleEvaluator, O/C)
         services.AddScoped<IRuleEvaluator, GeofenceRuleEvaluator>();
 
+        // HU-012 & T-023: Evaluador de regla Time-Window (contrato IRuleEvaluator, O/C)
+        services.AddScoped<IRuleEvaluator, TimeWindowRuleEvaluator>();
+
         // HU-017: services.AddSingleton<ISecretProvider, KeyVaultSecretProvider>();
 
         return services;
