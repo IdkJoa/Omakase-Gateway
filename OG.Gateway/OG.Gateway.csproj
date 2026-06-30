@@ -12,6 +12,10 @@
     </ItemGroup>
 
     <ItemGroup>
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    </ItemGroup>
+
+    <ItemGroup>
         <Folder Include="Common\RiskEngine\AnomalyDetection\" />
         <Folder Include="Common\RiskEngine\Rules\" />
         <Folder Include="Common\RiskEngine\Scoring\" />
