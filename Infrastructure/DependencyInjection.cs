@@ -50,6 +50,12 @@ public static class DependencyInjection
         // HU-012 & T-023: Evaluador de regla Time-Window (contrato IRuleEvaluator, O/C)
         services.AddScoped<IRuleEvaluator, TimeWindowRuleEvaluator>();
 
+        // HU-013 & T-024: Servicio de huella digital de navegador
+        services.AddSingleton<IFingerprintService, FingerprintService>();
+
+        // HU-013 & T-025: Evaluador de regla Fingerprint (contrato IRuleEvaluator, O/C)
+        services.AddScoped<IRuleEvaluator, FingerprintRuleEvaluator>();
+
         // HU-017: services.AddSingleton<ISecretProvider, KeyVaultSecretProvider>();
 
         return services;
