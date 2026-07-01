@@ -3,10 +3,11 @@ using Application.Common.Mediator;
 using Application.Common.RiskEngine;
 using Application.Common.RiskEngine.Commands;
 using Application.Common.Security;
-using Application.Common.Telemetry;
 using Domain.Entities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using static Application.Common.Telemetry.OmakaseActivity;
+using static Application.Common.Telemetry.OmakaseActivity.Spans;
 
 namespace Application.Middlewares;
 
@@ -31,8 +32,6 @@ public sealed class RiskEvaluationMiddleware
     private readonly RequestDelegate _next;
     private readonly ILogger<RiskEvaluationMiddleware> _logger;
 
-    // Servicios con ciclo de vida de petición (Scoped/Singleton sin estado de request)
-    // se inyectan en InvokeAsync para respetar el modelo de middleware singleton de ASP.NET Core.
     public RiskEvaluationMiddleware(
         RequestDelegate next,
         ILogger<RiskEvaluationMiddleware> logger)
@@ -47,24 +46,23 @@ public sealed class RiskEvaluationMiddleware
         ILogSanitizer sanitizer,
         IAuditChannel auditChannel)
     {
-        // Identificador único de esta evaluación — correlaciona respuesta HTTP, AuditEvent y span OTel.
         var evaluationId = Guid.NewGuid();
 
-        // ── 1. IP de origen ────────────────────────────────────────────────────
+        // IP de origen 
         // UseForwardedHeaders() ya procesó X-Forwarded-For antes de llegar aquí (T-019).
         var sourceIp = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
 
-        // ── 2. User-Agent sanitizado ───────────────────────────────────────────
+        // User-Agent sanitizado 
         var userAgent = sanitizer.Sanitize(context.Request.Headers.UserAgent.ToString());
 
-        // ── 3. Cabeceras de fingerprint ────────────────────────────────────────
+        // Cabeceras de fingerprint 
         var acceptLanguage = context.Request.Headers.AcceptLanguage.ToString();
         var acceptEncoding = context.Request.Headers.AcceptEncoding.ToString();
 
-        // ── 4. UserId del claim JWT (null hasta HU-auth) ───────────────────────
+        // UserId del claim JWT (null hasta HU-auth) 
         var userId = context.User.FindFirst("sub")?.Value;
 
-        // ── 5. RequestContext inmutable ────────────────────────────────────────
+        // RequestContext inmutable 
         var requestContext = new RequestContext
         {
             SourceIp       = sourceIp,
@@ -75,19 +73,19 @@ public sealed class RiskEvaluationMiddleware
             Timestamp      = DateTimeOffset.UtcNow
         };
 
-        // ── 6. Span OTel ───────────────────────────────────────────────────────
-        using var span = OmakaseActivity.Source.StartActivity(OmakaseActivity.Spans.Interception);
-        span?.SetTag(OmakaseActivity.Tags.SourceIp, sourceIp);
+        // Span OTel
+        using var span = Source.StartActivity(Interception);
+        span?.SetTag(Tags.SourceIp, sourceIp);
         if (userId is not null)
-            span?.SetTag(OmakaseActivity.Tags.UserId, userId);
+            span?.SetTag(Tags.UserId, userId);
 
-        // ── 7. Evaluar riesgo ──────────────────────────────────────────────────
+        // Evaluar riesgo 
         var result = await mediator.SendAsync(
             new EvaluateRiskCommand(requestContext),
             context.RequestAborted);
 
-        span?.SetTag(OmakaseActivity.Tags.Verdict,   result.Verdict.ToString());
-        span?.SetTag(OmakaseActivity.Tags.RiskScore,  result.RiskScore.ToString("F2"));
+        span?.SetTag(Tags.Verdict,   result.Verdict.ToString());
+        span?.SetTag(Tags.RiskScore,  result.RiskScore.ToString("F2"));
 
         _logger.LogInformation(
             "[RiskEvaluationMiddleware] EvaluationId={EvaluationId} IP={SourceIp} " +
@@ -96,7 +94,7 @@ public sealed class RiskEvaluationMiddleware
             string.IsNullOrEmpty(userAgent) ? "-" : userAgent,
             result.Verdict, result.RiskScore);
 
-        // ── 8. Encolar AuditEvent (fire-and-forget — no bloquea el pipeline) ───
+        // Encolar AuditEvent (fire-and-forget — no bloquea el pipeline)
         var auditEvent = new AuditEvent(
             EvaluationId: evaluationId,
             SourceIp:     sourceIp,
@@ -116,7 +114,7 @@ public sealed class RiskEvaluationMiddleware
                 evaluationId);
         }
 
-        // ── 9. Despacho de veredicto ───────────────────────────────────────────
+        // Despacho de veredicto 
         switch (result.Verdict)
         {
             case Verdict.Allow:
@@ -140,7 +138,7 @@ public sealed class RiskEvaluationMiddleware
 
                 await context.Response.WriteAsJsonAsync(new
                 {
-                    errorCode    = "CHALLENGE_REQUIRED",
+                    errorCode    = GatewayErrorCodes.ChallengeRequired,
                     message      = "Se requiere verificación adicional (MFA) para continuar.",
                     evaluationId = evaluationId,
                     traceId      = context.TraceIdentifier
@@ -158,7 +156,7 @@ public sealed class RiskEvaluationMiddleware
 
                 await context.Response.WriteAsJsonAsync(new
                 {
-                    errorCode    = "ACCESS_DENIED",
+                    errorCode    = GatewayErrorCodes.AccessDenied,
                     message      = "La petición fue bloqueada por el motor de riesgo.",
                     evaluationId = evaluationId,
                     traceId      = context.TraceIdentifier

@@ -38,6 +38,18 @@ builder.Services.AddSingleton<Application.Common.Security.ILogSanitizer, Applica
 // El BackgroundService AuditPersistenceWorker (T-100) drena el canal y persiste en PostgreSQL.
 builder.Services.AddSingleton<Application.Common.Audit.IAuditChannel, Application.Common.Audit.InMemoryAuditChannel>();
 
+// T-100: Worker de persistencia de auditoría.
+// Consume IAuditChannel en segundo plano y persiste en audit_logs sin bloquear el pipeline HTTP.
+builder.Services.AddHostedService<Infrastructure.Workers.AuditPersistenceWorker>();
+
+// Options Pattern — configuración tipada para los componentes del pipeline.
+builder.Services.Configure<Application.Common.Audit.AuditChannelOptions>(
+    builder.Configuration.GetSection(Application.Common.Audit.AuditChannelOptions.SectionName));
+builder.Services.Configure<Infrastructure.Workers.AuditWorkerOptions>(
+    builder.Configuration.GetSection(Infrastructure.Workers.AuditWorkerOptions.SectionName));
+builder.Services.Configure<Application.Common.Options.RateLimitingOptions>(
+    builder.Configuration.GetSection(Application.Common.Options.RateLimitingOptions.SectionName));
+
 // Configurar ForwardedHeaders (HU-010 / T-019)
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {

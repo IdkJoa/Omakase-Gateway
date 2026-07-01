@@ -1,9 +1,9 @@
+using Application.Common.Audit;
 using Application.Common.Security;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Threading.Tasks;
+using Microsoft.Extensions.Options;
+using Application.Common.Options;
 
 namespace Application.Middlewares;
 
@@ -20,14 +20,13 @@ public sealed class RateLimitMiddleware
 
     public RateLimitMiddleware(
         RequestDelegate next,
-        IConfiguration configuration,
+        IOptions<RateLimitingOptions> options,
         ILogger<RateLimitMiddleware> logger)
     {
-        _next = next;
+        _next   = next;
         _logger = logger;
-        _limit = configuration.GetValue<int>("RateLimiting:Limit", 100);
-        var windowSeconds = configuration.GetValue<int>("RateLimiting:WindowSeconds", 60);
-        _window = TimeSpan.FromSeconds(windowSeconds);
+        _limit  = options.Value.Limit;
+        _window = TimeSpan.FromSeconds(options.Value.WindowSeconds);
     }
 
     public async Task InvokeAsync(HttpContext context, IRedisService redisService)
@@ -47,40 +46,41 @@ public sealed class RateLimitMiddleware
 
             if (count > _limit)
             {
-                _logger.LogWarning("Rate limit excedido para la IP: {IpAddress} (Contador: {Count}/{Limit})", ipAddress, count, _limit);
+                _logger.LogWarning(
+                    "Rate limit excedido para la IP: {IpAddress} (Contador: {Count}/{Limit})",
+                    ipAddress, count, _limit);
 
-                context.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+                context.Response.StatusCode  = StatusCodes.Status429TooManyRequests;
                 context.Response.ContentType = "application/json";
 
-                var errorResponse = new
+                await context.Response.WriteAsJsonAsync(new
                 {
-                    errorCode = "TOO_MANY_REQUESTS",
-                    message = $"Se ha superado el límite de peticiones (máximo {_limit} por minuto).",
-                    traceId = context.TraceIdentifier
-                };
-
-                await context.Response.WriteAsJsonAsync(errorResponse);
-                return; // Cortar el pipeline tempranamente
+                    errorCode = GatewayErrorCodes.TooManyRequests,
+                    message   = $"Se ha superado el límite de peticiones (máximo {_limit} por minuto).",
+                    traceId   = context.TraceIdentifier
+                });
+                return;
             }
         }
         catch (Exception ex)
         {
             // Regla de Degradación Segura - Módulo 9 (Fail-Closed)
             // Si Redis está caído o inaccesible, se bloquea el tráfico por seguridad y se reporta HTTP 503.
-            _logger.LogCritical(ex, "Fallo crítico en Redis al evaluar el rate limit para la IP: {IpAddress}. Aplicando Fail-Closed.", ipAddress);
+            _logger.LogCritical(
+                ex,
+                "Fallo crítico en Redis al evaluar el rate limit para la IP: {IpAddress}. Aplicando Fail-Closed.",
+                ipAddress);
 
-            context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
+            context.Response.StatusCode  = StatusCodes.Status503ServiceUnavailable;
             context.Response.ContentType = "application/json";
 
-            var errorResponse = new
+            await context.Response.WriteAsJsonAsync(new
             {
-                errorCode = "SERVICE_UNAVAILABLE",
-                message = "El servicio de seguridad no está disponible debido a fallas en dependencias críticas.",
-                traceId = context.TraceIdentifier
-            };
-
-            await context.Response.WriteAsJsonAsync(errorResponse);
-            return; // Cortar el pipeline por seguridad
+                errorCode = GatewayErrorCodes.ServiceUnavailable,
+                message   = "El servicio de seguridad no está disponible debido a fallas en dependencias críticas.",
+                traceId   = context.TraceIdentifier
+            });
+            return;
         }
 
         await _next(context);

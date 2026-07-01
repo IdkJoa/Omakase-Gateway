@@ -28,4 +28,18 @@ public interface IAuditChannel
     /// Usado exclusivamente por el <c>AuditPersistenceWorker</c> de T-100.
     /// </summary>
     IAsyncEnumerable<AuditEvent> ReadAllAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Espera de forma asíncrona hasta que haya al menos un evento disponible para leer.
+    /// Suspende el hilo del worker sin busy-waiting. Devuelve <c>false</c> si el canal se cierra.
+    /// Usado por <c>AuditPersistenceWorker</c> para iniciar cada ciclo de batch-drain.
+    /// </summary>
+    ValueTask<bool> WaitToReadAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Intenta leer un evento del canal sin bloquear.
+    /// Devuelve <c>false</c> si el canal está vacío en este momento.
+    /// Usado en bucle tras <see cref="WaitToReadAsync"/> para drenar el canal en lotes.
+    /// </summary>
+    bool TryRead(out AuditEvent auditEvent);
 }
