@@ -56,6 +56,12 @@ public static class DependencyInjection
         // HU-013 & T-025: Evaluador de regla Fingerprint (contrato IRuleEvaluator, O/C)
         services.AddScoped<IRuleEvaluator, FingerprintRuleEvaluator>();
 
+        // HU-014 & T-027: Servicio de último acceso del usuario
+        services.AddScoped<ILastAccessService, Infrastructure.Persistence.LastAccessService>();
+
+        // HU-014 & T-027: Evaluador de regla Viaje Imposible (contrato IRuleEvaluator, O/C)
+        services.AddScoped<IRuleEvaluator, ImpossibleTravelRuleEvaluator>();
+
         // HU-017: services.AddSingleton<ISecretProvider, KeyVaultSecretProvider>();
 
         return services;
