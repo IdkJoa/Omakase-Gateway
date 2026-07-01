@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
@@ -21,7 +21,6 @@
         <Folder Include="Common\RiskEngine\Scoring\" />
         <Folder Include="Common\Security\" />
         <Folder Include="Features\" />
-        <Folder Include="Middlewares\" />
         <Folder Include="Proxy\" />
     </ItemGroup>
 

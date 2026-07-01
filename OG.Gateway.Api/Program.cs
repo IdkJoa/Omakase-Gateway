@@ -16,6 +16,23 @@ builder.Services.AddOpenApi();
 
 builder.Services.AddInfrastructure();
 
+// T-014: Registrar YARP como reverse proxy.
+// LoadFromConfig enlaza la sección "ReverseProxy" de appsettings.json de forma hot-reloadable.
+builder.Services
+    .AddReverseProxy()
+    .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
+
+// T-015: Mediador lightweight propio (sin dependencias externas).
+builder.Services.AddScoped<Application.Common.Mediator.IMediator, Application.Common.Mediator.Mediator>();
+builder.Services.AddScoped<
+    Application.Common.Mediator.IRequestHandler<
+        Application.Common.RiskEngine.Commands.EvaluateRiskCommand,
+        Application.Common.RiskEngine.Commands.RiskEvaluationResult>,
+    Application.Common.RiskEngine.Commands.EvaluateRiskHandler>();
+
+// T-015: Sanitizador de logs/audit (Singleton: sin estado mutable).
+builder.Services.AddSingleton<Application.Common.Security.ILogSanitizer, Application.Common.Security.LogSanitizer>();
+
 // Configurar ForwardedHeaders (HU-010 / T-019)
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
@@ -55,6 +72,9 @@ app.UseForwardedHeaders();
 // Habilitar el control de tasa de peticiones (Rate Limiting) por IP (T-020)
 app.UseMiddleware<Application.Middlewares.RateLimitMiddleware>();
 
+// T-015: Interceptar cada petición para extracción de contexto y evaluación de riesgo.
+app.UseMiddleware<Application.Middlewares.RiskEvaluationMiddleware>();
+
 // Migraciones automáticas al arranque 
 // Aplica las migraciones pendientes antes de aceptar tráfico.
 if (app.Environment.IsDevelopment())
@@ -74,5 +94,7 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
+
+app.MapReverseProxy();
 
 await app.RunAsync();
