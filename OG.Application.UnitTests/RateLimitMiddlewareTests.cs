@@ -1,8 +1,9 @@
 using Application.Middlewares;
 using Application.Common.Security;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Application.Common.Options;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 using System;
@@ -22,7 +23,7 @@ namespace OG.Application.UnitTests;
 public class RateLimitMiddlewareTests
 {
     private readonly IRedisService _redisMock;
-    private readonly IConfiguration _config;
+    private readonly IOptions<RateLimitingOptions> _options;
     private readonly ILogger<RateLimitMiddleware> _loggerMock;
     private bool _nextCalled;
     private readonly RequestDelegate _next;
@@ -38,16 +39,11 @@ public class RateLimitMiddlewareTests
             return Task.CompletedTask;
         };
 
-        // Usamos una configuración real en memoria para evitar problemas de simulación de métodos de extensión.
-        var inMemorySettings = new Dictionary<string, string>
+        _options = Microsoft.Extensions.Options.Options.Create(new RateLimitingOptions
         {
-            { "RateLimiting:Limit", "100" },
-            { "RateLimiting:WindowSeconds", "60" }
-        };
-
-        _config = new ConfigurationBuilder()
-            .AddInMemoryCollection(inMemorySettings!)
-            .Build();
+            Limit = 100,
+            WindowSeconds = 60
+        });
     }
 
     private HttpContext CreateHttpContext(string ip)
@@ -65,7 +61,7 @@ public class RateLimitMiddlewareTests
         var context = CreateHttpContext("192.168.1.50");
         _redisMock.IncrementRateLimitAsync("192.168.1.50", Arg.Any<TimeSpan>()).Returns(99);
 
-        var middleware = new RateLimitMiddleware(_next, _config, _loggerMock);
+        var middleware = new RateLimitMiddleware(_next, _options, _loggerMock);
 
         // Act
         await middleware.InvokeAsync(context, _redisMock);
@@ -82,7 +78,7 @@ public class RateLimitMiddlewareTests
         var context = CreateHttpContext("192.168.1.50");
         _redisMock.IncrementRateLimitAsync("192.168.1.50", Arg.Any<TimeSpan>()).Returns(101);
 
-        var middleware = new RateLimitMiddleware(_next, _config, _loggerMock);
+        var middleware = new RateLimitMiddleware(_next, _options, _loggerMock);
 
         // Act
         await middleware.InvokeAsync(context, _redisMock);
@@ -108,7 +104,7 @@ public class RateLimitMiddlewareTests
         var context = CreateHttpContext("192.168.1.50");
         _redisMock.IncrementRateLimitAsync("192.168.1.50", Arg.Any<TimeSpan>()).Throws(new Exception("Redis connection failed."));
 
-        var middleware = new RateLimitMiddleware(_next, _config, _loggerMock);
+        var middleware = new RateLimitMiddleware(_next, _options, _loggerMock);
 
         // Act
         await middleware.InvokeAsync(context, _redisMock);

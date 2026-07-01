@@ -1,3 +1,4 @@
+using Application.Middlewares;
 using Infrastructure;
 using Infrastructure.Persistence.Seeding;
 using Microsoft.EntityFrameworkCore;
@@ -32,6 +33,22 @@ builder.Services.AddScoped<
 
 // T-015: Sanitizador de logs/audit (Singleton: sin estado mutable).
 builder.Services.AddSingleton<Application.Common.Security.ILogSanitizer, Application.Common.Security.LogSanitizer>();
+
+// T-016: Canal de auditoría asíncrono (System.Threading.Channels, bounded 10 000 items).
+// El BackgroundService AuditPersistenceWorker (T-100) drena el canal y persiste en PostgreSQL.
+builder.Services.AddSingleton<Application.Common.Audit.IAuditChannel, Application.Common.Audit.InMemoryAuditChannel>();
+
+// T-100: Worker de persistencia de auditoría.
+// Consume IAuditChannel en segundo plano y persiste en audit_logs sin bloquear el pipeline HTTP.
+builder.Services.AddHostedService<Infrastructure.Workers.AuditPersistenceWorker>();
+
+// Options Pattern — configuración tipada para los componentes del pipeline.
+builder.Services.Configure<Application.Common.Audit.AuditChannelOptions>(
+    builder.Configuration.GetSection(Application.Common.Audit.AuditChannelOptions.SectionName));
+builder.Services.Configure<Infrastructure.Workers.AuditWorkerOptions>(
+    builder.Configuration.GetSection(Infrastructure.Workers.AuditWorkerOptions.SectionName));
+builder.Services.Configure<Application.Common.Options.RateLimitingOptions>(
+    builder.Configuration.GetSection(Application.Common.Options.RateLimitingOptions.SectionName));
 
 // Configurar ForwardedHeaders (HU-010 / T-019)
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
@@ -70,10 +87,10 @@ var app = builder.Build();
 app.UseForwardedHeaders();
 
 // Habilitar el control de tasa de peticiones (Rate Limiting) por IP (T-020)
-app.UseMiddleware<Application.Middlewares.RateLimitMiddleware>();
+app.UseMiddleware<RateLimitMiddleware>();
 
 // T-015: Interceptar cada petición para extracción de contexto y evaluación de riesgo.
-app.UseMiddleware<Application.Middlewares.RiskEvaluationMiddleware>();
+app.UseMiddleware<RiskEvaluationMiddleware>();
 
 // Migraciones automáticas al arranque 
 // Aplica las migraciones pendientes antes de aceptar tráfico.
