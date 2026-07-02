@@ -17,11 +17,16 @@ builder.Services.AddOpenApi();
 
 builder.Services.AddInfrastructure();
 
-// T-014: Registrar YARP como reverse proxy.
-// LoadFromConfig enlaza la sección "ReverseProxy" de appsettings.json de forma hot-reloadable.
-builder.Services
-    .AddReverseProxy()
-    .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
+// T-014 (HU-008) + HU-009 (T-017/T-018): YARP con rutas hidratadas desde protected_services.
+// La config ya no sale de appsettings: DatabaseProxyConfigProvider la construye desde la BD y
+// ProxyConfigReloader la recarga por polling (sin reiniciar el proceso).
+builder.Services.AddReverseProxy();
+builder.Services.AddSingleton<Infrastructure.Proxy.DatabaseProxyConfigProvider>();
+builder.Services.AddSingleton<Yarp.ReverseProxy.Configuration.IProxyConfigProvider>(
+    sp => sp.GetRequiredService<Infrastructure.Proxy.DatabaseProxyConfigProvider>());
+builder.Services.AddHostedService<Infrastructure.Proxy.ProxyConfigReloader>();
+builder.Services.Configure<Infrastructure.Proxy.ProxyReloadOptions>(
+    builder.Configuration.GetSection(Infrastructure.Proxy.ProxyReloadOptions.SectionName));
 
 // T-015: Mediador lightweight propio (sin dependencias externas).
 builder.Services.AddScoped<Application.Common.Mediator.IMediator, Application.Common.Mediator.Mediator>();
