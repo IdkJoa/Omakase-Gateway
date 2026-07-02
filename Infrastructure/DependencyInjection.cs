@@ -50,15 +50,28 @@ public static class DependencyInjection
         // HU-011 & T-022: Evaluador de regla Geofencing (contrato IRuleEvaluator, O/C)
         services.AddScoped<IRuleEvaluator, GeofenceRuleEvaluator>();
 
-        // HU-015: Motor de scoring (Policy Score ponderado + Risk Score consolidado)
+        // HU-012 & T-023: Evaluador de regla Time-Window (contrato IRuleEvaluator, O/C)
+        services.AddScoped<IRuleEvaluator, TimeWindowRuleEvaluator>();
+
+        // HU-013 & T-024: Servicio de huella digital de navegador
+        services.AddSingleton<IFingerprintService, FingerprintService>();
+
+        // HU-013 & T-025: Evaluador de regla Fingerprint (contrato IRuleEvaluator, O/C)
+        services.AddScoped<IRuleEvaluator, FingerprintRuleEvaluator>();
+
+        // HU-014 & T-027: Servicio de último acceso del usuario
+        services.AddScoped<ILastAccessService, Infrastructure.Persistence.LastAccessService>();
+
+        // HU-014 & T-027: Evaluador de regla Viaje Imposible (contrato IRuleEvaluator, O/C)
+        services.AddScoped<IRuleEvaluator, ImpossibleTravelRuleEvaluator>();
+
+        // HU-015 & T-028/T-029: Motor de scoring (Policy Score ponderado + Risk Score consolidado)
         services.AddScoped<IPolicyScoreCalculator, PolicyScoreCalculator>();
         services.AddScoped<IRiskScoreConsolidator, RiskScoreConsolidator>();
-        services.AddScoped<IRiskEvaluationService, RiskEvaluationService>();
 
         // HU-015: Puertos de datos del motor (impl sobre DbContext)
         services.AddScoped<IServicePolicyProvider, ServicePolicyProvider>();
         services.AddScoped<IRiskConfigProvider, RiskConfigProvider>();
-        services.AddScoped<IAuditWriter, AuditWriter>();
 
         // HU-017: services.AddSingleton<ISecretProvider, KeyVaultSecretProvider>();
 

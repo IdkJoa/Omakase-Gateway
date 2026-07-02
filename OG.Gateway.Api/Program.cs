@@ -1,6 +1,8 @@
+using Application.Middlewares;
 using Infrastructure;
 using Infrastructure.Persistence.Seeding;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.HttpOverrides;
 using ServiceDefaults;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -15,7 +17,80 @@ builder.Services.AddOpenApi();
 
 builder.Services.AddInfrastructure();
 
+// T-014: Registrar YARP como reverse proxy.
+// LoadFromConfig enlaza la sección "ReverseProxy" de appsettings.json de forma hot-reloadable.
+builder.Services
+    .AddReverseProxy()
+    .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
+
+// T-015: Mediador lightweight propio (sin dependencias externas).
+builder.Services.AddScoped<Application.Common.Mediator.IMediator, Application.Common.Mediator.Mediator>();
+builder.Services.AddScoped<
+    Application.Common.Mediator.IRequestHandler<
+        Application.Common.RiskEngine.Commands.EvaluateRiskCommand,
+        Application.Common.RiskEngine.Commands.RiskEvaluationResult>,
+    Application.Common.RiskEngine.Commands.EvaluateRiskHandler>();
+
+// T-015: Sanitizador de logs/audit (Singleton: sin estado mutable).
+builder.Services.AddSingleton<Application.Common.Security.ILogSanitizer, Application.Common.Security.LogSanitizer>();
+
+// T-016: Canal de auditoría asíncrono (System.Threading.Channels, bounded 10 000 items).
+// El BackgroundService AuditPersistenceWorker (T-100) drena el canal y persiste en PostgreSQL.
+builder.Services.AddSingleton<Application.Common.Audit.IAuditChannel, Application.Common.Audit.InMemoryAuditChannel>();
+
+// T-100: Worker de persistencia de auditoría.
+// Consume IAuditChannel en segundo plano y persiste en audit_logs sin bloquear el pipeline HTTP.
+builder.Services.AddHostedService<Infrastructure.Workers.AuditPersistenceWorker>();
+
+// Options Pattern — configuración tipada para los componentes del pipeline.
+builder.Services.Configure<Application.Common.Audit.AuditChannelOptions>(
+    builder.Configuration.GetSection(Application.Common.Audit.AuditChannelOptions.SectionName));
+builder.Services.Configure<Infrastructure.Workers.AuditWorkerOptions>(
+    builder.Configuration.GetSection(Infrastructure.Workers.AuditWorkerOptions.SectionName));
+builder.Services.Configure<Application.Common.Options.RateLimitingOptions>(
+    builder.Configuration.GetSection(Application.Common.Options.RateLimitingOptions.SectionName));
+
+// Configurar ForwardedHeaders (HU-010 / T-019)
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    
+    // Por defecto en desarrollo confiamos en cualquier proxy de Docker/Aspire.
+    // En producción se restringe mediante KnownProxies en appsettings.json.
+    var configSection = builder.Configuration.GetSection("ForwardedHeaders");
+    var trustAll = configSection.GetValue<bool>("TrustAll", true);
+    
+    if (trustAll)
+    {
+        options.KnownNetworks.Clear();
+        options.KnownProxies.Clear();
+    }
+    else
+    {
+        var knownProxies = configSection.GetSection("KnownProxies").Get<string[]>();
+        if (knownProxies != null)
+        {
+            foreach (var proxy in knownProxies)
+            {
+                if (System.Net.IPAddress.TryParse(proxy, out var ip))
+                {
+                    options.KnownProxies.Add(ip);
+                }
+            }
+        }
+    }
+});
+
 var app = builder.Build();
+
+// Habilitar el procesamiento de cabeceras reenviadas antes de cualquier middleware (T-019)
+app.UseForwardedHeaders();
+
+// Habilitar el control de tasa de peticiones (Rate Limiting) por IP (T-020)
+app.UseMiddleware<RateLimitMiddleware>();
+
+// T-015: Interceptar cada petición para extracción de contexto y evaluación de riesgo.
+app.UseMiddleware<RiskEvaluationMiddleware>();
 
 // Migraciones automáticas al arranque 
 // Aplica las migraciones pendientes antes de aceptar tráfico.
@@ -36,5 +111,7 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
+
+app.MapReverseProxy();
 
 await app.RunAsync();
