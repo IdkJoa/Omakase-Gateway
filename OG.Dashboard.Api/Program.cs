@@ -10,12 +10,25 @@ builder.AddNpgsqlDbContext<OmakaseDbContext>("Omakase");
 builder.AddRedisClient("redis");
 builder.Services.AddOpenApi();
 
+// CORS para que el front Angular (localhost:4200) consuma los mocks (Contract-First).
+const string FrontendCors = "FrontendCors";
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(FrontendCors, policy =>
+        policy.WithOrigins("http://localhost:4200", "https://localhost:4200")
+              .AllowAnyHeader()
+              .AllowAnyMethod());
+});
+
 //  Infrastructure (repositorios, etc.) — se completa en HU-003/004 
 // builder.Services.AddInfrastructure();
 
 var app = builder.Build();
 
-//  Endpoints de diagnóstico Aspire (/health y /alive) 
+// Habilitar CORS antes de mapear los endpoints.
+app.UseCors(FrontendCors);
+
+//  Endpoints de diagnóstico Aspire (/health y /alive)
 app.MapDefaultEndpoints();
 
 if (app.Environment.IsDevelopment())
