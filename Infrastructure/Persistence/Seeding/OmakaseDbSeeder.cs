@@ -14,6 +14,7 @@ public sealed class OmakaseDbSeeder : IDbSeeder
     {
         await SeedRiskScoreConfigAsync(cancellationToken);
         await SeedRolesAsync(cancellationToken);
+        await SeedProtectedServicesAsync(cancellationToken);
 
         // Los roles deben persistirse antes de que SeedInitialUserAsync los consulte.
         await _db.SaveChangesAsync(cancellationToken);
@@ -57,6 +58,22 @@ public sealed class OmakaseDbSeeder : IDbSeeder
                 Description = "Read-only access to audit logs and risk dashboards.",
                 IsActive    = true,
             });
+    }
+
+    private async Task SeedProtectedServicesAsync(CancellationToken ct)
+    {
+        if (await _db.ProtectedServices.AnyAsync(ct)) return;
+
+        // Servicio demo para YARP (HU-009): rutea /httpbin/** hacia el upstream.
+        // Permite demostrar la hidratación/recarga cambiando upstream_url o is_active en BD.
+        _db.ProtectedServices.Add(new ProtectedService
+        {
+            Id           = ProtectedServiceId.New(),
+            Name         = "httpbin",
+            UpstreamUrl  = "https://httpbin.org/",
+            RequiresAuth = false,
+            IsActive     = true,
+        });
     }
 
     private async Task SeedInitialUserAsync(CancellationToken ct)
