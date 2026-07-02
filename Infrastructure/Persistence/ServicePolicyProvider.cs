@@ -26,4 +26,18 @@ public sealed class ServicePolicyProvider : IServicePolicyProvider
             .Select(sp => sp.AccessPolicy!)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<ServicePolicySet?> GetByServiceNameAsync(
+        string serviceName, CancellationToken cancellationToken = default)
+    {
+        var service = await _db.ProtectedServices
+            .AsNoTracking()
+            .FirstOrDefaultAsync(s => s.Name == serviceName && s.IsActive, cancellationToken);
+
+        if (service is null)
+            return null;
+
+        var policies = await GetActivePoliciesAsync(service.Id, cancellationToken);
+        return new ServicePolicySet(service.Id, policies);
+    }
 }

@@ -22,6 +22,12 @@ public sealed record RequestContext
     /// <summary>Accept-Encoding header value from client request, when present.</summary>
     public string? AcceptEncoding { get; init; }
 
+    /// <summary>
+    /// Destination service name resolved from the request path (HU-009 convention
+    /// <c>/{name}/**</c>). Used to load that service's policies (T-028). Null if unresolved.
+    /// </summary>
+    public string? ServiceName { get; init; }
+
     /// <summary>Instant at which the request was intercepted.</summary>
     public DateTimeOffset Timestamp { get; init; } = DateTimeOffset.UtcNow;
 }

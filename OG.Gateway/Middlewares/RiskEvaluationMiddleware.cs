@@ -62,7 +62,10 @@ public sealed class RiskEvaluationMiddleware
         // UserId del claim JWT (null hasta HU-auth) 
         var userId = context.User.FindFirst("sub")?.Value;
 
-        // RequestContext inmutable 
+        // Servicio destino: primer segmento del path (convención HU-009: /{name}/**).
+        var serviceName = ExtractServiceName(context.Request.Path);
+
+        // RequestContext inmutable
         var requestContext = new RequestContext
         {
             SourceIp       = sourceIp,
@@ -70,6 +73,7 @@ public sealed class RiskEvaluationMiddleware
             UserId         = userId,
             AcceptLanguage = string.IsNullOrEmpty(acceptLanguage) ? null : acceptLanguage,
             AcceptEncoding = string.IsNullOrEmpty(acceptEncoding) ? null : acceptEncoding,
+            ServiceName    = serviceName,
             Timestamp      = DateTimeOffset.UtcNow
         };
 
@@ -96,16 +100,19 @@ public sealed class RiskEvaluationMiddleware
 
         // Encolar AuditEvent (fire-and-forget — no bloquea el pipeline)
         var auditEvent = new AuditEvent(
-            EvaluationId: evaluationId,
-            SourceIp:     sourceIp,
-            UserAgent:    requestContext.UserAgent,
-            UserId:       userId,
-            Verdict:      result.Verdict,
-            RiskScore:    result.RiskScore,
-            PolicyScore:  0m,   // T-016+: rellenado por el PolicyScoreCalculator real
-            AnomalyScore: 0m,   // T-016+: rellenado por el AnomalyScoreCalculator real
-            TraceId:      context.TraceIdentifier,
-            EvaluatedAt:  DateTimeOffset.UtcNow);
+            EvaluationId:    evaluationId,
+            SourceIp:        sourceIp,
+            UserAgent:       requestContext.UserAgent,
+            UserId:          userId,
+            Verdict:         result.Verdict,
+            RiskScore:       result.RiskScore,
+            PolicyScore:     result.PolicyScore,
+            AnomalyScore:    result.AnomalyScore,
+            TraceId:         context.TraceIdentifier,
+            EvaluatedAt:     DateTimeOffset.UtcNow,
+            Geo:             result.Geo,
+            TriggeredRules:  result.TriggeredRules,
+            ServiceId:       result.ServiceId);
 
         if (!auditChannel.TryWrite(auditEvent))
         {
@@ -172,5 +179,22 @@ public sealed class RiskEvaluationMiddleware
                 context.Response.StatusCode = StatusCodes.Status500InternalServerError;
                 break;
         }
+    }
+
+    /// <summary>
+    /// Extrae el nombre del servicio destino del primer segmento del path
+    /// (convención HU-009: <c>/{name}/**</c>). Devuelve null si no hay segmento.
+    /// </summary>
+    private static string? ExtractServiceName(PathString path)
+    {
+        var value = path.Value;
+        if (string.IsNullOrEmpty(value))
+            return null;
+
+        var segment = value.AsSpan().TrimStart('/');
+        var slash = segment.IndexOf('/');
+        var name = slash >= 0 ? segment[..slash] : segment;
+
+        return name.IsEmpty ? null : name.ToString();
     }
 }

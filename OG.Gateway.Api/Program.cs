@@ -54,6 +54,8 @@ builder.Services.Configure<Infrastructure.Workers.AuditWorkerOptions>(
     builder.Configuration.GetSection(Infrastructure.Workers.AuditWorkerOptions.SectionName));
 builder.Services.Configure<Application.Common.Options.RateLimitingOptions>(
     builder.Configuration.GetSection(Application.Common.Options.RateLimitingOptions.SectionName));
+builder.Services.Configure<Infrastructure.GeoLocation.GeoLocationOptions>(
+    builder.Configuration.GetSection(Infrastructure.GeoLocation.GeoLocationOptions.SectionName));
 
 // Configurar ForwardedHeaders (HU-010 / T-019)
 builder.Services.Configure<ForwardedHeadersOptions>(options =>

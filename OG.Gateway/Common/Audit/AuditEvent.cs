@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Domain.Entities;
 
 namespace Application.Common.Audit;
@@ -33,4 +34,8 @@ public sealed record AuditEvent(
     decimal         PolicyScore,
     decimal         AnomalyScore,
     string          TraceId,
-    DateTimeOffset  EvaluatedAt);
+    DateTimeOffset  EvaluatedAt,
+    JsonDocument?   Geo = null,
+    JsonDocument?   TriggeredRules = null,
+    Guid?           ServiceId = null,
+    string?         FingerprintHash = null);

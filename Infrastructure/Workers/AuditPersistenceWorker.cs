@@ -182,8 +182,11 @@ public sealed class AuditPersistenceWorker : BackgroundService
         RiskScore    = ev.RiskScore,
         PolicyScore  = ev.PolicyScore,
         AnomalyScore = ev.AnomalyScore,
-        EvaluatedAt  = ev.EvaluatedAt
-        // Geo, FingerprintHash, TriggeredRules, ServiceId:
-        // null en T-100 — completados por tareas posteriores (scoring real, geolocation, etc.)
+        EvaluatedAt  = ev.EvaluatedAt,
+        // T-030 (HU-015): completados por el motor de riesgo real.
+        Geo             = ev.Geo,
+        TriggeredRules  = ev.TriggeredRules,
+        FingerprintHash = ev.FingerprintHash,
+        ServiceId       = ev.ServiceId is Guid sid ? ProtectedServiceId.From(sid) : null,
     };
 }

@@ -7,6 +7,7 @@ using Infrastructure.Persistence;
 using Infrastructure.Persistence.Seeding;
 using Infrastructure.Redis;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace Infrastructure;
 
@@ -39,12 +40,14 @@ public static class DependencyInjection
         // HU-005 & T-012: Registro del servicio unificado de Redis
         services.AddSingleton<IRedisService, RedisService>();
 
-        // HU-011 & T-021: GeoLocation (HTTP + caché en memoria, timeout 2s -> fail-safe null)
+        // HU-011 & T-021: GeoLocation (HTTP + caché en memoria, timeout -> fail-safe).
+        // Config (URL/timeout) vía options pattern (GeoLocationOptions), no hardcode.
         services.AddMemoryCache();
-        services.AddHttpClient<IGeoLocationService, GeoLocationService>(client =>
+        services.AddHttpClient<IGeoLocationService, GeoLocationService>((sp, client) =>
         {
-            client.BaseAddress = new Uri("http://ip-api.com/");
-            client.Timeout = TimeSpan.FromSeconds(2);
+            var options = sp.GetRequiredService<IOptions<GeoLocationOptions>>().Value;
+            client.BaseAddress = new Uri(options.BaseUrl);
+            client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
         });
 
         // HU-011 & T-022: Evaluador de regla Geofencing (contrato IRuleEvaluator, O/C)
@@ -72,6 +75,10 @@ public static class DependencyInjection
         // HU-015: Puertos de datos del motor (impl sobre DbContext)
         services.AddScoped<IServicePolicyProvider, ServicePolicyProvider>();
         services.AddScoped<IRiskConfigProvider, RiskConfigProvider>();
+
+        // HU-015: Detector de anomalías — stub (AnomalyScore=50) en Sprint 2.
+        // Sprint 3 solo cambia esta línea por la implementación ML.NET.
+        services.AddScoped<IAnomalyDetector, StubAnomalyDetector>();
 
         // HU-017: services.AddSingleton<ISecretProvider, KeyVaultSecretProvider>();
 
