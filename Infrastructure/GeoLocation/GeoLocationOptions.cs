@@ -13,4 +13,7 @@ public sealed class GeoLocationOptions
 
     /// <summary>Timeout de la petición HTTP, en segundos. Default: 2.</summary>
     public int TimeoutSeconds { get; set; } = 2;
+
+    /// <summary>Vigencia de la caché de resultados por IP, en horas. Default: 1.</summary>
+    public int CacheTtlHours { get; set; } = 1;
 }

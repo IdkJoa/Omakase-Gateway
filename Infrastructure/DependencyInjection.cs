@@ -68,17 +68,18 @@ public static class DependencyInjection
         // HU-014 & T-027: Evaluador de regla Viaje Imposible (contrato IRuleEvaluator, O/C)
         services.AddScoped<IRuleEvaluator, ImpossibleTravelRuleEvaluator>();
 
-        // HU-015 & T-028/T-029: Motor de scoring (Policy Score ponderado + Risk Score consolidado)
-        services.AddScoped<IPolicyScoreCalculator, PolicyScoreCalculator>();
-        services.AddScoped<IRiskScoreConsolidator, RiskScoreConsolidator>();
+        // HU-015 & T-028/T-029: Motor de scoring. Puros y sin estado -> Singleton
+        // (una instancia; evita asignación en heap por petición).
+        services.AddSingleton<IPolicyScoreCalculator, PolicyScoreCalculator>();
+        services.AddSingleton<IRiskScoreConsolidator, RiskScoreConsolidator>();
 
-        // HU-015: Puertos de datos del motor (impl sobre DbContext)
+        // HU-015: Puertos de datos del motor (usan DbContext scoped -> Scoped).
         services.AddScoped<IServicePolicyProvider, ServicePolicyProvider>();
         services.AddScoped<IRiskConfigProvider, RiskConfigProvider>();
 
-        // HU-015: Detector de anomalías — stub (AnomalyScore=50) en Sprint 2.
+        // HU-015: Detector de anomalías — stub sin estado -> Singleton.
         // Sprint 3 solo cambia esta línea por la implementación ML.NET.
-        services.AddScoped<IAnomalyDetector, StubAnomalyDetector>();
+        services.AddSingleton<IAnomalyDetector, StubAnomalyDetector>();
 
         // HU-017: services.AddSingleton<ISecretProvider, KeyVaultSecretProvider>();
 

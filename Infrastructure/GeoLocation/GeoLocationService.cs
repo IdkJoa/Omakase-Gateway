@@ -3,27 +3,32 @@ using Application.Common.Security;
 using Domain.Common;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Infrastructure.GeoLocation;
 
 /// <summary>
 /// IP geolocation via the free ip-api.com endpoint (T-021).
-/// Caches successful results in-memory (1h) to avoid repeated lookups for the
+/// Caches successful results in-memory to avoid repeated lookups for the
 /// same IP, and returns a failed <see cref="Result{GeoResult}"/> on timeout/error.
 /// </summary>
 public sealed class GeoLocationService : IGeoLocationService
 {
-    private static readonly TimeSpan CacheTtl = TimeSpan.FromHours(1);
-
     private readonly HttpClient _http;
     private readonly IMemoryCache _cache;
     private readonly ILogger<GeoLocationService> _logger;
+    private readonly TimeSpan _cacheTtl;
 
-    public GeoLocationService(HttpClient http, IMemoryCache cache, ILogger<GeoLocationService> logger)
+    public GeoLocationService(
+        HttpClient http,
+        IMemoryCache cache,
+        IOptions<GeoLocationOptions> options,
+        ILogger<GeoLocationService> logger)
     {
         _http = http;
         _cache = cache;
         _logger = logger;
+        _cacheTtl = TimeSpan.FromHours(options.Value.CacheTtlHours);
     }
 
     public async Task<Result<GeoResult>> ResolveAsync(string ipAddress, CancellationToken cancellationToken = default)
@@ -49,7 +54,7 @@ public sealed class GeoLocationService : IGeoLocationService
             }
 
             var result = new GeoResult(dto.CountryCode, dto.City, dto.Lat, dto.Lon);
-            _cache.Set(CacheKey(ipAddress), result, CacheTtl);
+            _cache.Set(CacheKey(ipAddress), result, _cacheTtl);
             return result;
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or OperationCanceledException)
