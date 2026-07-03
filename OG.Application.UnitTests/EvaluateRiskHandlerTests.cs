@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Application.Common.RiskEngine;
+using Application.Common.RiskEngine.AnomalyDetection;
 using Application.Common.RiskEngine.Commands;
 using Application.Common.RiskEngine.Rules;
 using Application.Common.RiskEngine.Scoring;
@@ -64,9 +65,11 @@ public class EvaluateRiskHandlerTests
             => Task.FromResult(new RuleEvaluationResult("GEOFENCE", _score, p.Weight, _score > 0m, "stub"));
     }
 
+    private readonly IProfileUpdateChannel _profileChannel = Substitute.For<IProfileUpdateChannel>();
+
     private EvaluateRiskHandler CreateSut(IEnumerable<IRuleEvaluator> evaluators) => new(
         _policyProvider, evaluators, new PolicyScoreCalculator(), new RiskScoreConsolidator(),
-        _configProvider, new StubAnomalyDetector(), _geo);
+        _configProvider, new StubAnomalyDetector(), _geo, _profileChannel);
 
     private static EvaluateRiskCommand CommandFor(string? serviceName) =>
         new(new RequestContext { SourceIp = "190.166.12.45", ServiceName = serviceName });
