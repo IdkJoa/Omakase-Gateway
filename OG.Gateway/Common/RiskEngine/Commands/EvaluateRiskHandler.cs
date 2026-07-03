@@ -1,8 +1,10 @@
 using System.Text.Json;
 using Application.Common.Mediator;
+using Application.Common.RiskEngine.AnomalyDetection;
 using Application.Common.RiskEngine.Rules;
 using Application.Common.RiskEngine.Scoring;
 using Application.Common.Security;
+using Domain.Entities;
 
 namespace Application.Common.RiskEngine.Commands;
 
@@ -28,6 +30,7 @@ public sealed class EvaluateRiskHandler
     private readonly IRiskConfigProvider _configProvider;
     private readonly IAnomalyDetector _anomalyDetector;
     private readonly IGeoLocationService _geoLocation;
+    private readonly IProfileUpdateChannel _profileChannel;
 
     public EvaluateRiskHandler(
         IServicePolicyProvider policyProvider,
@@ -36,7 +39,8 @@ public sealed class EvaluateRiskHandler
         IRiskScoreConsolidator consolidator,
         IRiskConfigProvider configProvider,
         IAnomalyDetector anomalyDetector,
-        IGeoLocationService geoLocation)
+        IGeoLocationService geoLocation,
+        IProfileUpdateChannel profileChannel)
     {
         _policyProvider = policyProvider;
         _evaluators = evaluators;
@@ -45,6 +49,7 @@ public sealed class EvaluateRiskHandler
         _configProvider = configProvider;
         _anomalyDetector = anomalyDetector;
         _geoLocation = geoLocation;
+        _profileChannel = profileChannel;
     }
 
     /// <inheritdoc/>
@@ -79,13 +84,16 @@ public sealed class EvaluateRiskHandler
         // 2. Policy Score ponderado (T-028).
         var policyScore = _policyCalculator.Calculate(ruleResults);
 
-        // 3. Anomaly Score (stub = 50 en Sprint 2).
+        // 3. Anomaly Score (modelo ML.NET real; 50 si sin identidad/cold-start).
         var anomalyScore = await _anomalyDetector.GetAnomalyScoreAsync(context, cancellationToken);
 
-        // 4. Risk Score + veredicto (T-029). Cold-start 0: access_count = N -> penalización 0.
+        // 4. Risk Score + veredicto (T-029). Cold-start 0 aquí (access_count = N); HU-017 lo activa.
         var consolidated = _consolidator.Consolidate(policyScore, anomalyScore, config.ColdStartN, config);
 
-        // 5. Desglose de auditoría (T-030): geo + reglas disparadas.
+        // 5. Alimentar el perfil de forma asíncrona (T-033): fuera de la ruta crítica.
+        EnqueueProfileUpdate(context, config);
+
+        // 6. Desglose de auditoría (T-030): geo + reglas disparadas.
         var geoJson = await BuildGeoAsync(context.SourceIp, cancellationToken);
         var triggeredJson = BuildTriggeredRules(ruleResults);
 
@@ -97,6 +105,19 @@ public sealed class EvaluateRiskHandler
             geoJson,
             triggeredJson,
             serviceId);
+    }
+
+    /// <summary>Encola la actualización del perfil (T-033). Solo con identidad; fire-and-forget, no bloquea.</summary>
+    private void EnqueueProfileUpdate(RequestContext context, RiskScoreConfig config)
+    {
+        if (string.IsNullOrWhiteSpace(context.UserId))
+            return;
+
+        _profileChannel.TryWrite(new ProfileUpdate(
+            context.UserId,
+            context.Timestamp,
+            context.ServiceName ?? string.Empty,
+            config.ColdStartN));
     }
 
     /// <summary>Resuelve la geolocalización y la serializa a JSON para el audit (clave para HU-014).</summary>

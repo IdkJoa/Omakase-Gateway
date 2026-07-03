@@ -16,7 +16,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Folder Include="Common\RiskEngine\AnomalyDetection\" />
         <Folder Include="Common\RiskEngine\Rules\" />
         <Folder Include="Common\RiskEngine\Scoring\" />
         <Folder Include="Common\Security\" />

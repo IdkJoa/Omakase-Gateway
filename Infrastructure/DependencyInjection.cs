@@ -1,7 +1,9 @@
 using Application.Common.RiskEngine;
+using Application.Common.RiskEngine.AnomalyDetection;
 using Application.Common.RiskEngine.Rules;
 using Application.Common.RiskEngine.Scoring;
 using Application.Common.Security;
+using Infrastructure.AnomalyDetection;
 using Infrastructure.GeoLocation;
 using Infrastructure.Persistence;
 using Infrastructure.Persistence.Seeding;
@@ -77,9 +79,25 @@ public static class DependencyInjection
         services.AddScoped<IServicePolicyProvider, ServicePolicyProvider>();
         services.AddScoped<IRiskConfigProvider, RiskConfigProvider>();
 
-        // HU-015: Detector de anomalías — stub sin estado -> Singleton.
-        // Sprint 3 solo cambia esta línea por la implementación ML.NET.
-        services.AddSingleton<IAnomalyDetector, StubAnomalyDetector>();
+        // HU-016/017: Detección de anomalías con RandomizedPCA (ML.NET). Reemplaza al StubAnomalyDetector.
+        // Config tipada (options pattern); overridable vía Configure<AnomalyDetectionOptions> en el host.
+        services.AddOptions<AnomalyDetectionOptions>();
+        services.AddSingleton(sp => sp.GetRequiredService<IOptions<AnomalyDetectionOptions>>().Value);
+
+        // Componentes puros/sin estado -> Singleton.
+        services.AddSingleton<IFeatureExtractor>(sp =>
+            new FeatureExtractor(sp.GetRequiredService<AnomalyDetectionOptions>()));
+        services.AddSingleton(sp =>
+            new AnomalyModelTrainer(sp.GetRequiredService<AnomalyDetectionOptions>()));
+        services.AddSingleton<IAnomalyModelCache, AnomalyModelCache>();
+
+        // Canal de actualización de perfil (fire-and-forget) + worker de persistencia asíncrona (T-033/T-034).
+        services.AddSingleton<IProfileUpdateChannel, InMemoryProfileUpdateChannel>();
+        services.AddHostedService<ProfileUpdateWorker>();
+
+        // Store de perfil (usa DbContext scoped) y detector real -> Scoped.
+        services.AddScoped<IUserProfileStore, UserProfileStore>();
+        services.AddScoped<IAnomalyDetector, RandomizedPcaAnomalyDetector>();
 
         // HU-017: services.AddSingleton<ISecretProvider, KeyVaultSecretProvider>();
 
