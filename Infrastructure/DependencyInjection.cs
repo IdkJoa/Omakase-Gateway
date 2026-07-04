@@ -95,6 +95,9 @@ public static class DependencyInjection
         services.AddSingleton<IProfileUpdateChannel, InMemoryProfileUpdateChannel>();
         services.AddHostedService<ProfileUpdateWorker>();
 
+        // HU-017 T-035: reentrenamiento periódico (invalida caché + actualiza last_trained_at).
+        services.AddHostedService<AnomalyRetrainWorker>();
+
         // Store de perfil (usa DbContext scoped) y detector real -> Scoped.
         services.AddScoped<IUserProfileStore, UserProfileStore>();
         services.AddScoped<IAnomalyDetector, RandomizedPcaAnomalyDetector>();

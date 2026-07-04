@@ -8,11 +8,13 @@ namespace Application.Common.RiskEngine.AnomalyDetection;
 /// <param name="UserId">Identificador del usuario (claim sub / GUID).</param>
 /// <param name="Timestamp">Instante de la petición evaluada.</param>
 /// <param name="Endpoint">Servicio/endpoint accedido (para la feature de diversidad).</param>
+/// <param name="BaseRiskPenalty">Penalización de cold-start aplicada en esta evaluación (T-034, persistir).</param>
 /// <param name="ColdStartN">Umbral N para recalcular <c>is_cold_start</c> tras incrementar el contador.</param>
 public sealed record ProfileUpdate(
     string UserId,
     DateTimeOffset Timestamp,
     string Endpoint,
+    decimal BaseRiskPenalty,
     int ColdStartN);
 
 /// <summary>

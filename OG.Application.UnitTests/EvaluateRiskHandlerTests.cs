@@ -65,11 +65,12 @@ public class EvaluateRiskHandlerTests
             => Task.FromResult(new RuleEvaluationResult("GEOFENCE", _score, p.Weight, _score > 0m, "stub"));
     }
 
+    private readonly IUserProfileStore _profileStore = Substitute.For<IUserProfileStore>();
     private readonly IProfileUpdateChannel _profileChannel = Substitute.For<IProfileUpdateChannel>();
 
     private EvaluateRiskHandler CreateSut(IEnumerable<IRuleEvaluator> evaluators) => new(
         _policyProvider, evaluators, new PolicyScoreCalculator(), new RiskScoreConsolidator(),
-        _configProvider, new StubAnomalyDetector(), _geo, _profileChannel);
+        _configProvider, new StubAnomalyDetector(), _geo, _profileStore, _profileChannel);
 
     private static EvaluateRiskCommand CommandFor(string? serviceName) =>
         new(new RequestContext { SourceIp = "190.166.12.45", ServiceName = serviceName });
@@ -136,6 +137,51 @@ public class EvaluateRiskHandlerTests
 
         Assert.Equal(0m, result.PolicyScore);
         Assert.Null(result.ServiceId);
+    }
+
+    // ── HU-017 / T-034: cold-start real desde el access_count del perfil ────────
+
+    private void GivenProfileAccessCount(string userId, int accessCount) =>
+        _profileStore.GetAsync(userId, Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<UserAnomalyProfile?>(new UserAnomalyProfile(
+                Array.Empty<AnomalyFeatureVector>(), Array.Empty<UserAccessSample>(), accessCount, accessCount < 10)));
+
+    private static EvaluateRiskCommand CommandForUser(string userId) =>
+        new(new RequestContext { SourceIp = "190.166.12.45", UserId = userId });
+
+    [Fact]
+    public async Task NewUser_AccessCountZero_AppliesFullColdStart_Challenge()
+    {
+        GivenProfileAccessCount("u1", 0);
+
+        // Risk = 0.6*0 + 0.4*50 + 30*(1 - 0/10) = 20 + 30 = 50 -> CHALLENGE
+        var result = await CreateSut(Array.Empty<IRuleEvaluator>()).HandleAsync(CommandForUser("u1"));
+
+        Assert.Equal(50m, result.RiskScore);
+        Assert.Equal(Verdict.Challenge, result.Verdict);
+    }
+
+    [Fact]
+    public async Task EstablishedUser_AccessCountReachesN_NoColdStart_Allow()
+    {
+        GivenProfileAccessCount("u1", 10);
+
+        // Risk = 20 + 30*(1 - 10/10) = 20 -> ALLOW
+        var result = await CreateSut(Array.Empty<IRuleEvaluator>()).HandleAsync(CommandForUser("u1"));
+
+        Assert.Equal(20m, result.RiskScore);
+        Assert.Equal(Verdict.Allow, result.Verdict);
+    }
+
+    [Fact]
+    public async Task ColdStart_DecaysLinearly_AtHalfway()
+    {
+        GivenProfileAccessCount("u1", 5);
+
+        // Risk = 20 + 30*(1 - 5/10) = 20 + 15 = 35
+        var result = await CreateSut(Array.Empty<IRuleEvaluator>()).HandleAsync(CommandForUser("u1"));
+
+        Assert.Equal(35m, result.RiskScore);
     }
 }
 

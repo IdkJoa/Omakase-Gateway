@@ -12,9 +12,9 @@ namespace Infrastructure.AnomalyDetection;
 
 /// <summary>
 /// Worker que drena el <see cref="IProfileUpdateChannel"/> y persiste el perfil de comportamiento en
-/// <c>user_behavior_profiles</c> fuera de la ruta crítica (HU-016 T-033): recompone el vector de features
-/// del acceso, lo agrega a la ventana rodante, incrementa <c>access_count</c>, recalcula <c>is_cold_start</c>
-/// y refresca la caché Redis.
+/// <c>user_behavior_profiles</c> fuera de la ruta crítica (HU-016 T-033 / HU-017 T-034): recompone el vector
+/// de features del acceso, lo agrega a la ventana rodante, incrementa <c>access_count</c>, recalcula
+/// <c>is_cold_start</c>, guarda <c>base_risk_penalty</c> y refresca la caché Redis.
 /// <para><b>Singleton</b> (vive toda la app); crea un scope por mensaje para el <c>DbContext</c> (Scoped).</para>
 /// </summary>
 public sealed class ProfileUpdateWorker : BackgroundService
@@ -102,6 +102,7 @@ public sealed class ProfileUpdateWorker : BackgroundService
 
         entity.AccessCount += 1;
         entity.IsColdStart = entity.AccessCount < update.ColdStartN;
+        entity.BaseRiskPenalty = update.BaseRiskPenalty;
         entity.FeatureVector = UserProfileSerializer.Serialize(newWindow, newRecent);
 
         if (isNew)
