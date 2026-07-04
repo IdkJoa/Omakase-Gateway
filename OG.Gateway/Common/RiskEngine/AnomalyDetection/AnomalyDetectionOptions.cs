@@ -45,4 +45,7 @@ public sealed class AnomalyDetectionOptions
 
     /// <summary>Capacidad del canal de actualización de perfil (fire-and-forget). Default: 10000.</summary>
     public int ProfileUpdateChannelCapacity { get; set; } = 10_000;
+
+    /// <summary>Periodo del reentrenamiento programado de los modelos por usuario, en horas (T-035). Default: 24.</summary>
+    public int RetrainIntervalHours { get; set; } = 24;
 }

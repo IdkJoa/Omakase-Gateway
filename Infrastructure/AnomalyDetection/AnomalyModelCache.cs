@@ -12,8 +12,11 @@ public interface IAnomalyModelCache
     /// <summary>Devuelve el modelo del usuario, construyéndolo una sola vez con <paramref name="factory"/>.</summary>
     AnomalyModel GetOrBuild(string userId, Func<AnomalyModel> factory);
 
-    /// <summary>Descarta el modelo del usuario para forzar su reconstrucción.</summary>
+    /// <summary>Descarta el modelo del usuario para forzar su reconstrucción (reentrenamiento T-035).</summary>
     void Invalidate(string userId);
+
+    /// <summary>Descarta todos los modelos (reentrenamiento periódico global, T-035).</summary>
+    void Clear();
 }
 
 /// <inheritdoc cref="IAnomalyModelCache"/>
@@ -26,4 +29,6 @@ public sealed class AnomalyModelCache : IAnomalyModelCache
         _cache.GetOrAdd(userId, _ => new Lazy<AnomalyModel>(factory)).Value;
 
     public void Invalidate(string userId) => _cache.TryRemove(userId, out _);
+
+    public void Clear() => _cache.Clear();
 }
