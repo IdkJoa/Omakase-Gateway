@@ -1,0 +1,72 @@
+{
+  "realm": "omakase-gateway",
+  "enabled": true,
+  "users": [
+    {
+      "username": "admin",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Security",
+      "lastName": "Admin",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin",
+          "temporary": false
+        }
+      ],
+      "requiredActions": [ "CONFIGURE_TOTP" ],
+      "realmRoles": [ "ADMIN" ]
+    },
+    {
+      "username": "joel",
+      "enabled": true,
+      "email" : "joelg@gmail.com",
+      "emailVerified": true,
+      "firstName": "Joel",
+      "lastName": "Guerra",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "1234",
+          "temporary": false
+        }
+      ],
+      "requiredActions": [ "" ],
+      "realmRoles": [ "ADMIN" ]
+    }
+  ],
+  "roles": {
+    "realm": [
+      {
+        "name": "ADMIN",
+        "description": "Administrator role"
+      },
+      {
+        "name": "VIEWER",
+        "description": "Read-only viewer role"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "omakase-dashboard",
+      "enabled": true,
+      "publicClient": true,
+      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "rootUrl": "http://localhost:4200",
+      "adminUrl": "http://localhost:4200",
+      "redirectUris": [
+        "http://localhost:4200/*"
+      ],
+      "webOrigins": [
+        "+"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      }
+    }
+  ]
+}
