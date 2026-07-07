@@ -15,7 +15,10 @@ var redis = builder.AddRedis("redis")
 // Identidad 
 // URL configurada en appsettings.json cuando se implemente la HU de autenticación
 var keycloak = builder.AddContainer("keycloak", "quay.io/keycloak/keycloak")
-    .WithArgs("start-dev")
+    .WithArgs("start-dev", "--import-realm")
+    .WithEnvironment("KEYCLOAK_ADMIN", "admin")
+    .WithEnvironment("KEYCLOAK_ADMIN_PASSWORD", "admin")
+    .WithBindMount("./config/keycloak", "/opt/keycloak/data/import")
     .WithHttpEndpoint(port: 8080, targetPort: 8080, name: "http");
 
 // Observabilidad 

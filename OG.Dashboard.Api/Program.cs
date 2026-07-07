@@ -1,4 +1,6 @@
 using Infrastructure;
+using Infrastructure.Persistence;
+using Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 using OG.Dashboard.Api.Endpoints;
 using ServiceDefaults;
@@ -9,6 +11,12 @@ builder.AddServiceDefaults();
 builder.AddNpgsqlDbContext<OmakaseDbContext>("Omakase");
 builder.AddRedisClient("redis");
 builder.Services.AddOpenApi();
+
+builder.Services.AddOmakaseAuthentication(builder.Configuration);
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOnly", policy => policy.RequireRole("ADMIN"));
+});
 
 // CORS para que el front Angular (localhost:4200) consuma los mocks (Contract-First).
 const string FrontendCors = "FrontendCors";
@@ -28,6 +36,9 @@ var app = builder.Build();
 // Habilitar CORS antes de mapear los endpoints.
 app.UseCors(FrontendCors);
 
+app.UseAuthentication();
+app.UseAuthorization();
+
 //  Endpoints de diagnóstico Aspire (/health y /alive)
 app.MapDefaultEndpoints();
 
@@ -37,12 +48,14 @@ if (app.Environment.IsDevelopment())
 }
 
 // T-088: Contratos de API mock (Contract-First)
-app.MapAuditLogsEndpoints();
-app.MapMetricsEndpoints();
-app.MapPoliciesEndpoints();
-app.MapServicesEndpoints();
-app.MapUsersEndpoints();
-app.MapRolesEndpoints();
-app.MapRiskConfigEndpoints();
+var apiGroup = app.MapGroup("").RequireAuthorization("AdminOnly");
+
+apiGroup.MapAuditLogsEndpoints();
+apiGroup.MapMetricsEndpoints();
+apiGroup.MapPoliciesEndpoints();
+apiGroup.MapServicesEndpoints();
+apiGroup.MapUsersEndpoints();
+apiGroup.MapRolesEndpoints();
+apiGroup.MapRiskConfigEndpoints();
 
 await app.RunAsync();
