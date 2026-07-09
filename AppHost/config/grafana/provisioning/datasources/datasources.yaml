@@ -6,8 +6,11 @@ datasources:
     url: http://tempo:3200
     isDefault: true
     jsonData:
-      # HU-030: descomentar cuando Loki y Prometheus estén configurados
-      # tracesToLogsV2:
-      #   datasourceUid: loki
-      # serviceMap:
-      #   datasourceUid: prometheus
+      tracesToLogsV2:
+        datasourceUid: loki
+  
+  - name: Loki
+    type: loki
+    uid: loki
+    access: proxy
+    url: http://loki:3100

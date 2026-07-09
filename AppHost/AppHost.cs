@@ -34,15 +34,21 @@ var otelCollector = builder.AddContainer("otel-collector", "otel/opentelemetry-c
     .WithEndpoint(port: 4318, targetPort: 4318, scheme: "http", name: "otlp-http")
     .WaitFor(tempo);
 
+var loki = builder.AddContainer("loki", "grafana/loki")
+    .WithHttpEndpoint(port: 3100, targetPort: 3100, name: "http");
+
 builder.AddContainer("grafana", "grafana/grafana")
     .WithHttpEndpoint(port: 3000, targetPort: 3000)
     .WithBindMount("./config/grafana/provisioning", "/etc/grafana/provisioning")
-    .WaitFor(tempo);
+    .WithBindMount("./config/grafana/dashboards", "/etc/grafana/dashboards")
+    .WaitFor(tempo)
+    .WaitFor(loki);
 
 // Servicios de aplicación 
 builder.AddProject<OG_Gateway_Api>("gateway-api")
     .WithReference(postgres)
     .WithReference(redis)
+    .WithReference(loki.GetEndpoint("http"))
     .WithEnvironment("OTEL_EXPORTER_OTLP_ENDPOINT", "http://otel-collector:4318")
     .WaitFor(postgres)
     .WaitFor(redis)
@@ -52,6 +58,7 @@ builder.AddProject<OG_Gateway_Api>("gateway-api")
 builder.AddProject<OG_Dashboard_Api>("dashboard-api")
     .WithReference(postgres)
     .WithReference(redis)
+    .WithReference(loki.GetEndpoint("http"))
     .WithEnvironment("OTEL_EXPORTER_OTLP_ENDPOINT", "http://otel-collector:4318")
     .WaitFor(postgres)
     .WaitFor(redis)

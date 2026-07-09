@@ -83,20 +83,27 @@ public sealed class RiskEvaluationMiddleware
         if (userId is not null)
             span?.SetTag(Tags.UserId, userId);
 
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        
         // Evaluar riesgo 
         var result = await mediator.SendAsync(
             new EvaluateRiskCommand(requestContext),
             context.RequestAborted);
+            
+        sw.Stop();
 
         span?.SetTag(Tags.Verdict,   result.Verdict.ToString());
         span?.SetTag(Tags.RiskScore,  result.RiskScore.ToString("F2"));
 
-        _logger.LogInformation(
-            "[RiskEvaluationMiddleware] EvaluationId={EvaluationId} IP={SourceIp} " +
-            "UA={UserAgent} Verdict={Verdict} Score={Score}",
-            evaluationId, sourceIp,
-            string.IsNullOrEmpty(userAgent) ? "-" : userAgent,
-            result.Verdict, result.RiskScore);
+        _logger.LogInformation("Evaluación completada {@Context}", new 
+        { 
+            UserId = userId ?? "anonymous", 
+            ServiceId = result.ServiceId?.ToString() ?? "unknown",
+            Verdict = result.Verdict.ToString(), 
+            RiskScore = result.RiskScore, 
+            TraceId = context.TraceIdentifier,
+            DurationMs = sw.ElapsedMilliseconds
+        });
 
         // Encolar AuditEvent (fire-and-forget — no bloquea el pipeline)
         var auditEvent = new AuditEvent(
