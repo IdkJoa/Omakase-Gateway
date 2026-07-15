@@ -80,6 +80,7 @@ public sealed class RiskEvaluationMiddleware
         // Span OTel
         using var span = Source.StartActivity(Interception);
         span?.SetTag(Tags.SourceIp, sourceIp);
+        
         if (userId is not null)
             span?.SetTag(Tags.UserId, userId);
 
