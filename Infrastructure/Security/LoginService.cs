@@ -43,17 +43,20 @@ public sealed class LoginService : ILoginService
     private readonly IGatewayTokenService _tokenService;
     private readonly IAuditChannel _auditChannel;
     private readonly ILogger<LoginService> _logger;
+    private readonly Application.Common.Security.IRedisService _redisService;
 
     public LoginService(
         OmakaseDbContext db,
         IGatewayTokenService tokenService,
         IAuditChannel auditChannel,
-        ILogger<LoginService> logger)
+        ILogger<LoginService> logger,
+        Application.Common.Security.IRedisService redisService)
     {
         _db = db;
         _tokenService = tokenService;
         _auditChannel = auditChannel;
         _logger = logger;
+        _redisService = redisService;
     }
 
     public async Task<LoginResult> LoginAsync(
@@ -158,6 +161,109 @@ public sealed class LoginService : ILoginService
         EmitAudit(user.Id, Verdict.Allow, RuleLoginSuccess, sourceIp: sourceIp, userAgent: deviceInfo);
 
         return LoginResult.Success(accessToken, refreshTokenRaw);
+    }
+
+    public async Task<LoginResult> RefreshSessionAsync(
+        string rawRefreshToken,
+        string? deviceInfo = null,
+        string? sourceIp = null,
+        CancellationToken ct = default)
+    {
+        var tokenHash = _tokenService.HashRefreshToken(rawRefreshToken);
+        var storedToken = await _db.RefreshTokens
+            .Include(rt => rt.User)
+            .FirstOrDefaultAsync(rt => rt.TokenHash == tokenHash, ct);
+
+        if (storedToken is null)
+        {
+            _logger.LogWarning("Intento de refresh con token no encontrado.");
+            EmitAudit(null, Verdict.Block, JsonDocument.Parse("[\"AUTH_REFRESH_FAILED\"]"), sourceIp, deviceInfo);
+            return LoginResult.Unauthorized();
+        }
+
+        var user = storedToken.User;
+
+        // Verificar si el token ya expiró o el usuario fue desactivado
+        if (storedToken.ExpiresAt <= DateTimeOffset.UtcNow || !user.IsActive)
+        {
+            _logger.LogWarning("Intento de refresh con token expirado o usuario inactivo.");
+            EmitAudit(user.Id, Verdict.Block, JsonDocument.Parse("[\"AUTH_REFRESH_FAILED\"]"), sourceIp, deviceInfo);
+            return LoginResult.Unauthorized();
+        }
+
+        // T-041: Si el token está revocado, revocar TODOS los tokens del usuario (alerta de compromiso)
+        if (storedToken.IsRevoked)
+        {
+            _logger.LogWarning("ALERTA DE SEGURIDAD: Intento de uso de refresh token revocado. Revocando todos los tokens del usuario {UserId}.", user.Id);
+            
+            var allActiveTokens = await _db.RefreshTokens
+                .Where(rt => rt.UserId == user.Id && !rt.IsRevoked)
+                .ToListAsync(ct);
+            
+            foreach (var token in allActiveTokens)
+            {
+                token.IsRevoked = true;
+            }
+            
+            await _db.SaveChangesAsync(ct);
+            EmitAudit(user.Id, Verdict.Block, JsonDocument.Parse("[\"AUTH_TOKEN_COMPROMISED\"]"), sourceIp, deviceInfo);
+            
+            return LoginResult.Unauthorized();
+        }
+
+        // Rotar: Marcar el actual como revocado
+        storedToken.IsRevoked = true;
+
+        // Generar nuevo par de tokens
+        var (accessToken, _) = _tokenService.GenerateAccessToken(user);
+        var refreshTokenRaw = _tokenService.GenerateRefreshTokenRaw();
+        var newRefreshTokenHash = _tokenService.HashRefreshToken(refreshTokenRaw);
+
+        var newRefreshToken = new RefreshToken
+        {
+            Id = RefreshTokenId.New(),
+            UserId = user.Id,
+            TokenHash = newRefreshTokenHash,
+            DeviceInfo = deviceInfo,
+            ExpiresAt = DateTimeOffset.UtcNow.AddDays(7),
+            IsRevoked = false,
+            CreatedAt = DateTimeOffset.UtcNow
+        };
+
+        _db.RefreshTokens.Add(newRefreshToken);
+        await _db.SaveChangesAsync(ct);
+
+        _logger.LogInformation("Refresh de sesión exitoso: usuario '{Username}'.", user.Username);
+        EmitAudit(user.Id, Verdict.Allow, JsonDocument.Parse("[\"AUTH_REFRESH_SUCCESS\"]"), sourceIp, deviceInfo);
+
+        return LoginResult.Success(accessToken, refreshTokenRaw);
+    }
+
+    public async Task LogoutAsync(
+        string rawRefreshToken,
+        string accessTokenJti,
+        TimeSpan accessTokenRemainingLifetime,
+        string? deviceInfo = null,
+        string? sourceIp = null,
+        CancellationToken ct = default)
+    {
+        var tokenHash = _tokenService.HashRefreshToken(rawRefreshToken);
+        var storedToken = await _db.RefreshTokens
+            .FirstOrDefaultAsync(rt => rt.TokenHash == tokenHash, ct);
+
+        if (storedToken is not null)
+        {
+            storedToken.IsRevoked = true;
+            await _db.SaveChangesAsync(ct);
+            
+            EmitAudit(storedToken.UserId, Verdict.Allow, JsonDocument.Parse("[\"AUTH_LOGOUT\"]"), sourceIp, deviceInfo);
+        }
+
+        if (!string.IsNullOrEmpty(accessTokenJti) && accessTokenRemainingLifetime > TimeSpan.Zero)
+        {
+            // T-042: Añadir a la blacklist en Redis
+            await _redisService.AddToBlacklistAsync(accessTokenJti, accessTokenRemainingLifetime);
+        }
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

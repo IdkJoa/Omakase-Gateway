@@ -64,6 +64,9 @@ builder.Services.Configure<Infrastructure.GeoLocation.GeoLocationOptions>(
 builder.Services.Configure<Application.Common.Options.JwtOptions>(
     builder.Configuration.GetSection(Application.Common.Options.JwtOptions.SectionName));
 
+// HU-020: Configurar JWT Bearer y Blacklist
+builder.Services.AddGatewayAuthentication();
+
 // Configurar ForwardedHeaders (HU-010 / T-019)
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
@@ -102,6 +105,10 @@ app.UseForwardedHeaders();
 
 // Habilitar el control de tasa de peticiones (Rate Limiting) por IP (T-020)
 app.UseMiddleware<RateLimitMiddleware>();
+
+// Habilitar la autenticación para que HttpContext.User se llene con el JWT
+app.UseAuthentication();
+app.UseAuthorization();
 
 // T-015: Interceptar cada petición para extracción de contexto y evaluación de riesgo.
 app.UseMiddleware<RiskEvaluationMiddleware>();

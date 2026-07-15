@@ -27,4 +27,26 @@ public interface ILoginService
         string? deviceInfo = null,
         string? sourceIp = null,
         CancellationToken ct = default);
+
+    /// <summary>
+    /// Renueva la sesión utilizando un refresh token, invalidando el anterior.
+    /// T-041.
+    /// </summary>
+    Task<LoginResult> RefreshSessionAsync(
+        string rawRefreshToken,
+        string? deviceInfo = null,
+        string? sourceIp = null,
+        CancellationToken ct = default);
+
+    /// <summary>
+    /// Cierra la sesión revocando el refresh token y añadiendo el access token a la blacklist.
+    /// T-042.
+    /// </summary>
+    Task LogoutAsync(
+        string rawRefreshToken,
+        string accessTokenJti,
+        TimeSpan accessTokenRemainingLifetime,
+        string? deviceInfo = null,
+        string? sourceIp = null,
+        CancellationToken ct = default);
 }

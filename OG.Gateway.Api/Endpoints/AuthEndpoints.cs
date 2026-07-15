@@ -67,6 +67,87 @@ public static class AuthEndpoints
         .Produces<AccountLockedResponse>(StatusCodes.Status423Locked)
         .AllowAnonymous();
 
+        // POST /auth/refresh
+        group.MapPost("/refresh", async (
+            ILoginService loginService,
+            HttpContext ctx,
+            CancellationToken ct) =>
+        {
+            if (!ctx.Request.Cookies.TryGetValue(RefreshTokenCookieName, out var rawRefreshToken))
+                return Results.Unauthorized();
+
+            var deviceInfo = ctx.Request.Headers.UserAgent.ToString();
+            if (string.IsNullOrWhiteSpace(deviceInfo)) deviceInfo = null;
+            var sourceIp = ctx.Connection.RemoteIpAddress?.ToString();
+
+            var result = await loginService.RefreshSessionAsync(rawRefreshToken, deviceInfo, sourceIp, ct);
+
+            if (result.IsUnauthorized)
+                return Results.Unauthorized();
+
+            // Set new cookie
+            ctx.Response.Cookies.Append(RefreshTokenCookieName, result.RefreshTokenRaw!, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Path = "/auth/refresh",
+                Expires = DateTimeOffset.UtcNow.AddDays(7)
+            });
+
+            return Results.Ok(new LoginResponse(result.AccessToken!));
+        })
+        .WithName("Refresh")
+        .WithSummary("Renueva la sesión")
+        .WithDescription("Renueva el JWT usando un refresh token válido (T-041).")
+        .Produces<LoginResponse>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status401Unauthorized)
+        .AllowAnonymous(); // The refresh token is in the cookie, no JWT needed here.
+
+        // POST /auth/logout
+        group.MapPost("/logout", async (
+            ILoginService loginService,
+            HttpContext ctx,
+            CancellationToken ct) =>
+        {
+            if (!ctx.Request.Cookies.TryGetValue(RefreshTokenCookieName, out var rawRefreshToken))
+                return Results.NoContent();
+
+            var jti = ctx.User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Jti)?.Value;
+            var expClaim = ctx.User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Exp)?.Value;
+            
+            TimeSpan remainingLifetime = TimeSpan.Zero;
+            if (long.TryParse(expClaim, out var expUnix))
+            {
+                var expDateTime = DateTimeOffset.FromUnixTimeSeconds(expUnix);
+                remainingLifetime = expDateTime - DateTimeOffset.UtcNow;
+            }
+
+            var deviceInfo = ctx.Request.Headers.UserAgent.ToString();
+            if (string.IsNullOrWhiteSpace(deviceInfo)) deviceInfo = null;
+            var sourceIp = ctx.Connection.RemoteIpAddress?.ToString();
+
+            await loginService.LogoutAsync(
+                rawRefreshToken, 
+                jti ?? string.Empty, 
+                remainingLifetime, 
+                deviceInfo, 
+                sourceIp, 
+                ct);
+
+            ctx.Response.Cookies.Delete(RefreshTokenCookieName, new CookieOptions
+            {
+                Path = "/auth/refresh"
+            });
+
+            return Results.NoContent();
+        })
+        .WithName("Logout")
+        .WithSummary("Cierra sesión")
+        .WithDescription("Revoca el refresh token y añade el access token a la blacklist (T-042).")
+        .Produces(StatusCodes.Status204NoContent)
+        .RequireAuthorization(); // Requires valid JWT
+
         return app;
     }
 }

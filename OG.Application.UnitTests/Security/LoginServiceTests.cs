@@ -36,6 +36,7 @@ public class LoginServiceTests : IDisposable
     private readonly OmakaseDbContext _db;
     private readonly IGatewayTokenService _tokenService;
     private readonly IAuditChannel _auditChannel;
+    private readonly global::Application.Common.Security.IRedisService _redisService;
     private readonly LoginService _sut;
 
     /// <summary>BCrypt factor 4 — rápido en tests; producción usa ≥12.</summary>
@@ -69,7 +70,9 @@ public class LoginServiceTests : IDisposable
         _auditChannel = Substitute.For<IAuditChannel>();
         _auditChannel.TryWrite(Arg.Any<AuditEvent>()).Returns(true);
 
-        _sut = new LoginService(_db, _tokenService, _auditChannel, NullLogger<LoginService>.Instance);
+        _redisService = Substitute.For<global::Application.Common.Security.IRedisService>();
+
+        _sut = new LoginService(_db, _tokenService, _auditChannel, NullLogger<LoginService>.Instance, _redisService);
     }
 
     public void Dispose()
@@ -100,6 +103,25 @@ public class LoginServiceTests : IDisposable
         _db.SaveChanges();
         _db.ChangeTracker.Clear(); // evitar conflictos de tracking entre operaciones
         return user;
+    }
+
+    private RefreshToken SeedRefreshToken(UserId userId, string rawToken, bool isRevoked = false, DateTimeOffset? expiresAt = null)
+    {
+        var tokenHash = _tokenService.HashRefreshToken(rawToken);
+        var token = new RefreshToken
+        {
+            Id = RefreshTokenId.New(),
+            UserId = userId,
+            TokenHash = tokenHash,
+            DeviceInfo = "TestDevice",
+            ExpiresAt = expiresAt ?? DateTimeOffset.UtcNow.AddDays(7),
+            IsRevoked = isRevoked,
+            CreatedAt = DateTimeOffset.UtcNow
+        };
+        _db.RefreshTokens.Add(token);
+        _db.SaveChanges();
+        _db.ChangeTracker.Clear();
+        return token;
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -474,6 +496,114 @@ public class LoginServiceTests : IDisposable
             tokens.Add(service.GenerateRefreshTokenRaw());
 
         Assert.Equal(100, tokens.Count); // sin colisiones en 100 generaciones
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // ESCENARIO 4 — Refresh Session (HU-020 / T-041)
+    // ══════════════════════════════════════════════════════════════════════════
+
+    [Fact]
+    public async Task Refresh_ConTokenValido_RenuevaTokensYMarcaAnteriorComoRevocado()
+    {
+        var user = SeedUser();
+        var rawToken = "valid-refresh-token-1234567890ab";
+        SeedRefreshToken(user.Id, rawToken);
+
+        var result = await _sut.RefreshSessionAsync(rawToken);
+
+        Assert.False(result.IsUnauthorized);
+        Assert.NotNull(result.AccessToken);
+        Assert.NotNull(result.RefreshTokenRaw);
+        
+        var oldHash = _tokenService.HashRefreshToken(rawToken);
+        var oldStored = await _db.RefreshTokens.FirstOrDefaultAsync(t => t.TokenHash == oldHash);
+        Assert.True(oldStored!.IsRevoked);
+        
+        var newHash = _tokenService.HashRefreshToken(result.RefreshTokenRaw!);
+        var newStored = await _db.RefreshTokens.FirstOrDefaultAsync(t => t.TokenHash == newHash);
+        Assert.NotNull(newStored);
+        Assert.False(newStored.IsRevoked);
+        
+        _auditChannel.Received(1).TryWrite(Arg.Is<AuditEvent>(e => e.TriggeredRules!.RootElement.ToString().Contains("AUTH_REFRESH_SUCCESS")));
+    }
+
+    [Fact]
+    public async Task Refresh_ConTokenInexistente_RetornaUnauthorized()
+    {
+        var result = await _sut.RefreshSessionAsync("invalid-token");
+
+        Assert.True(result.IsUnauthorized);
+        _auditChannel.Received(1).TryWrite(Arg.Is<AuditEvent>(e => e.TriggeredRules!.RootElement.ToString().Contains("AUTH_REFRESH_FAILED")));
+    }
+
+    [Fact]
+    public async Task Refresh_ConTokenExpirado_RetornaUnauthorized()
+    {
+        var user = SeedUser();
+        var rawToken = "expired-token";
+        SeedRefreshToken(user.Id, rawToken, expiresAt: DateTimeOffset.UtcNow.AddMinutes(-5));
+
+        var result = await _sut.RefreshSessionAsync(rawToken);
+
+        Assert.True(result.IsUnauthorized);
+        _auditChannel.Received(1).TryWrite(Arg.Is<AuditEvent>(e => e.TriggeredRules!.RootElement.ToString().Contains("AUTH_REFRESH_FAILED")));
+    }
+
+    [Fact]
+    public async Task Refresh_ConTokenRevocado_RevocaTodosLosTokensYRetornaUnauthorized()
+    {
+        var user = SeedUser();
+        // Tokens activos
+        SeedRefreshToken(user.Id, "active-1");
+        SeedRefreshToken(user.Id, "active-2");
+        SeedRefreshToken(user.Id, "active-3");
+        
+        // Token revocado
+        var revokedRaw = "revoked-token";
+        SeedRefreshToken(user.Id, revokedRaw, isRevoked: true);
+
+        var result = await _sut.RefreshSessionAsync(revokedRaw);
+
+        Assert.True(result.IsUnauthorized);
+        
+        var allTokens = await _db.RefreshTokens.Where(t => t.UserId == user.Id).ToListAsync();
+        Assert.All(allTokens, t => Assert.True(t.IsRevoked));
+        
+        _auditChannel.Received(1).TryWrite(Arg.Is<AuditEvent>(e => e.Verdict == Verdict.Block && e.TriggeredRules!.RootElement.ToString().Contains("AUTH_TOKEN_COMPROMISED")));
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // ESCENARIO 5 — Logout (HU-020 / T-042)
+    // ══════════════════════════════════════════════════════════════════════════
+
+    [Fact]
+    public async Task Logout_ConTokenValido_RevocaTokenYAgregaAccessABlacklist()
+    {
+        var user = SeedUser();
+        var rawToken = "token-to-logout";
+        SeedRefreshToken(user.Id, rawToken);
+        var jti = Guid.NewGuid().ToString();
+        var lifetime = TimeSpan.FromMinutes(10);
+
+        await _sut.LogoutAsync(rawToken, jti, lifetime);
+
+        var hash = _tokenService.HashRefreshToken(rawToken);
+        var stored = await _db.RefreshTokens.FirstOrDefaultAsync(t => t.TokenHash == hash);
+        Assert.True(stored!.IsRevoked);
+        
+        await _redisService.Received(1).AddToBlacklistAsync(jti, lifetime);
+        _auditChannel.Received(1).TryWrite(Arg.Is<AuditEvent>(e => e.TriggeredRules!.RootElement.ToString().Contains("AUTH_LOGOUT")));
+    }
+
+    [Fact]
+    public async Task Logout_ConTokenInexistente_EsIdempotenteYAgregaBlacklist()
+    {
+        var jti = Guid.NewGuid().ToString();
+        var lifetime = TimeSpan.FromMinutes(10);
+
+        await _sut.LogoutAsync("non-existent-token", jti, lifetime);
+
+        await _redisService.Received(1).AddToBlacklistAsync(jti, lifetime);
     }
 
     // ── Utilidades ────────────────────────────────────────────────────────────
