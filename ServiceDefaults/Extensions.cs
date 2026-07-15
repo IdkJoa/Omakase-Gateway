@@ -1,3 +1,5 @@
+using Serilog;
+using Serilog.Sinks.Grafana.Loki;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.DependencyInjection;
@@ -7,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
+using Microsoft.Extensions.Configuration;
 
 namespace ServiceDefaults;
 
@@ -20,6 +23,15 @@ public static class Extensions
 
     public static TBuilder AddServiceDefaults<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
     {
+        var lokiUrl = builder.Configuration["services:loki:http:0"] ?? "http://localhost:3100";
+        
+        builder.Services.AddSerilog((services, lc) => lc
+            .MinimumLevel.Information()
+            .Enrich.FromLogContext()
+            .Enrich.WithProperty("Application", builder.Environment.ApplicationName)
+            .WriteTo.Console()
+            .WriteTo.GrafanaLoki(lokiUrl));
+
         builder.ConfigureOpenTelemetry();
 
         builder.AddDefaultHealthChecks();
