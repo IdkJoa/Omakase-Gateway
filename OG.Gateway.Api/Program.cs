@@ -3,7 +3,9 @@ using Infrastructure;
 using Infrastructure.Persistence.Seeding;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.HttpOverrides;
+using OmakaseGateway.Api.Endpoints;
 using ServiceDefaults;
+using System.Net;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -57,6 +59,11 @@ builder.Services.Configure<Application.Common.Options.RateLimitingOptions>(
 builder.Services.Configure<Infrastructure.GeoLocation.GeoLocationOptions>(
     builder.Configuration.GetSection(Infrastructure.GeoLocation.GeoLocationOptions.SectionName));
 
+// HU-019 / T-038: Opciones del JWT propio del Gateway.
+// La SecretKey la inyecta Azure Key Vault en producción; en desarrollo proviene de appsettings/user-secrets.
+builder.Services.Configure<Application.Common.Options.JwtOptions>(
+    builder.Configuration.GetSection(Application.Common.Options.JwtOptions.SectionName));
+
 // Configurar ForwardedHeaders (HU-010 / T-019)
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
@@ -79,7 +86,7 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
         {
             foreach (var proxy in knownProxies)
             {
-                if (System.Net.IPAddress.TryParse(proxy, out var ip))
+                if (IPAddress.TryParse(proxy, out var ip))
                 {
                     options.KnownProxies.Add(ip);
                 }
@@ -118,6 +125,10 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
+
+// HU-019 / T-038: Endpoints de autenticación de Client Users.
+// Se registran ANTES de MapReverseProxy para que YARP no intercepte /auth/*.
+app.MapAuthEndpoints();
 
 app.MapReverseProxy();
 
