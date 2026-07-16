@@ -110,6 +110,18 @@ public static class DependencyInjection
         services.AddScoped<IGatewayTokenService, GatewayTokenService>();
         services.AddScoped<ILoginService, LoginService>();
 
+        // HU-046: Step-up MFA (TOTP) para client users.
+        // TOTP y protector: puros/sin estado mutable -> Singleton. Stores Redis -> Singleton
+        // (mismo patrón que IRedisService). Puerto de estado MFA usa DbContext -> Scoped.
+        services.AddSingleton<Application.Common.Security.Mfa.ITotpService,
+                              Application.Common.Security.Mfa.TotpService>();
+        services.AddSingleton<Application.Common.Security.Mfa.ITotpSecretProtector,
+                              Infrastructure.Security.AesGcmTotpSecretProtector>();
+        services.AddSingleton<Application.Common.Security.Mfa.IChallengeStore, ChallengeStore>();
+        services.AddSingleton<Application.Common.Security.Mfa.IStepUpStore, StepUpStore>();
+        services.AddSingleton<Application.Common.Security.Mfa.IMfaAttemptStore, MfaAttemptStore>();
+        services.AddScoped<Application.Common.Security.Mfa.IUserMfaInfoProvider, UserMfaInfoProvider>();
+
         return services;
     }
 }

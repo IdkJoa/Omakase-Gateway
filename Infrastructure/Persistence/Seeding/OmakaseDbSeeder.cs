@@ -1,14 +1,26 @@
+using Application.Common.Security.Mfa;
 using Domain.Entities;
 using Domain.ValueObjects;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace Infrastructure.Persistence.Seeding;
 
 public sealed class OmakaseDbSeeder : IDbSeeder
 {
     private readonly OmakaseDbContext _db;
+    private readonly IConfiguration _configuration;
+    private readonly ITotpSecretProtector _totpProtector;
 
-    public OmakaseDbSeeder(OmakaseDbContext db) => _db = db;
+    public OmakaseDbSeeder(
+        OmakaseDbContext db,
+        IConfiguration configuration,
+        ITotpSecretProtector totpProtector)
+    {
+        _db = db;
+        _configuration = configuration;
+        _totpProtector = totpProtector;
+    }
 
     public async Task SeedAsync(CancellationToken cancellationToken = default)
     {
@@ -20,6 +32,7 @@ public sealed class OmakaseDbSeeder : IDbSeeder
         await _db.SaveChangesAsync(cancellationToken);
 
         await SeedInitialUserAsync(cancellationToken);
+        await SeedDemoClientUserAsync(cancellationToken);
         await _db.SaveChangesAsync(cancellationToken);
     }
 
@@ -104,6 +117,39 @@ public sealed class OmakaseDbSeeder : IDbSeeder
             UserId     = user.Id,
             RoleId     = adminRole.Id,
             AssignedAt = DateTimeOffset.UtcNow,
+        });
+    }
+
+    /// <summary>
+    /// HU-046 / T-102: client user de demo con secreto TOTP sembrado desde configuración
+    /// (<c>Mfa:DemoUser:Username</c> + <c>Mfa:DemoUser:Password</c> + <c>Mfa:DemoUser:TotpSecret</c>
+    /// en Base32). Permite demostrar login (HU-019) + Challenge→verify→Allow sin enrolamiento
+    /// manual. Si la sección no está configurada, no se siembra nada.
+    /// </summary>
+    private async Task SeedDemoClientUserAsync(CancellationToken ct)
+    {
+        var username = _configuration["Mfa:DemoUser:Username"];
+        var password = _configuration["Mfa:DemoUser:Password"];
+        var totpSecret = _configuration["Mfa:DemoUser:TotpSecret"];
+
+        if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(totpSecret)
+            || string.IsNullOrWhiteSpace(password))
+            return;
+
+        if (await _db.Users.AnyAsync(u => u.Username == username, ct)) return;
+
+        _db.Users.Add(new User
+        {
+            Id            = UserId.New(),
+            Username      = username,
+            Type          = UserType.Client,
+            // Credencial local para /auth/login (HU-019): hash bcrypt factor 12 (SRS §3.6).
+            PasswordHash  = BCrypt.Net.BCrypt.HashPassword(password, workFactor: 12),
+            KeycloakSub   = null!,
+            IsActive      = true,
+            IsInteractive = true,
+            MfaEnabled    = true,
+            TotpSecret    = _totpProtector.Protect(totpSecret.Trim()),
         });
     }
 }
