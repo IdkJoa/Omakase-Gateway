@@ -139,10 +139,27 @@ public sealed class EvaluateRiskHandler
         return profile?.AccessCount ?? 0;
     }
 
-    /// <summary>Encola la actualización del perfil (T-033 + base_risk_penalty T-034). Solo con identidad; fire-and-forget.</summary>
+    /// <summary>
+    /// Encola la actualización del perfil (T-033 + base_risk_penalty T-034). Solo con identidad; fire-and-forget.
+    /// <para>
+    /// Solo alimentan el perfil los accesos efectivamente CONCEDIDOS (incluidos los que se concedieron
+    /// tras un step-up MFA válido, ya degradados a Allow en este punto). Un intento desafiado o bloqueado
+    /// no es «comportamiento real» del usuario (HU-017) y no debe:
+    /// <list type="bullet">
+    ///   <item>extinguir la penalización de cold-start — si no, una cuenta nueva con credenciales robadas
+    ///   agota el cold-start a base de peticiones rechazadas y termina evaluada como confiable sin
+    ///   completar nunca el segundo factor, dejando abierto el punto ciego que el SRS §9.3 cierra;</item>
+    ///   <item>entrar en el baseline del modelo de anomalías — el tráfico rechazado envenenaría el perfil
+    ///   que RandomizedPCA aprende como normal (RF-M3).</item>
+    /// </list>
+    /// </para>
+    /// </summary>
     private void EnqueueProfileUpdate(RequestContext context, ConsolidatedRisk consolidated, RiskScoreConfig config)
     {
         if (string.IsNullOrWhiteSpace(context.UserId))
+            return;
+
+        if (consolidated.Verdict != Verdict.Allow)
             return;
 
         _profileChannel.TryWrite(new ProfileUpdate(
