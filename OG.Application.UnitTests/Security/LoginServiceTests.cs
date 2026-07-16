@@ -576,6 +576,11 @@ public class LoginServiceTests : IDisposable
     // ESCENARIO 5 — Logout (HU-020 / T-042)
     // ══════════════════════════════════════════════════════════════════════════
 
+    // El logout identifica la sesión por el claim `sub` del access token, NO por la cookie del
+    // refresh token: esa cookie se emite con Path=/auth/refresh (SRS §3.6) y nunca llega a
+    // /auth/logout. Condicionar el logout a su presencia dejaba vivos el access token y el
+    // refresh token pese a responder 204 (fix HU-020).
+
     [Fact]
     public async Task Logout_ConTokenValido_RevocaTokenYAgregaAccessABlacklist()
     {
@@ -585,24 +590,69 @@ public class LoginServiceTests : IDisposable
         var jti = Guid.NewGuid().ToString();
         var lifetime = TimeSpan.FromMinutes(10);
 
-        await _sut.LogoutAsync(rawToken, jti, lifetime);
+        await _sut.LogoutAsync(user.Id.Value.ToString(), jti, lifetime);
 
         var hash = _tokenService.HashRefreshToken(rawToken);
         var stored = await _db.RefreshTokens.FirstOrDefaultAsync(t => t.TokenHash == hash);
         Assert.True(stored!.IsRevoked);
-        
+
         await _redisService.Received(1).AddToBlacklistAsync(jti, lifetime);
         _auditChannel.Received(1).TryWrite(Arg.Is<AuditEvent>(e => e.TriggeredRules!.RootElement.ToString().Contains("AUTH_LOGOUT")));
     }
 
     [Fact]
-    public async Task Logout_ConTokenInexistente_EsIdempotenteYAgregaBlacklist()
+    public async Task Logout_RevocaTodasLasSesionesActivasDelUsuario()
+    {
+        // Sin la cookie no se puede singularizar el token del dispositivo actual, así que el
+        // logout revoca todas las sesiones activas (fail-closed, SRS §9.4).
+        var user = SeedUser();
+        SeedRefreshToken(user.Id, "sesion-1");
+        SeedRefreshToken(user.Id, "sesion-2");
+        SeedRefreshToken(user.Id, "sesion-3");
+
+        await _sut.LogoutAsync(user.Id.Value.ToString(), Guid.NewGuid().ToString(), TimeSpan.FromMinutes(10));
+
+        var tokens = await _db.RefreshTokens.Where(t => t.UserId == user.Id).ToListAsync();
+        Assert.Equal(3, tokens.Count);
+        Assert.All(tokens, t => Assert.True(t.IsRevoked));
+    }
+
+    [Fact]
+    public async Task Logout_NoDejaSesionesQueSobrevivanAlCierre()
+    {
+        // Regresión del bug: el refresh token seguía activo tras el logout y permitía
+        // renovar la sesión con la cookie robada.
+        var user = SeedUser();
+        var rawToken = "sesion-robada";
+        SeedRefreshToken(user.Id, rawToken);
+
+        await _sut.LogoutAsync(user.Id.Value.ToString(), Guid.NewGuid().ToString(), TimeSpan.FromMinutes(10));
+
+        var result = await _sut.RefreshSessionAsync(rawToken);
+
+        Assert.True(result.IsUnauthorized);
+    }
+
+    [Fact]
+    public async Task Logout_ConUsuarioInexistente_EsIdempotenteYAgregaBlacklist()
     {
         var jti = Guid.NewGuid().ToString();
         var lifetime = TimeSpan.FromMinutes(10);
 
-        await _sut.LogoutAsync("non-existent-token", jti, lifetime);
+        await _sut.LogoutAsync(UserId.New().Value.ToString(), jti, lifetime);
 
+        await _redisService.Received(1).AddToBlacklistAsync(jti, lifetime);
+    }
+
+    [Fact]
+    public async Task Logout_ConSubInvalido_AunAsiRevocaElAccessToken()
+    {
+        var jti = Guid.NewGuid().ToString();
+        var lifetime = TimeSpan.FromMinutes(10);
+
+        await _sut.LogoutAsync("no-es-un-guid", jti, lifetime);
+
+        // La lista negra es la defensa crítica: no depende de poder resolver al usuario.
         await _redisService.Received(1).AddToBlacklistAsync(jti, lifetime);
     }
 

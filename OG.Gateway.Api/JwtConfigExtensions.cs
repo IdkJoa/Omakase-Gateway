@@ -14,6 +14,11 @@ public static class JwtConfigExtensions
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {
+                // FIX HU-046/HU-019: sin esto, el mapeo de claims entrantes renombra "sub" a
+                // ClaimTypes.NameIdentifier y el RiskEvaluationMiddleware (que lee "sub")
+                // nunca resolvería la identidad del client user.
+                options.MapInboundClaims = false;
+
                 // Defer the configuration to the execution time so we can resolve the registered JwtOptions
                 options.Events = new JwtBearerEvents
                 {

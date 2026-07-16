@@ -39,11 +39,19 @@ public interface ILoginService
         CancellationToken ct = default);
 
     /// <summary>
-    /// Cierra la sesión revocando el refresh token y añadiendo el access token a la blacklist.
-    /// T-042.
+    /// Cierra la sesión: revoca los refresh tokens activos del usuario y añade el access token
+    /// a la lista negra de Redis. T-042.
     /// </summary>
+    /// <param name="userId">
+    /// Identificador del usuario, tomado del claim <c>sub</c> del access token.
+    /// La sesión se identifica por el usuario y NO por la cookie: la cookie del refresh token
+    /// se emite con <c>Path=/auth/refresh</c> (exigido por el SRS §3.6), por lo que nunca
+    /// acompaña a una petición a <c>/auth/logout</c>.
+    /// </param>
+    /// <param name="accessTokenJti">Claim <c>jti</c> del access token a revocar.</param>
+    /// <param name="accessTokenRemainingLifetime">TTL de la entrada en la lista negra (exp − now).</param>
     Task LogoutAsync(
-        string rawRefreshToken,
+        string userId,
         string accessTokenJti,
         TimeSpan accessTokenRemainingLifetime,
         string? deviceInfo = null,

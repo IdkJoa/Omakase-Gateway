@@ -85,6 +85,18 @@ public sealed class LoginService : ILoginService
             return LoginResult.Unauthorized();
         }
 
+        // ── 2b. Solo Client Users con contraseña local pueden usar este flujo ─
+        // FIX HU-046: los SECURITY_OFFICER (Keycloak) tienen password_hash NULL;
+        // sin este guard, BCrypt.Verify(null) lanza excepción → HTTP 500.
+        if (user.Type != UserType.Client || string.IsNullOrEmpty(user.PasswordHash))
+        {
+            _logger.LogWarning(
+                "Login fallido: usuario '{Username}' no es Client User con credencial local.",
+                user.Username);
+            EmitAudit(user.Id, Verdict.Block, RuleLoginFailed, sourceIp: sourceIp, userAgent: deviceInfo);
+            return LoginResult.Unauthorized();
+        }
+
         // ── 3. Verificar bloqueo ──────────────────────────────────────────────
         if (user.LockedUntil.HasValue && user.LockedUntil.Value > DateTimeOffset.UtcNow)
         {
@@ -239,31 +251,57 @@ public sealed class LoginService : ILoginService
         return LoginResult.Success(accessToken, refreshTokenRaw);
     }
 
+    /// <inheritdoc/>
+    /// <remarks>
+    /// FIX HU-020: la versión anterior localizaba el refresh token por la cookie de la petición,
+    /// pero esa cookie se emite con <c>Path=/auth/refresh</c> (SRS §3.6) y por tanto NUNCA llega a
+    /// <c>/auth/logout</c>: el logout salía sin revocar nada y devolvía 204, dejando vivos el access
+    /// token (15 min) y el refresh token (7 días). La sesión se identifica ahora por el claim
+    /// <c>sub</c> del access token, que siempre está presente (el endpoint exige autenticación).
+    /// <para>
+    /// Al no poder distinguir qué refresh token corresponde al dispositivo actual (la cookie es
+    /// opaca y no viaja hasta aquí), se revocan todos los del usuario. Es un superconjunto de
+    /// «revocar el refresh token actual» (HU-020) y la lectura fail-closed coherente con Zero Trust
+    /// (SRS §9.4): ante un logout, ninguna sesión sobrevive.
+    /// </para>
+    /// </remarks>
     public async Task LogoutAsync(
-        string rawRefreshToken,
+        string userId,
         string accessTokenJti,
         TimeSpan accessTokenRemainingLifetime,
         string? deviceInfo = null,
         string? sourceIp = null,
         CancellationToken ct = default)
     {
-        var tokenHash = _tokenService.HashRefreshToken(rawRefreshToken);
-        var storedToken = await _db.RefreshTokens
-            .FirstOrDefaultAsync(rt => rt.TokenHash == tokenHash, ct);
-
-        if (storedToken is not null)
-        {
-            storedToken.IsRevoked = true;
-            await _db.SaveChangesAsync(ct);
-            
-            EmitAudit(storedToken.UserId, Verdict.Allow, JsonDocument.Parse("[\"AUTH_LOGOUT\"]"), sourceIp, deviceInfo);
-        }
-
+        // T-042: revocar el access token en Redis es lo prioritario — es la credencial en uso.
         if (!string.IsNullOrEmpty(accessTokenJti) && accessTokenRemainingLifetime > TimeSpan.Zero)
         {
-            // T-042: Añadir a la blacklist en Redis
             await _redisService.AddToBlacklistAsync(accessTokenJti, accessTokenRemainingLifetime);
         }
+
+        if (!Guid.TryParse(userId, out var userGuid))
+        {
+            _logger.LogWarning("Logout con claim sub inválido; no se revocaron refresh tokens.");
+            return;
+        }
+
+        var ownerId = UserId.From(userGuid);
+
+        var activeTokens = await _db.RefreshTokens
+            .Where(rt => rt.UserId == ownerId && !rt.IsRevoked)
+            .ToListAsync(ct);
+
+        foreach (var token in activeTokens)
+            token.IsRevoked = true;
+
+        if (activeTokens.Count > 0)
+            await _db.SaveChangesAsync(ct);
+
+        _logger.LogInformation(
+            "Logout: usuario {UserId}, {Count} refresh token(s) revocado(s), access token en lista negra.",
+            ownerId, activeTokens.Count);
+
+        EmitAudit(ownerId, Verdict.Allow, JsonDocument.Parse("[\"AUTH_LOGOUT\"]"), sourceIp, deviceInfo);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
