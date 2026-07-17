@@ -70,6 +70,22 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
                .HasColumnType("timestamptz")
                .IsRequired(false);
 
+        // HU-046 / T-102: step-up MFA (TOTP) — SRS §7.1
+        builder.Property(u => u.TotpSecret)
+               .HasColumnName("totp_secret")
+               .HasColumnType("varchar(255)")
+               .IsRequired(false);
+
+        builder.Property(u => u.MfaEnabled)
+               .HasColumnName("mfa_enabled")
+               .HasDefaultValue(false)
+               .IsRequired();
+
+        builder.Property(u => u.IsInteractive)
+               .HasColumnName("is_interactive")
+               .HasDefaultValue(true)
+               .IsRequired();
+
         #region Relationships
 
         builder.HasOne(u => u.BehaviorProfile)

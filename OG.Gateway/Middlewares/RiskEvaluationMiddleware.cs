@@ -3,9 +3,11 @@ using Application.Common.Mediator;
 using Application.Common.RiskEngine;
 using Application.Common.RiskEngine.Commands;
 using Application.Common.Security;
+using Application.Common.Security.Mfa;
 using Domain.Entities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using static Application.Common.Telemetry.OmakaseActivity;
 using static Application.Common.Telemetry.OmakaseActivity.Spans;
 
@@ -23,12 +25,19 @@ namespace Application.Middlewares;
 ///   <item>Empaquetar en un <see cref="RequestContext"/> inmutable.</item>
 ///   <item>Abrir el span OTel <c>gateway.request.intercept</c>.</item>
 ///   <item>Despachar <see cref="EvaluateRiskCommand"/> al motor de riesgo vía <see cref="IMediator"/>.</item>
-///   <item>Actuar sobre el <see cref="Verdict"/> (Allow → upstream, Challenge → 403 CHALLENGE_REQUIRED, Block → 403 ACCESS_DENIED).</item>
+///   <item>Actuar sobre el <see cref="Verdict"/> (Allow → upstream, Challenge → 401 MFA_REQUIRED + challengeId (HU-046/T-103), Block → 403 ACCESS_DENIED).</item>
 ///   <item>Encolar un <see cref="AuditEvent"/> en <see cref="IAuditChannel"/> para persistencia asíncrona (T-100).</item>
 /// </list>
 /// </remarks>
 public sealed class RiskEvaluationMiddleware
 {
+    /// <summary>
+    /// Rutas propias del Gateway que NO se evalúan ni se proxean: endpoints de
+    /// autenticación/MFA (HU-046) y diagnóstico de Aspire. Todo lo demás pasa
+    /// por el motor de riesgo.
+    /// </summary>
+    private static readonly string[] BypassPrefixes = ["/auth", "/health", "/alive", "/openapi"];
+
     private readonly RequestDelegate _next;
     private readonly ILogger<RiskEvaluationMiddleware> _logger;
 
@@ -44,8 +53,18 @@ public sealed class RiskEvaluationMiddleware
         HttpContext context,
         IMediator mediator,
         ILogSanitizer sanitizer,
-        IAuditChannel auditChannel)
+        IAuditChannel auditChannel,
+        IFingerprintService fingerprintService,
+        IChallengeStore challengeStore,
+        IOptions<MfaOptions> mfaOptions)
     {
+        // Endpoints propios del Gateway: fuera de la ruta de evaluación (T-103).
+        if (IsBypassedPath(context.Request.Path))
+        {
+            await _next(context);
+            return;
+        }
+
         var evaluationId = Guid.NewGuid();
 
         // IP de origen 
@@ -59,11 +78,17 @@ public sealed class RiskEvaluationMiddleware
         var acceptLanguage = context.Request.Headers.AcceptLanguage.ToString();
         var acceptEncoding = context.Request.Headers.AcceptEncoding.ToString();
 
-        // UserId del claim JWT (null hasta HU-auth) 
-        var userId = context.User.FindFirst("sub")?.Value;
+        // UserId del claim "sub" del JWT propio (HU-019), ya validado por UseAuthentication.
+        // Fallback a ClaimTypes.NameIdentifier por si el mapeo de claims entrantes está activo.
+        var userId = context.User.FindFirst("sub")?.Value
+                  ?? context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
 
         // Servicio destino: primer segmento del path (convención HU-009: /{name}/**).
         var serviceName = ExtractServiceName(context.Request.Path);
+
+        // Huella del dispositivo (HU-013): liga el desafío/step-up al dispositivo (HU-046)
+        // y completa el registro de auditoría (fingerprint_hash).
+        var fingerprintHash = fingerprintService.GenerateHash(userAgent, acceptLanguage, acceptEncoding);
 
         // RequestContext inmutable
         var requestContext = new RequestContext
@@ -120,7 +145,8 @@ public sealed class RiskEvaluationMiddleware
             EvaluatedAt:     DateTimeOffset.UtcNow,
             Geo:             result.Geo,
             TriggeredRules:  result.TriggeredRules,
-            ServiceId:       result.ServiceId);
+            ServiceId:       result.ServiceId,
+            FingerprintHash: fingerprintHash);
 
         if (!auditChannel.TryWrite(auditEvent))
         {
@@ -138,23 +164,62 @@ public sealed class RiskEvaluationMiddleware
                 break;
 
             case Verdict.Challenge:
-                // Score 41-75: se requiere verificación adicional (MFA).
-                // NOTA HTTP 403: el estándar semántico para "acceso condicionado" sería
-                // un 401 (autenticación) o un 302 hacia el endpoint de MFA. Se usa 403
-                // en T-016 por especificación de la tarea. T-017 (flujo MFA completo)
-                // puede cambiar esto a un redirect 302 → /mfa/challenge cuando el
-                // endpoint de desafío esté implementado.
+                // Score en zona de desafío: HTTP 401 con descriptor MFA_REQUIRED y
+                // challengeId (HU-046 / T-103, contrato SRS §4.1). El desafío se
+                // persiste en Redis con el contexto de la petición original y el
+                // cliente lo completa en POST /auth/challenge/verify (T-104).
                 _logger.LogWarning(
                     "[RiskEvaluationMiddleware] CHALLENGE requerido. EvaluationId={EvaluationId} IP={SourceIp} Score={Score}",
                     evaluationId, sourceIp, result.RiskScore);
 
-                context.Response.StatusCode  = StatusCodes.Status403Forbidden;
+                Guid? challengeId = null;
+
+                if (userId is not null)
+                {
+                    challengeId = Guid.NewGuid();
+                    var challenge = new ChallengeData(
+                        UserId:          userId,
+                        ServiceName:     serviceName,
+                        FingerprintHash: fingerprintHash,
+                        SourceIp:        sourceIp,
+                        CreatedAt:       DateTimeOffset.UtcNow);
+
+                    try
+                    {
+                        await challengeStore.StoreAsync(
+                            challengeId.Value,
+                            challenge,
+                            TimeSpan.FromSeconds(mfaOptions.Value.ChallengeTtlSeconds));
+                    }
+                    catch (Exception ex)
+                    {
+                        // Fail-closed (SRS §9.4 / RF-M9): sin store de step-up no hay
+                        // desafío completable → se deniega con 503, nunca se permite.
+                        _logger.LogError(ex,
+                            "[RiskEvaluationMiddleware] Redis no disponible al persistir el desafío. EvaluationId={EvaluationId}",
+                            evaluationId);
+
+                        context.Response.StatusCode  = StatusCodes.Status503ServiceUnavailable;
+                        context.Response.ContentType = "application/json";
+                        await context.Response.WriteAsJsonAsync(new
+                        {
+                            errorCode = GatewayErrorCodes.ServiceUnavailable,
+                            message   = "No es posible emitir el desafío de verificación en este momento.",
+                            traceId   = context.TraceIdentifier
+                        });
+                        break;
+                    }
+                }
+
+                context.Response.StatusCode  = StatusCodes.Status401Unauthorized;
                 context.Response.ContentType = "application/json";
 
                 await context.Response.WriteAsJsonAsync(new
                 {
-                    errorCode    = GatewayErrorCodes.ChallengeRequired,
+                    errorCode    = GatewayErrorCodes.MfaRequired,
                     message      = "Se requiere verificación adicional (MFA) para continuar.",
+                    challengeId  = challengeId,
+                    methods      = new[] { "totp" },
                     evaluationId = evaluationId,
                     traceId      = context.TraceIdentifier
                 });
@@ -187,6 +252,18 @@ public sealed class RiskEvaluationMiddleware
                 context.Response.StatusCode = StatusCodes.Status500InternalServerError;
                 break;
         }
+    }
+
+    /// <summary>True si el path es un endpoint propio del Gateway exento de evaluación.</summary>
+    private static bool IsBypassedPath(PathString path)
+    {
+        foreach (var prefix in BypassPrefixes)
+        {
+            if (path.StartsWithSegments(prefix, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+
+        return false;
     }
 
     /// <summary>

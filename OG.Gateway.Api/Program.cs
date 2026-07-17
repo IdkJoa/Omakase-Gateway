@@ -1,5 +1,6 @@
 using Application.Middlewares;
 using Infrastructure;
+using OG.Gateway.Api.Endpoints;
 using Infrastructure.Persistence.Seeding;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -58,6 +59,8 @@ builder.Services.Configure<Application.Common.Options.RateLimitingOptions>(
     builder.Configuration.GetSection(Application.Common.Options.RateLimitingOptions.SectionName));
 builder.Services.Configure<Infrastructure.GeoLocation.GeoLocationOptions>(
     builder.Configuration.GetSection(Infrastructure.GeoLocation.GeoLocationOptions.SectionName));
+builder.Services.Configure<Application.Common.Security.Mfa.MfaOptions>(
+    builder.Configuration.GetSection(Application.Common.Security.Mfa.MfaOptions.SectionName));
 
 // HU-019 / T-038: Opciones del JWT propio del Gateway.
 // La SecretKey la inyecta Azure Key Vault en producción; en desarrollo proviene de appsettings/user-secrets.
@@ -136,6 +139,9 @@ if (app.Environment.IsDevelopment())
 // HU-019 / T-038: Endpoints de autenticación de Client Users.
 // Se registran ANTES de MapReverseProxy para que YARP no intercepte /auth/*.
 app.MapAuthEndpoints();
+
+// HU-046: endpoints de step-up MFA (/auth/**, exentos de evaluación de riesgo).
+app.MapMfaEndpoints();
 
 app.MapReverseProxy();
 

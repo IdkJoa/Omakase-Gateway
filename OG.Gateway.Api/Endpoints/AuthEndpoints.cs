@@ -1,3 +1,4 @@
+using Application.Common.Security;
 using Application.Features.Auth;
 using Application.Features.Auth.DTOs;
 
@@ -20,13 +21,17 @@ public static class AuthEndpoints
         group.MapPost("/login", async (
             LoginRequest request,
             ILoginService loginService,
+            ILogSanitizer sanitizer,
             HttpContext ctx,
             CancellationToken ct) =>
         {
-            // T-039: capturar User-Agent para persistirlo como device_info
+            // T-039: capturar User-Agent para persistirlo como device_info.
+            // FIX HU-046: sanitizado (ILogSanitizer, SRS §6.3.2) y acotado a 255
+            // (longitud de refresh_tokens.device_info) antes de persistir/auditar.
             var deviceInfo = ctx.Request.Headers.UserAgent.ToString();
-            if (string.IsNullOrWhiteSpace(deviceInfo))
-                deviceInfo = null;
+            deviceInfo = string.IsNullOrWhiteSpace(deviceInfo)
+                ? null
+                : sanitizer.Sanitize(deviceInfo, maxLength: 255);
 
             // T-040: IP real del cliente (ya resuelta por UseForwardedHeaders middleware)
             var sourceIp = ctx.Connection.RemoteIpAddress?.ToString();
@@ -70,6 +75,7 @@ public static class AuthEndpoints
         // POST /auth/refresh
         group.MapPost("/refresh", async (
             ILoginService loginService,
+            ILogSanitizer sanitizer,
             HttpContext ctx,
             CancellationToken ct) =>
         {
@@ -77,7 +83,9 @@ public static class AuthEndpoints
                 return Results.Unauthorized();
 
             var deviceInfo = ctx.Request.Headers.UserAgent.ToString();
-            if (string.IsNullOrWhiteSpace(deviceInfo)) deviceInfo = null;
+            deviceInfo = string.IsNullOrWhiteSpace(deviceInfo)
+                ? null
+                : sanitizer.Sanitize(deviceInfo, maxLength: 255);
             var sourceIp = ctx.Connection.RemoteIpAddress?.ToString();
 
             var result = await loginService.RefreshSessionAsync(rawRefreshToken, deviceInfo, sourceIp, ct);
@@ -107,15 +115,18 @@ public static class AuthEndpoints
         // POST /auth/logout
         group.MapPost("/logout", async (
             ILoginService loginService,
+            ILogSanitizer sanitizer,
             HttpContext ctx,
             CancellationToken ct) =>
         {
-            if (!ctx.Request.Cookies.TryGetValue(RefreshTokenCookieName, out var rawRefreshToken))
-                return Results.NoContent();
-
+            // FIX HU-020: la sesión se identifica por los claims del access token, NO por la cookie.
+            // La cookie del refresh token vive en Path=/auth/refresh (SRS §3.6) y nunca se envía a
+            // /auth/logout: condicionar el logout a su presencia hacía que no revocara nada.
+            var userId = ctx.User.FindFirst("sub")?.Value
+                      ?? ctx.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             var jti = ctx.User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Jti)?.Value;
             var expClaim = ctx.User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Exp)?.Value;
-            
+
             TimeSpan remainingLifetime = TimeSpan.Zero;
             if (long.TryParse(expClaim, out var expUnix))
             {
@@ -124,15 +135,17 @@ public static class AuthEndpoints
             }
 
             var deviceInfo = ctx.Request.Headers.UserAgent.ToString();
-            if (string.IsNullOrWhiteSpace(deviceInfo)) deviceInfo = null;
+            deviceInfo = string.IsNullOrWhiteSpace(deviceInfo)
+                ? null
+                : sanitizer.Sanitize(deviceInfo, maxLength: 255);
             var sourceIp = ctx.Connection.RemoteIpAddress?.ToString();
 
             await loginService.LogoutAsync(
-                rawRefreshToken, 
-                jti ?? string.Empty, 
-                remainingLifetime, 
-                deviceInfo, 
-                sourceIp, 
+                userId ?? string.Empty,
+                jti ?? string.Empty,
+                remainingLifetime,
+                deviceInfo,
+                sourceIp,
                 ct);
 
             ctx.Response.Cookies.Delete(RefreshTokenCookieName, new CookieOptions
