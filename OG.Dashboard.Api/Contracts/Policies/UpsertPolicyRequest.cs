@@ -18,16 +18,16 @@ public sealed record UpsertPolicyRequest(
     string Type,
 
     /// <summary>
-    /// Parámetros JSONB del tipo de regla.
-    /// Ej para Geofence: { "allowedCountries": ["DO", "US"] }
-    /// Ej para TimeWindow: { "startHour": 8, "endHour": 20, "daysOfWeek": [1,2,3,4,5] }
-    /// Ej para ImpossibleTravel: { "maxSpeedKmh": 900 }
+    /// Parámetros JSONB del tipo de regla, con las claves snake_case que parsea el motor:
+    /// Geofence: { "allowed_countries": ["DO","US"] } y/o { "denied_countries": ["JP"] }
+    /// TimeWindow: { "start_time": "08:00", "end_time": "20:00", "timezone": "America/Santo_Domingo" }
+    /// Fingerprint / ImpossibleTravel: sin parámetros ({}).
     /// </summary>
     [Required]
     object Config,
 
-    /// <summary>Factor de ponderación en el Policy Score (0.001–9.999).</summary>
-    [Range(0.001, 9.999)]
+    /// <summary>Factor de ponderación en el Policy Score. Rango [0,1] (T-047).</summary>
+    [Range(0.0, 1.0)]
     decimal Weight,
 
     /// <summary>Estado activo de la política. Default: true.</summary>

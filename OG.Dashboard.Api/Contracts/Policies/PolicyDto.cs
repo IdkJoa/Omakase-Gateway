@@ -17,12 +17,12 @@ public sealed record PolicyDto(
     string Type,
 
     /// <summary>
-    /// Parámetros JSONB específicos del tipo de regla.
-    /// Ej: { "allowedCountries": ["DO","US"] } para Geofence.
+    /// Parámetros JSONB específicos del tipo de regla (claves snake_case, las que parsea el motor).
+    /// Ej: { "allowed_countries": ["DO","US"] } para Geofence.
     /// </summary>
     object Config,
 
-    /// <summary>Factor de ponderación de esta regla en el Policy Score (0.000–9.999).</summary>
+    /// <summary>Factor de ponderación de esta regla en el Policy Score. Rango [0,1] (T-047).</summary>
     decimal Weight,
 
     /// <summary>Indica si la política está activa (soft-delete).</summary>
