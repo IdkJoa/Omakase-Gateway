@@ -11,6 +11,9 @@
         <PackageReference Include="coverlet.collector" Version="6.0.4" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.9" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.8" />
+        <!-- Override de seguridad: fuerza el paquete nativo parcheado (SQLite >= 3.50.2).
+             EF Core Sqlite arrastra transitivamente 2.1.11, afectado por GHSA-2m69-gcr7-jv3q. -->
+        <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.12" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
         <PackageReference Include="xunit" Version="2.9.3" />
         <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />

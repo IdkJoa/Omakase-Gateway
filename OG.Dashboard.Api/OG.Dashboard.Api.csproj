@@ -14,6 +14,9 @@
 
     <ItemGroup>
         <PackageReference Include="Microsoft.AspNetCore.OpenApi"                 Version="10.0.3" />
+        <!-- Override de seguridad: AspNetCore.OpenApi arrastra Microsoft.OpenApi 2.0.0,
+             afectado por GHSA-v5pm-xwqc-g5wc (parcheado en la linea 2.x desde 2.7.5). -->
+        <PackageReference Include="Microsoft.OpenApi"                             Version="2.11.0" />
         <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.4.3" />
         <PackageReference Include="Aspire.StackExchange.Redis"                   Version="13.4.3" />
     </ItemGroup>
