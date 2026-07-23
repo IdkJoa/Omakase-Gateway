@@ -8,6 +8,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Domain\Domain.csproj" />
+        <ProjectReference Include="..\Infrastructure\Infrastructure.csproj" />
     </ItemGroup>
 
     <ItemGroup>
@@ -17,7 +18,6 @@
         <Folder Include="Features\RiskConfig\" />
         <Folder Include="Features\Roles\" />
         <Folder Include="Features\ServicePolicies\" />
-        <Folder Include="Features\Services\" />
         <Folder Include="Features\Users\" />
     </ItemGroup>
 

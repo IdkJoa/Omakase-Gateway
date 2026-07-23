@@ -184,4 +184,21 @@ public sealed class RedisService : IRedisService
         return 0;
     }
     #endregion
+
+    #region Pub/Sub
+    public async Task PublishAsync(string channel, string message)
+    {
+        var subscriber = _db.Multiplexer.GetSubscriber();
+        await subscriber.PublishAsync(RedisChannel.Literal(channel), message);
+    }
+
+    public async Task SubscribeAsync(string channel, Action<string, string> handler)
+    {
+        var subscriber = _db.Multiplexer.GetSubscriber();
+        await subscriber.SubscribeAsync(RedisChannel.Literal(channel), (redisChannel, redisValue) => 
+        {
+            handler(redisChannel.ToString(), redisValue.ToString());
+        });
+    }
+    #endregion
 }
