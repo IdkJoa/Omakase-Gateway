@@ -86,22 +86,42 @@ public sealed class OmakaseDbSeeder : IDbSeeder
 
         if (adminRole is null) return;
 
-        var user = new User
+        // 1. Seed admin user
+        var adminUser = new User
         {
             Id           = UserId.New(),
             Username     = "admin",
             Type         = UserType.SecurityOfficer,
-            // SecurityOfficer no usa contraseña local; se autentica vía Keycloak.
             PasswordHash = null!,
             KeycloakSub  = null!,
             IsActive     = true,
         };
 
-        _db.Users.Add(user);
+        _db.Users.Add(adminUser);
         _db.UserRoles.Add(new UserRole
         {
             Id         = UserRoleId.New(),
-            UserId     = user.Id,
+            UserId     = adminUser.Id,
+            RoleId     = adminRole.Id,
+            AssignedAt = DateTimeOffset.UtcNow,
+        });
+
+        // 2. Seed joel user (matching Keycloak config)
+        var joelUser = new User
+        {
+            Id           = UserId.New(),
+            Username     = "joel",
+            Type         = UserType.SecurityOfficer,
+            PasswordHash = null!,
+            KeycloakSub  = null!,
+            IsActive     = true,
+        };
+
+        _db.Users.Add(joelUser);
+        _db.UserRoles.Add(new UserRole
+        {
+            Id         = UserRoleId.New(),
+            UserId     = joelUser.Id,
             RoleId     = adminRole.Id,
             AssignedAt = DateTimeOffset.UtcNow,
         });
