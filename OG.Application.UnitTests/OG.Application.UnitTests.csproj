@@ -23,6 +23,7 @@
     <ItemGroup>
         <ProjectReference Include="..\OG.Gateway\OG.Gateway.csproj" />
         <ProjectReference Include="..\Infrastructure\Infrastructure.csproj" />
+        <ProjectReference Include="..\OG.Dashboard\OG.Dashboard.csproj" />
     </ItemGroup>
 
     <ItemGroup>
