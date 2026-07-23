@@ -1,78 +1,70 @@
 using OG.Dashboard.Api.Contracts.Common;
 using OG.Dashboard.Api.Contracts.Roles;
+using Infrastructure;
+using Microsoft.EntityFrameworkCore;
+using Domain.Entities;
+using Domain.ValueObjects;
 
 namespace OG.Dashboard.Api.Endpoints;
 
 /// <summary>
-/// Endpoints mock CRUD del catálogo RBAC de roles.
-/// CRUD bajo /api/v1/roles — corresponde a las entidades Role / UserRole del dominio.
-/// Roles iniciales del SRS: Viewer (solo lectura) y Admin (gestión completa).
-/// El catálogo es extensible sin modificar el esquema de BD.
+/// Endpoints CRUD del catálogo RBAC de roles y asignación a usuarios.
+/// CRUD bajo /api/v1/roles e /api/v1/users/{userId}/roles.
 /// </summary>
 public static class RolesEndpoints
 {
-    // ── Datos mock ────────────────────────────────────────────────────────────
-
-    private static readonly List<RoleDto> MockRoles =
-    [
-        new(
-            Id: Guid.Parse("role-0001-0000-0000-0000-000000000000"),
-            Name: "Admin",
-            Description: "Acceso completo al Dashboard: gestión de políticas, servicios, usuarios y configuración de Risk Score.",
-            CreatedAt: new DateTimeOffset(2026, 4, 1, 0, 0, 0, TimeSpan.Zero),
-            UsersCount: 1
-        ),
-        new(
-            Id: Guid.Parse("role-0002-0000-0000-0000-000000000000"),
-            Name: "Viewer",
-            Description: "Solo lectura: puede explorar logs de auditoría, métricas y configuración, pero no modificar nada.",
-            CreatedAt: new DateTimeOffset(2026, 4, 1, 0, 0, 0, TimeSpan.Zero),
-            UsersCount: 1
-        ),
-    ];
-
-    // ── Registro de endpoints ─────────────────────────────────────────────────
-
     public static IEndpointRouteBuilder MapRolesEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app
+        var rolesGroup = app
             .MapGroup("/api/v1/roles")
             .WithTags("Roles")
             .WithOpenApi();
 
         // GET /api/v1/roles
-        group.MapGet("/", GetAll)
+        rolesGroup.MapGet("/", GetAll)
             .WithName("GetRoles")
             .WithSummary("Listar roles del sistema")
             .WithDescription("Devuelve el catálogo RBAC de roles con número de usuarios asignados.");
 
         // GET /api/v1/roles/{id}
-        group.MapGet("/{id:guid}", GetById)
+        rolesGroup.MapGet("/{id:guid}", GetById)
             .WithName("GetRoleById")
             .WithSummary("Obtener un rol por ID");
 
         // POST /api/v1/roles
-        group.MapPost("/", Create)
+        rolesGroup.MapPost("/", Create)
             .WithName("CreateRole")
             .WithSummary("Crear un nuevo rol")
             .Produces<RoleDto>(StatusCodes.Status201Created)
             .ProducesValidationProblem();
 
         // DELETE /api/v1/roles/{id}
-        group.MapDelete("/{id:guid}", Delete)
+        rolesGroup.MapDelete("/{id:guid}", Delete)
             .WithName("DeleteRole")
             .WithSummary("Eliminar un rol (solo si no tiene usuarios asignados)")
             .Produces(StatusCodes.Status204NoContent);
 
-        // POST /api/v1/roles/{roleId}/users — Asignar rol a un usuario
-        group.MapPost("/{roleId:guid}/users", AssignToUser)
+        // Endpoints de asignación bajo /api/v1/users/{userId}/roles (T-056)
+        var userRolesGroup = app
+            .MapGroup("/api/v1/users/{userId:guid}/roles")
+            .WithTags("User Roles")
+            .WithOpenApi();
+
+        // GET /api/v1/users/{userId}/roles
+        userRolesGroup.MapGet("/", GetRolesForUser)
+            .WithName("GetRolesForUser")
+            .WithSummary("Listar roles de un usuario")
+            .WithDescription("Devuelve los roles asignados a un usuario específico.");
+
+        // POST /api/v1/users/{userId}/roles
+        userRolesGroup.MapPost("/", AssignRoleToUser)
             .WithName("AssignRoleToUser")
             .WithSummary("Asignar un rol a un usuario")
             .Produces(StatusCodes.Status204NoContent)
             .ProducesValidationProblem();
 
-        // DELETE /api/v1/roles/{roleId}/users/{userId} — Revocar rol de un usuario
-        group.MapDelete("/{roleId:guid}/users/{userId:guid}", RevokeFromUser)
+        // DELETE /api/v1/users/{userId}/roles/{roleId}
+        userRolesGroup.MapDelete("/{roleId:guid}", RevokeRoleFromUser)
             .WithName("RevokeRoleFromUser")
             .WithSummary("Revocar un rol de un usuario")
             .Produces(StatusCodes.Status204NoContent);
@@ -80,13 +72,37 @@ public static class RolesEndpoints
         return app;
     }
 
-    // ── Handlers ──────────────────────────────────────────────────────────────
-
-    private static IResult GetAll() => Results.Ok(MockRoles.AsReadOnly());
-
-    private static IResult GetById(Guid id)
+    private static async Task<IResult> GetAll(OmakaseDbContext db)
     {
-        var role = MockRoles.FirstOrDefault(r => r.Id == id);
+        var roles = await db.Roles
+            .AsNoTracking()
+            .Select(r => new RoleDto(
+                r.Id.Value,
+                r.Name,
+                r.Description,
+                r.CreatedAt,
+                r.UserRoles.Count
+            ))
+            .ToListAsync();
+
+        return Results.Ok(roles);
+    }
+
+    private static async Task<IResult> GetById(Guid id, OmakaseDbContext db)
+    {
+        var roleId = RoleId.From(id);
+        var role = await db.Roles
+            .AsNoTracking()
+            .Where(r => r.Id == roleId)
+            .Select(r => new RoleDto(
+                r.Id.Value,
+                r.Name,
+                r.Description,
+                r.CreatedAt,
+                r.UserRoles.Count
+            ))
+            .FirstOrDefaultAsync();
+
         if (role is null)
             return Results.NotFound(new ErrorResponse("NOT_FOUND", $"Rol '{id}' no encontrado.",
                 System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
@@ -94,57 +110,136 @@ public static class RolesEndpoints
         return Results.Ok(role);
     }
 
-    private static IResult Create(CreateRoleRequest request)
+    private static async Task<IResult> Create(CreateRoleRequest request, OmakaseDbContext db)
     {
-        if (MockRoles.Any(r => r.Name.Equals(request.Name, StringComparison.OrdinalIgnoreCase)))
+        var nameUpper = request.Name.Trim().ToUpperInvariant();
+        var exists = await db.Roles.AnyAsync(r => r.Name.ToUpper() == nameUpper);
+        if (exists)
             return Results.Conflict(new ErrorResponse("CONFLICT",
                 $"Ya existe un rol con el nombre '{request.Name}'.",
                 System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
 
-        var created = new RoleDto(
-            Id: Guid.NewGuid(),
-            Name: request.Name,
-            Description: request.Description,
-            CreatedAt: DateTimeOffset.UtcNow,
-            UsersCount: 0
+        var role = new Role
+        {
+            Id = RoleId.New(),
+            Name = request.Name.Trim(),
+            Description = request.Description?.Trim(),
+            IsActive = true,
+            CreatedAt = DateTimeOffset.UtcNow
+        };
+
+        db.Roles.Add(role);
+        await db.SaveChangesAsync();
+
+        var dto = new RoleDto(
+            role.Id.Value,
+            role.Name,
+            role.Description,
+            role.CreatedAt,
+            0
         );
 
-        return Results.Created($"/api/v1/roles/{created.Id}", created);
+        return Results.Created($"/api/v1/roles/{role.Id.Value}", dto);
     }
 
-    private static IResult Delete(Guid id)
+    private static async Task<IResult> Delete(Guid id, OmakaseDbContext db)
     {
-        var role = MockRoles.FirstOrDefault(r => r.Id == id);
+        var roleId = RoleId.From(id);
+        var role = await db.Roles
+            .Include(r => r.UserRoles)
+            .FirstOrDefaultAsync(r => r.Id == roleId);
+
         if (role is null)
             return Results.NotFound(new ErrorResponse("NOT_FOUND", $"Rol '{id}' no encontrado.",
                 System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
 
-        // Mock: impedir eliminación si tiene usuarios (simula la restricción de integridad)
-        if (role.UsersCount > 0)
+        if (role.UserRoles.Any())
             return Results.Conflict(new ErrorResponse("CONFLICT",
-                $"El rol '{role.Name}' tiene {role.UsersCount} usuario(s) asignado(s). Revoque los accesos antes de eliminar.",
+                $"El rol '{role.Name}' tiene usuarios asignados. Revoque los accesos antes de eliminar.",
                 System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
+
+        db.Roles.Remove(role);
+        await db.SaveChangesAsync();
 
         return Results.NoContent();
     }
 
-    private static IResult AssignToUser(Guid roleId, AssignRoleRequest request)
+    private static async Task<IResult> GetRolesForUser(Guid userId, OmakaseDbContext db)
     {
-        var role = MockRoles.FirstOrDefault(r => r.Id == roleId);
-        if (role is null)
-            return Results.NotFound(new ErrorResponse("NOT_FOUND", $"Rol '{roleId}' no encontrado.",
+        var typedUserId = UserId.From(userId);
+        var userExists = await db.Users.AnyAsync(u => u.Id == typedUserId);
+        if (!userExists)
+            return Results.NotFound(new ErrorResponse("NOT_FOUND", $"Usuario '{userId}' no encontrado.",
                 System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
 
-        // Mock: 204 — asignación simulada.
+        var roles = await db.UserRoles
+            .AsNoTracking()
+            .Where(ur => ur.UserId == typedUserId)
+            .Select(ur => new RoleDto(
+                ur.Role!.Id.Value,
+                ur.Role.Name,
+                ur.Role.Description,
+                ur.Role.CreatedAt,
+                ur.Role.UserRoles.Count
+            ))
+            .ToListAsync();
+
+        return Results.Ok(roles);
+    }
+
+    private static async Task<IResult> AssignRoleToUser(Guid userId, AssignRoleToUserRequest request, OmakaseDbContext db)
+    {
+        var typedUserId = UserId.From(userId);
+        var userExists = await db.Users.AnyAsync(u => u.Id == typedUserId);
+        if (!userExists)
+            return Results.NotFound(new ErrorResponse("NOT_FOUND", $"Usuario '{userId}' no encontrado.",
+                System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
+
+        var typedRoleId = RoleId.From(request.RoleId);
+        var role = await db.Roles.FirstOrDefaultAsync(r => r.Id == typedRoleId);
+        if (role is null)
+            return Results.NotFound(new ErrorResponse("NOT_FOUND", $"Rol '{request.RoleId}' no encontrado.",
+                System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
+
+        if (!role.IsActive)
+            return Results.BadRequest(new ErrorResponse("BAD_REQUEST", $"El rol '{role.Name}' no está activo.",
+                System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
+
+        // Validar combinación única
+        var exists = await db.UserRoles.AnyAsync(ur => ur.UserId == typedUserId && ur.RoleId == typedRoleId);
+        if (exists)
+            return Results.Conflict(new ErrorResponse("CONFLICT",
+                $"El usuario ya tiene asignado el rol '{role.Name}'.",
+                System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
+
+        var userRole = new UserRole
+        {
+            Id = UserRoleId.New(),
+            UserId = typedUserId,
+            RoleId = typedRoleId,
+            AssignedAt = DateTimeOffset.UtcNow
+        };
+
+        db.UserRoles.Add(userRole);
+        await db.SaveChangesAsync();
+
         return Results.NoContent();
     }
 
-    private static IResult RevokeFromUser(Guid roleId, Guid userId)
+    private static async Task<IResult> RevokeRoleFromUser(Guid userId, Guid roleId, OmakaseDbContext db)
     {
-        var role = MockRoles.FirstOrDefault(r => r.Id == roleId);
-        if (role is null)
-            return Results.NotFound(new ErrorResponse("NOT_FOUND", $"Rol '{roleId}' no encontrado.",
+        var typedUserId = UserId.From(userId);
+        var typedRoleId = RoleId.From(roleId);
+
+        var userRole = await db.UserRoles
+            .FirstOrDefaultAsync(ur => ur.UserId == typedUserId && ur.RoleId == typedRoleId);
+
+        if (userRole is null)
+            return Results.NotFound(new ErrorResponse("NOT_FOUND", "Asignación de rol no encontrada.",
                 System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
+
+        db.UserRoles.Remove(userRole);
+        await db.SaveChangesAsync();
 
         return Results.NoContent();
     }

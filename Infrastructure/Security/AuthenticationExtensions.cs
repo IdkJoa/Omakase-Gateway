@@ -5,6 +5,9 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using Domain.Entities;
+using Domain.ValueObjects;
+using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Security;
 
@@ -64,11 +67,17 @@ public static class AuthenticationExtensions
                             logger.LogError("Error guardando auditoría de seguridad en BD: {Msg}", ex.Message);
                         }
                     },
-                    OnTokenValidated = context =>
+                    OnTokenValidated = async context =>
                     {
                         var identity = context.Principal?.Identity as ClaimsIdentity;
                         if (identity != null)
                         {
+                            var sub = identity.FindFirst(ClaimTypes.NameIdentifier)?.Value 
+                                      ?? identity.FindFirst("sub")?.Value;
+                            var username = identity.FindFirst("preferred_username")?.Value 
+                                           ?? identity.Name;
+
+                            var rolesList = new List<string>();
                             var realmAccessClaim = identity.FindFirst("realm_access")?.Value;
                             if (!string.IsNullOrEmpty(realmAccessClaim))
                             {
@@ -81,12 +90,80 @@ public static class AuthenticationExtensions
                                         if (!string.IsNullOrEmpty(roleValue))
                                         {
                                             identity.AddClaim(new Claim(ClaimTypes.Role, roleValue));
+                                            rolesList.Add(roleValue);
                                         }
                                     }
                                 }
                             }
+
+                            // JIT Sync to local PostgreSQL users table
+                            if (!string.IsNullOrEmpty(sub) && !string.IsNullOrEmpty(username))
+                            {
+                                try
+                                {
+                                    var db = context.HttpContext.RequestServices.GetRequiredService<OmakaseDbContext>();
+                                    
+                                    // 1. Buscar si el usuario ya existe por KeycloakSub o por Username
+                                    var existingUser = await db.Users
+                                        .Include(u => u.UserRoles)
+                                        .FirstOrDefaultAsync(u => u.KeycloakSub == sub || u.Username == username);
+
+                                    if (existingUser == null)
+                                    {
+                                        // Crear nuevo Security Officer
+                                        var typedUserId = UserId.New();
+                                        var newUser = new User
+                                        {
+                                            Id = typedUserId,
+                                            Username = username,
+                                            Type = UserType.SecurityOfficer,
+                                            PasswordHash = null!,
+                                            KeycloakSub = sub,
+                                            IsActive = true,
+                                            CreatedAt = DateTimeOffset.UtcNow
+                                        };
+                                        db.Users.Add(newUser);
+
+                                        // Mapear los roles desde Keycloak a la DB local
+                                        foreach (var roleName in rolesList)
+                                        {
+                                            var dbRole = await db.Roles.FirstOrDefaultAsync(r => r.Name.ToUpper() == roleName.ToUpper());
+                                            if (dbRole != null)
+                                            {
+                                                db.UserRoles.Add(new UserRole
+                                                {
+                                                    Id = UserRoleId.New(),
+                                                    UserId = typedUserId,
+                                                    RoleId = dbRole.Id,
+                                                    AssignedAt = DateTimeOffset.UtcNow
+                                                });
+                                            }
+                                        }
+                                        await db.SaveChangesAsync();
+                                    }
+                                    else
+                                    {
+                                        // Sincronizar KeycloakSub por si se creó vía seeder sin Sub
+                                        bool updated = false;
+                                        if (existingUser.KeycloakSub != sub)
+                                        {
+                                            existingUser.KeycloakSub = sub;
+                                            updated = true;
+                                        }
+                                        if (updated)
+                                        {
+                                            db.Users.Update(existingUser);
+                                            await db.SaveChangesAsync();
+                                        }
+                                    }
+                                }
+                                catch (System.Exception ex)
+                                {
+                                    var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<JwtBearerHandler>>();
+                                    logger.LogError("Error en sincronización JIT de usuario Keycloak: {Exception}", ex.Message);
+                                }
+                            }
                         }
-                        return Task.CompletedTask;
                     }
                 };
             });
