@@ -41,3 +41,15 @@ public sealed record AssignRoleToUserRequest(
     [Required]
     Guid RoleId
 );
+
+/// <summary>
+/// Payload para actualizar un rol existente.
+/// Usado en PUT /api/v1/roles/{id}.
+/// </summary>
+public sealed record UpdateRoleRequest(
+    [Required, MinLength(2), MaxLength(50)]
+    string Name,
+
+    [MaxLength(200)]
+    string? Description
+);
