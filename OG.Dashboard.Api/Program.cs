@@ -75,11 +75,11 @@ apiGroup.MapMetricsEndpoints();
 apiGroup.MapServicesEndpoints();
 apiGroup.MapUsersEndpoints();
 apiGroup.MapRolesEndpoints();
-apiGroup.MapRiskConfigEndpoints();
 
-// HU-023: endpoints reales — declaran su propia autorización
+// HU-023 / HU-025: endpoints reales — declaran su propia autorización
 // (AdminOnly en mutaciones, ReadAccess en lecturas).
 app.MapPoliciesEndpoints();
 app.MapServicePoliciesEndpoints();
+app.MapRiskConfigEndpoints();
 
 await app.RunAsync();
