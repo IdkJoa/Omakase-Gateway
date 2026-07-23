@@ -44,6 +44,13 @@ public static class RolesEndpoints
             .WithSummary("Eliminar un rol (solo si no tiene usuarios asignados)")
             .Produces(StatusCodes.Status204NoContent);
 
+        // PUT /api/v1/roles/{id}
+        rolesGroup.MapPut("/{id:guid}", Update)
+            .WithName("UpdateRole")
+            .WithSummary("Actualizar un rol existente")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesValidationProblem();
+
         // Endpoints de asignación bajo /api/v1/users/{userId}/roles (T-056)
         var userRolesGroup = app
             .MapGroup("/api/v1/users/{userId:guid}/roles")
@@ -159,6 +166,31 @@ public static class RolesEndpoints
                 System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
 
         db.Roles.Remove(role);
+        await db.SaveChangesAsync();
+
+        return Results.NoContent();
+    }
+
+    private static async Task<IResult> Update(Guid id, UpdateRoleRequest request, OmakaseDbContext db)
+    {
+        var roleId = RoleId.From(id);
+        var role = await db.Roles.FirstOrDefaultAsync(r => r.Id == roleId);
+
+        if (role is null)
+            return Results.NotFound(new ErrorResponse("NOT_FOUND", $"Rol '{id}' no encontrado.",
+                System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
+
+        var nameUpper = request.Name.Trim().ToUpperInvariant();
+        var exists = await db.Roles.AnyAsync(r => r.Name.ToUpper() == nameUpper && r.Id != roleId);
+        if (exists)
+            return Results.Conflict(new ErrorResponse("CONFLICT",
+                $"Ya existe otro rol con el nombre '{request.Name}'.",
+                System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
+
+        role.Name = request.Name.Trim();
+        role.Description = request.Description?.Trim();
+
+        db.Roles.Update(role);
         await db.SaveChangesAsync();
 
         return Results.NoContent();
