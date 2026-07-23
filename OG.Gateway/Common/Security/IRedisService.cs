@@ -80,4 +80,16 @@ public interface IRedisService
     /// </summary>
     Task<long> GetRateLimitAsync(string ip);
     #endregion
+
+    #region Pub/Sub
+    /// <summary>
+    /// Publica un mensaje en un canal de Redis (fuego y olvido).
+    /// </summary>
+    Task PublishAsync(string channel, string message);
+
+    /// <summary>
+    /// Se suscribe a un canal de Redis y ejecuta la acción al recibir un mensaje.
+    /// </summary>
+    Task SubscribeAsync(string channel, Action<string, string> handler);
+    #endregion
 }

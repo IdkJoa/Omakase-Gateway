@@ -82,7 +82,7 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
     
     if (trustAll)
     {
-        options.KnownNetworks.Clear();
+        options.KnownIPNetworks.Clear();
         options.KnownProxies.Clear();
     }
     else

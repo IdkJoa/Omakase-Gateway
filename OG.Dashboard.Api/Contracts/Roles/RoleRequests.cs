@@ -32,3 +32,24 @@ public sealed record RevokeRoleRequest(
     Guid RoleId,
     Guid UserId
 );
+
+/// <summary>
+/// Payload para asignar un rol a un usuario mediante la ruta de usuario.
+/// Usado en POST /api/v1/users/{userId}/roles.
+/// </summary>
+public sealed record AssignRoleToUserRequest(
+    [Required]
+    Guid RoleId
+);
+
+/// <summary>
+/// Payload para actualizar un rol existente.
+/// Usado en PUT /api/v1/roles/{id}.
+/// </summary>
+public sealed record UpdateRoleRequest(
+    [Required, MinLength(2), MaxLength(50)]
+    string Name,
+
+    [MaxLength(200)]
+    string? Description
+);

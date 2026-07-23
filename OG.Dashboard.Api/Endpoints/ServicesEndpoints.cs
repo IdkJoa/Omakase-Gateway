@@ -1,57 +1,21 @@
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Routing;
 using OG.Dashboard.Api.Contracts.Common;
 using OG.Dashboard.Api.Contracts.Services;
+using OG.Dashboard.Features.Services;
+using System.Diagnostics;
 
 namespace OG.Dashboard.Api.Endpoints;
 
 /// <summary>
-/// Endpoints mock CRUD de servicios protegidos por el Gateway.
+/// Endpoints CRUD de servicios protegidos por el Gateway.
 /// CRUD bajo /api/v1/services — corresponde a la entidad ProtectedService del dominio.
 /// El campo <c>Name</c> de cada servicio actúa como clusterId en YARP.
 /// </summary>
 public static class ServicesEndpoints
 {
-    // ── Datos mock ────────────────────────────────────────────────────────────
-
-    private static readonly List<ProtectedServiceDto> MockServices =
-    [
-        new(
-            Id: Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"),
-            Name: "orders-service",
-            UpstreamUrl: "https://orders-svc:8080",
-            RequiresAuth: true,
-            IsActive: true,
-            CreatedAt: new DateTimeOffset(2026, 5, 1, 9, 0, 0, TimeSpan.Zero),
-            AssociatedPoliciesCount: 3
-        ),
-        new(
-            Id: Guid.Parse("bbbbbbbb-cccc-dddd-eeee-ffffffffffff"),
-            Name: "payments-service",
-            UpstreamUrl: "https://payments-svc:8081",
-            RequiresAuth: true,
-            IsActive: true,
-            CreatedAt: new DateTimeOffset(2026, 5, 1, 9, 5, 0, TimeSpan.Zero),
-            AssociatedPoliciesCount: 4
-        ),
-        new(
-            Id: Guid.Parse("cccccccc-dddd-eeee-ffff-aaaaaaaaaaaa"),
-            Name: "inventory-service",
-            UpstreamUrl: "https://inventory-svc:8082",
-            RequiresAuth: false,
-            IsActive: true,
-            CreatedAt: new DateTimeOffset(2026, 5, 2, 10, 0, 0, TimeSpan.Zero),
-            AssociatedPoliciesCount: 1
-        ),
-        new(
-            Id: Guid.Parse("dddddddd-eeee-ffff-aaaa-bbbbbbbbbbbb"),
-            Name: "legacy-api",
-            UpstreamUrl: "http://legacy-api:3000",
-            RequiresAuth: false,
-            IsActive: false,
-            CreatedAt: new DateTimeOffset(2026, 4, 15, 8, 0, 0, TimeSpan.Zero),
-            AssociatedPoliciesCount: 0
-        ),
-    ];
-
     // ── Registro de endpoints ─────────────────────────────────────────────────
 
     public static IEndpointRouteBuilder MapServicesEndpoints(this IEndpointRouteBuilder app)
@@ -96,77 +60,113 @@ public static class ServicesEndpoints
 
     // ── Handlers ──────────────────────────────────────────────────────────────
 
-    private static IResult GetAll(int page = 1, int pageSize = 25, bool? isActive = null)
+    private static async Task<IResult> GetAll(
+        [FromQuery] int page,
+        [FromQuery] int pageSize,
+        [FromQuery] bool? isActive,
+        [FromServices] GetProtectedServicesHandler handler,
+        CancellationToken ct)
     {
-        if (page < 1) page = 1;
-        if (pageSize is < 1 or > 100) pageSize = 25;
-
-        var filtered = MockServices.AsEnumerable();
-        if (isActive.HasValue)
-            filtered = filtered.Where(s => s.IsActive == isActive.Value);
-
-        var list = filtered.ToList();
-        var data = list.Skip((page - 1) * pageSize).Take(pageSize).ToList();
-
-        return Results.Ok(new PagedResponse<ProtectedServiceDto>(page, pageSize, list.Count, data));
-    }
-
-    private static IResult GetById(Guid id)
-    {
-        var service = MockServices.FirstOrDefault(s => s.Id == id);
-        if (service is null)
-            return Results.NotFound(new ErrorResponse("NOT_FOUND", $"Servicio '{id}' no encontrado.",
-                System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
-
-        return Results.Ok(service);
-    }
-
-    private static IResult Create(UpsertServiceRequest request)
-    {
-        // Verificar nombre duplicado (mock)
-        if (MockServices.Any(s => s.Name.Equals(request.Name, StringComparison.OrdinalIgnoreCase)))
-            return Results.Conflict(new ErrorResponse("CONFLICT",
-                $"Ya existe un servicio con el nombre '{request.Name}'.",
-                System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
-
-        var created = new ProtectedServiceDto(
-            Id: Guid.NewGuid(),
-            Name: request.Name,
-            UpstreamUrl: request.UpstreamUrl,
-            RequiresAuth: request.RequiresAuth,
-            IsActive: request.IsActive,
-            CreatedAt: DateTimeOffset.UtcNow,
-            AssociatedPoliciesCount: 0
-        );
-
-        return Results.Created($"/api/v1/services/{created.Id}", created);
-    }
-
-    private static IResult Update(Guid id, UpsertServiceRequest request)
-    {
-        var existing = MockServices.FirstOrDefault(s => s.Id == id);
-        if (existing is null)
-            return Results.NotFound(new ErrorResponse("NOT_FOUND", $"Servicio '{id}' no encontrado.",
-                System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
-
-        var updated = existing with
+        var result = await handler.GetProtectedServicesAsync(page, pageSize, isActive, ct);
+        if (result.IsFailure)
         {
-            Name = request.Name,
-            UpstreamUrl = request.UpstreamUrl,
-            RequiresAuth = request.RequiresAuth,
-            IsActive = request.IsActive
-        };
+            return Results.BadRequest(new ErrorResponse("ERROR", result.Error.Description, Activity.Current?.TraceId.ToString() ?? "N/A"));
+        }
 
-        return Results.Ok(updated);
+        var (totalCount, services) = result.Value;
+        var dtos = services.Select(s => new ProtectedServiceDto(
+            s.Id.Value, s.Name, s.UpstreamUrl, s.RequiresAuth, s.IsActive, s.CreatedAt, s.ServicePolicies.Count)).ToList();
+            
+        return Results.Ok(new PagedResponse<ProtectedServiceDto>(page, pageSize, totalCount, dtos));
     }
 
-    private static IResult Delete(Guid id)
+    private static async Task<IResult> GetById(
+        Guid id,
+        [FromServices] GetProtectedServiceHandler handler,
+        CancellationToken ct)
     {
-        var existing = MockServices.FirstOrDefault(s => s.Id == id);
-        if (existing is null)
-            return Results.NotFound(new ErrorResponse("NOT_FOUND", $"Servicio '{id}' no encontrado.",
-                System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
+        var result = await handler.GetProtectedServiceAsync(id, ct);
+        if (result.IsFailure)
+        {
+            if (result.Error.Code.Contains("NotFound"))
+            {
+                return Results.NotFound(new ErrorResponse("NOT_FOUND", result.Error.Description, Activity.Current?.TraceId.ToString() ?? "N/A"));
+            }
+            return Results.BadRequest(new ErrorResponse("ERROR", result.Error.Description, Activity.Current?.TraceId.ToString() ?? "N/A"));
+        }
+            
+        var service = result.Value;
+        var dto = new ProtectedServiceDto(
+            service.Id.Value, service.Name, service.UpstreamUrl, service.RequiresAuth, service.IsActive, service.CreatedAt, service.ServicePolicies.Count);
+            
+        return Results.Ok(dto);
+    }
 
+    private static async Task<IResult> Create(
+        [FromBody] UpsertServiceRequest request,
+        [FromServices] CreateProtectedServiceHandler handler,
+        CancellationToken ct)
+    {
+        var result = await handler.CreateProtectedServiceAsync(request.Name, request.UpstreamUrl, request.RequiresAuth, request.IsActive, ct);
+        
+        if (result.IsFailure)
+        {
+            if (result.Error.Code.Contains("InvalidUrl"))
+                return Results.BadRequest(new ErrorResponse("INVALID_URL", result.Error.Description, Activity.Current?.TraceId.ToString() ?? "N/A"));
+            if (result.Error.Code.Contains("Conflict"))
+                return Results.Conflict(new ErrorResponse("CONFLICT", result.Error.Description, Activity.Current?.TraceId.ToString() ?? "N/A"));
+                
+            return Results.BadRequest(new ErrorResponse("ERROR", result.Error.Description, Activity.Current?.TraceId.ToString() ?? "N/A"));
+        }
+
+        var service = result.Value;
+        var dto = new ProtectedServiceDto(
+            service.Id.Value, service.Name, service.UpstreamUrl, service.RequiresAuth, service.IsActive, service.CreatedAt, 0);
+            
+        return Results.Created($"/api/v1/services/{dto.Id}", dto);
+    }
+
+    private static async Task<IResult> Update(
+        Guid id,
+        [FromBody] UpsertServiceRequest request,
+        [FromServices] UpdateProtectedServiceHandler handler,
+        CancellationToken ct)
+    {
+        var result = await handler.UpdateProtectedServiceAsync(id, request.Name, request.UpstreamUrl, request.RequiresAuth, request.IsActive, ct);
+        
+        if (result.IsFailure)
+        {
+            if (result.Error.Code.Contains("NotFound"))
+                return Results.NotFound(new ErrorResponse("NOT_FOUND", result.Error.Description, Activity.Current?.TraceId.ToString() ?? "N/A"));
+            if (result.Error.Code.Contains("InvalidUrl"))
+                return Results.BadRequest(new ErrorResponse("INVALID_URL", result.Error.Description, Activity.Current?.TraceId.ToString() ?? "N/A"));
+            if (result.Error.Code.Contains("Conflict"))
+                return Results.Conflict(new ErrorResponse("CONFLICT", result.Error.Description, Activity.Current?.TraceId.ToString() ?? "N/A"));
+                
+            return Results.BadRequest(new ErrorResponse("ERROR", result.Error.Description, Activity.Current?.TraceId.ToString() ?? "N/A"));
+        }
+
+        var service = result.Value;
+        var dto = new ProtectedServiceDto(
+            service.Id.Value, service.Name, service.UpstreamUrl, service.RequiresAuth, service.IsActive, service.CreatedAt, service.ServicePolicies.Count);
+            
+        return Results.Ok(dto);
+    }
+
+    private static async Task<IResult> Delete(
+        Guid id,
+        [FromServices] DeleteProtectedServiceHandler handler,
+        CancellationToken ct)
+    {
+        var result = await handler.DeleteProtectedServiceAsync(id, ct);
+        
+        if (result.IsFailure)
+        {
+            if (result.Error.Code.Contains("NotFound"))
+                return Results.NotFound(new ErrorResponse("NOT_FOUND", result.Error.Description, Activity.Current?.TraceId.ToString() ?? "N/A"));
+            return Results.BadRequest(new ErrorResponse("ERROR", result.Error.Description, Activity.Current?.TraceId.ToString() ?? "N/A"));
+        }
+            
         return Results.NoContent();
     }
 }

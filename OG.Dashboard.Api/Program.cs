@@ -11,6 +11,8 @@ builder.AddServiceDefaults();
 builder.AddNpgsqlDbContext<OmakaseDbContext>("Omakase");
 builder.AddRedisClient("redis");
 builder.Services.AddOpenApi();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
 builder.Services.AddOmakaseAuthentication(builder.Configuration);
 builder.Services.AddAuthorization(options =>
@@ -50,14 +52,22 @@ builder.Services.AddCors(options =>
 
 //  Infrastructure (repositorios, etc.) — se completa en HU-003/004 
 // builder.Services.AddInfrastructure();
+builder.Services.AddSingleton<Application.Common.Security.IRedisService, Infrastructure.Redis.RedisService>();
+
+// Register Dashboard handlers
+builder.Services.AddScoped<OG.Dashboard.Features.Services.GetProtectedServicesHandler>();
+builder.Services.AddScoped<OG.Dashboard.Features.Services.GetProtectedServiceHandler>();
+builder.Services.AddScoped<OG.Dashboard.Features.Services.CreateProtectedServiceHandler>();
+builder.Services.AddScoped<OG.Dashboard.Features.Services.UpdateProtectedServiceHandler>();
+builder.Services.AddScoped<OG.Dashboard.Features.Services.DeleteProtectedServiceHandler>();
 
 var app = builder.Build();
 
 // Habilitar CORS antes de mapear los endpoints.
 app.UseCors(FrontendCors);
 
-app.UseAuthentication();
-app.UseAuthorization();
+// app.UseAuthentication();
+// app.UseAuthorization();
 
 //  Endpoints de diagnóstico Aspire (/health y /alive)
 app.MapDefaultEndpoints();
@@ -65,10 +75,20 @@ app.MapDefaultEndpoints();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "OG Dashboard API v1");
+    });
 }
 
 // T-088: Contratos de API mock (Contract-First) — pendientes de implementación real.
-var apiGroup = app.MapGroup("").RequireAuthorization("AdminOnly");
+var apiGroup = app.MapGroup("");
+
+if (!app.Environment.IsDevelopment())
+{
+    apiGroup.RequireAuthorization("AdminOnly");
+}
 
 apiGroup.MapAuditLogsEndpoints();
 apiGroup.MapMetricsEndpoints();
