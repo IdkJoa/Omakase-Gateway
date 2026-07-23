@@ -343,6 +343,12 @@ namespace Infrastructure.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("is_active");
 
+                    b.Property<bool>("IsInteractive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_interactive");
+
                     b.Property<string>("KeycloakSub")
                         .HasColumnType("varchar(255)")
                         .HasColumnName("keycloak_sub");
@@ -351,9 +357,19 @@ namespace Infrastructure.Migrations
                         .HasColumnType("timestamptz")
                         .HasColumnName("locked_until");
 
+                    b.Property<bool>("MfaEnabled")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("mfa_enabled");
+
                     b.Property<string>("PasswordHash")
                         .HasColumnType("varchar(255)")
                         .HasColumnName("password_hash");
+
+                    b.Property<string>("TotpSecret")
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("totp_secret");
 
                     b.Property<string>("Type")
                         .IsRequired()

@@ -3,11 +3,13 @@ using Application.Common.RiskEngine.AnomalyDetection;
 using Application.Common.RiskEngine.Rules;
 using Application.Common.RiskEngine.Scoring;
 using Application.Common.Security;
+using Application.Features.Auth;
 using Infrastructure.AnomalyDetection;
 using Infrastructure.GeoLocation;
 using Infrastructure.Persistence;
 using Infrastructure.Persistence.Seeding;
 using Infrastructure.Redis;
+using Infrastructure.Security;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
@@ -103,6 +105,22 @@ public static class DependencyInjection
         services.AddScoped<IAnomalyDetector, RandomizedPcaAnomalyDetector>();
 
         // HU-017: services.AddSingleton<ISecretProvider, KeyVaultSecretProvider>();
+
+        // HU-019 / T-038: Autenticación de Client Users con JWT propio del Gateway.
+        services.AddScoped<IGatewayTokenService, GatewayTokenService>();
+        services.AddScoped<ILoginService, LoginService>();
+
+        // HU-046: Step-up MFA (TOTP) para client users.
+        // TOTP y protector: puros/sin estado mutable -> Singleton. Stores Redis -> Singleton
+        // (mismo patrón que IRedisService). Puerto de estado MFA usa DbContext -> Scoped.
+        services.AddSingleton<Application.Common.Security.Mfa.ITotpService,
+                              Application.Common.Security.Mfa.TotpService>();
+        services.AddSingleton<Application.Common.Security.Mfa.ITotpSecretProtector,
+                              Infrastructure.Security.AesGcmTotpSecretProtector>();
+        services.AddSingleton<Application.Common.Security.Mfa.IChallengeStore, ChallengeStore>();
+        services.AddSingleton<Application.Common.Security.Mfa.IStepUpStore, StepUpStore>();
+        services.AddSingleton<Application.Common.Security.Mfa.IMfaAttemptStore, MfaAttemptStore>();
+        services.AddScoped<Application.Common.Security.Mfa.IUserMfaInfoProvider, UserMfaInfoProvider>();
 
         return services;
     }

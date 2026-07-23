@@ -9,6 +9,7 @@ using Application.Common.RiskEngine.Commands;
 using Application.Common.RiskEngine.Rules;
 using Application.Common.RiskEngine.Scoring;
 using Application.Common.Security;
+using Application.Common.Security.Mfa;
 using Domain.Common;
 using Domain.Entities;
 using Domain.ValueObjects;
@@ -68,9 +69,14 @@ public class EvaluateRiskHandlerTests
     private readonly IUserProfileStore _profileStore = Substitute.For<IUserProfileStore>();
     private readonly IProfileUpdateChannel _profileChannel = Substitute.For<IProfileUpdateChannel>();
 
+    // HU-046: dependencias del step-up MFA. Por defecto: sin step-up vigente y sin info MFA.
+    private readonly IStepUpStore _stepUpStore = Substitute.For<IStepUpStore>();
+    private readonly IUserMfaInfoProvider _userMfaInfo = Substitute.For<IUserMfaInfoProvider>();
+
     private EvaluateRiskHandler CreateSut(IEnumerable<IRuleEvaluator> evaluators) => new(
         _policyProvider, evaluators, new PolicyScoreCalculator(), new RiskScoreConsolidator(),
-        _configProvider, new StubAnomalyDetector(), _geo, _profileStore, _profileChannel);
+        _configProvider, new StubAnomalyDetector(), _geo, _profileStore, _profileChannel,
+        _stepUpStore, _userMfaInfo, new FingerprintService());
 
     private static EvaluateRiskCommand CommandFor(string? serviceName) =>
         new(new RequestContext { SourceIp = "190.166.12.45", ServiceName = serviceName });
