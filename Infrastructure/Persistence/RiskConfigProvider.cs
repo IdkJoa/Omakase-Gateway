@@ -16,7 +16,10 @@ public sealed class RiskConfigProvider : IRiskConfigProvider
 
     public async Task<RiskScoreConfig> GetAsync(CancellationToken cancellationToken = default)
     {
-        var config = await _db.RiskScoreConfigs.AsNoTracking().FirstOrDefaultAsync(cancellationToken)
+        // Fila única (singleton): OrderBy explícito para una lectura determinista y silenciar
+        // la advertencia de EF sobre FirstOrDefault sin orden (esta consulta corre en cada evaluación).
+        var config = await _db.RiskScoreConfigs.AsNoTracking()
+            .OrderBy(r => r.UpdatedAt).FirstOrDefaultAsync(cancellationToken)
             ?? throw new InvalidOperationException(
                 "risk_score_config no tiene filas. Ejecuta el seed (HU-006) antes de evaluar riesgo.");
 
