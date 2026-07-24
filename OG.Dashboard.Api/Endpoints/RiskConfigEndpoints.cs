@@ -46,23 +46,40 @@ public static class RiskConfigEndpoints
 
     // ── Handlers ──────────────────────────────────────────────────────────────
 
-    private static async Task<IResult> Get(OmakaseDbContext db, CancellationToken ct)
+    private static async Task<IResult> Get(
+        OmakaseDbContext db, ILoggerFactory loggerFactory, CancellationToken ct)
     {
-        var config = await db.RiskScoreConfigs.AsNoTracking().FirstOrDefaultAsync(ct);
-        return config is null ? ConfigMissing() : Results.Ok(ToDto(config));
+        // Fila única (singleton): OrderBy explícito para una lectura determinista y silenciar
+        // la advertencia de EF sobre FirstOrDefault sin orden.
+        var config = await db.RiskScoreConfigs.AsNoTracking()
+            .OrderBy(r => r.UpdatedAt).FirstOrDefaultAsync(ct);
+        if (config is null)
+        {
+            loggerFactory.CreateLogger(nameof(RiskConfigEndpoints))
+                .LogWarning("risk_score_config no tiene filas al leer la configuración; falta el seed (HU-006).");
+            return ConfigMissing();
+        }
+
+        return Results.Ok(ToDto(config));
     }
 
     private static async Task<IResult> Update(
-        UpdateRiskConfigRequest request, OmakaseDbContext db, CancellationToken ct)
+        UpdateRiskConfigRequest request, OmakaseDbContext db, ILoggerFactory loggerFactory, CancellationToken ct)
     {
         var validation = Validate(request);
         if (validation is not null)
             return validation;
 
+        var logger = loggerFactory.CreateLogger(nameof(RiskConfigEndpoints));
+
         // Fila única: se lee rastreada para actualizarla en sitio (no AsNoTracking).
-        var config = await db.RiskScoreConfigs.FirstOrDefaultAsync(ct);
+        // OrderBy explícito → lectura determinista y sin la advertencia de EF.
+        var config = await db.RiskScoreConfigs.OrderBy(r => r.UpdatedAt).FirstOrDefaultAsync(ct);
         if (config is null)
+        {
+            logger.LogWarning("risk_score_config no tiene filas al actualizar; falta el seed (HU-006).");
             return ConfigMissing();
+        }
 
         config.PolicyWeight       = request.PolicyWeight;
         config.AnomalyWeight      = request.AnomalyWeight;
@@ -72,7 +89,19 @@ public static class RiskConfigEndpoints
         config.ChallengeThreshold = request.ChallengeThreshold;
         config.UpdatedAt          = DateTimeOffset.UtcNow;
 
-        await db.SaveChangesAsync(ct);
+        try
+        {
+            await db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException ex)
+        {
+            logger.LogError(ex, "Error de persistencia al actualizar risk_score_config.");
+            return InternalError("No se pudo guardar la configuración del Risk Score.");
+        }
+
+        logger.LogInformation(
+            "risk_score_config actualizada: Wp={PolicyWeight} Wa={AnomalyWeight} allow(challengeThreshold)={AllowCeiling} challenge(blockThreshold)={ChallengeCeiling}.",
+            request.PolicyWeight, request.AnomalyWeight, request.ChallengeThreshold, request.BlockThreshold);
 
         return Results.Ok(ToDto(config));
     }
@@ -139,4 +168,8 @@ public static class RiskConfigEndpoints
             "NOT_FOUND",
             "risk_score_config no tiene filas. Ejecuta el seed (HU-006) antes de operar.",
             TraceId()));
+
+    private static IResult InternalError(string message) =>
+        Results.Json(new ErrorResponse("INTERNAL_ERROR", message, TraceId()),
+            statusCode: StatusCodes.Status500InternalServerError);
 }

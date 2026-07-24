@@ -13,9 +13,7 @@ namespace OG.Dashboard.Api.Endpoints;
 /// el índice único de la BD y se traduce a 409 CONFLICT.
 /// <para>
 /// El motor lee service_policies en cada evaluación (<c>IServicePolicyProvider</c>,
-/// sin caché): asociar o desasociar surte efecto en la siguiente petición al Gateway,
-/// que es exactamente el criterio de aceptación de HU-023 ("el motor de riesgo evalúa
-/// esas 2 políticas para las peticiones a ese servicio").
+/// sin caché): asociar o desasociar surte efecto en la siguiente petición al Gateway.
 /// </para>
 /// </summary>
 public static class ServicePoliciesEndpoints
@@ -69,8 +67,10 @@ public static class ServicePoliciesEndpoints
         Guid serviceId,
         AssociatePolicyRequest request,
         OmakaseDbContext db,
+        ILoggerFactory loggerFactory,
         CancellationToken ct)
     {
+        var logger = loggerFactory.CreateLogger(nameof(ServicePoliciesEndpoints));
         var sid = ProtectedServiceId.From(serviceId);
         var pid = AccessPolicyId.From(request.PolicyId);
 
@@ -98,12 +98,25 @@ public static class ServicePoliciesEndpoints
         {
             await db.SaveChangesAsync(ct);
         }
-        catch (DbUpdateException)
+        catch (DbUpdateException ex) when (IsUniqueViolation(ex))
         {
             // Carrera entre el pre-chequeo y el insert: el índice único
-            // (service_id, policy_id) es la garantía real de unicidad (T-048).
+            // (service_id, policy_id) es la garantía real de unicidad (T-048). Esperado, no es error.
             return Conflict(serviceId, request.PolicyId);
         }
+        catch (DbUpdateException ex)
+        {
+            // Cualquier otro fallo de persistencia NO es la carrera de unicidad: se registra
+            // con contexto en vez de enmascararlo como un 409 mentiroso.
+            logger.LogError(ex,
+                "Error de persistencia al asociar la politica {PolicyId} al servicio {ServiceId} en service_policies.",
+                request.PolicyId, serviceId);
+            return InternalError("No se pudo asociar la política al servicio.");
+        }
+
+        logger.LogInformation(
+            "Política {PolicyId} asociada al servicio {ServiceId} (isEnabled={IsEnabled}).",
+            request.PolicyId, serviceId, request.IsEnabled);
 
         association.AccessPolicy = policy;
         return Results.Created(
@@ -111,8 +124,9 @@ public static class ServicePoliciesEndpoints
     }
 
     private static async Task<IResult> Disassociate(
-        Guid serviceId, Guid policyId, OmakaseDbContext db, CancellationToken ct)
+        Guid serviceId, Guid policyId, OmakaseDbContext db, ILoggerFactory loggerFactory, CancellationToken ct)
     {
+        var logger = loggerFactory.CreateLogger(nameof(ServicePoliciesEndpoints));
         var sid = ProtectedServiceId.From(serviceId);
         var pid = AccessPolicyId.From(policyId);
 
@@ -126,12 +140,29 @@ public static class ServicePoliciesEndpoints
                 TraceId()));
 
         db.ServicePolicies.Remove(association);
-        await db.SaveChangesAsync(ct);
+        try
+        {
+            await db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException ex)
+        {
+            logger.LogError(ex,
+                "Error de persistencia al desasociar la politica {PolicyId} del servicio {ServiceId}.",
+                policyId, serviceId);
+            return InternalError("No se pudo desasociar la política del servicio.");
+        }
+
+        logger.LogInformation(
+            "Política {PolicyId} desasociada del servicio {ServiceId}.", policyId, serviceId);
 
         return Results.NoContent();
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
+
+    /// <summary>True si el fallo es la violación del índice único (SQLSTATE 23505 de Postgres).</summary>
+    private static bool IsUniqueViolation(DbUpdateException ex) =>
+        ex.InnerException is Npgsql.PostgresException { SqlState: "23505" };
 
     private static ServicePolicyDto ToDto(Domain.Entities.ServicePolicy sp) => new(
         Id: sp.Id.Value,
@@ -154,4 +185,8 @@ public static class ServicePoliciesEndpoints
             "CONFLICT",
             $"La política '{policyId}' ya está asociada al servicio '{serviceId}'.",
             TraceId()));
+
+    private static IResult InternalError(string message) =>
+        Results.Json(new ErrorResponse("INTERNAL_ERROR", message, TraceId()),
+            statusCode: StatusCodes.Status500InternalServerError);
 }
