@@ -34,10 +34,16 @@ public sealed record RiskScoreConfigDto(
     /// </summary>
     int ColdStartN,
 
-    /// <summary>Risk Score por encima del cual el veredicto es BLOCK. Default: 75.</summary>
+    /// <summary>
+    /// Techo de CHALLENGE: Risk Score por encima del cual el veredicto es BLOCK
+    /// (SRS §7.6 challenge_threshold). Default: 75.
+    /// </summary>
     decimal BlockThreshold,
 
-    /// <summary>Risk Score por encima del cual el veredicto es CHALLENGE. Default: 50.</summary>
+    /// <summary>
+    /// Techo de ALLOW: Risk Score por encima del cual el veredicto es CHALLENGE
+    /// (SRS §7.6 allow_threshold). Debe ser menor que BlockThreshold. Default: 40.
+    /// </summary>
     decimal ChallengeThreshold,
 
     /// <summary>Timestamp de la última modificación de la configuración.</summary>
