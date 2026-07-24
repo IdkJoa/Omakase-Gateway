@@ -124,6 +124,7 @@ public static class PoliciesEndpoints
         OmakaseDbContext db,
         ICurrentUserService currentUser,
         IEnumerable<IPolicyConfigValidator> validators,
+        ILoggerFactory loggerFactory,
         HttpContext http,
         CancellationToken ct)
     {
@@ -139,6 +140,8 @@ public static class PoliciesEndpoints
                     "No se pudo resolver la identidad del administrador desde el token.", TraceId()),
                 statusCode: StatusCodes.Status401Unauthorized);
 
+        var logger = loggerFactory.CreateLogger(nameof(PoliciesEndpoints));
+
         var policy = new AccessPolicy
         {
             Id          = AccessPolicyId.New(),
@@ -151,7 +154,20 @@ public static class PoliciesEndpoints
         };
 
         db.AccessPolicies.Add(policy);
-        await db.SaveChangesAsync(ct);
+        try
+        {
+            await db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException ex)
+        {
+            logger.LogError(ex,
+                "Error de persistencia al crear la política '{PolicyName}' ({PolicyType}).", policy.Name, policy.Type);
+            return InternalError("No se pudo crear la política.");
+        }
+
+        logger.LogInformation(
+            "Política {PolicyId} '{PolicyName}' ({PolicyType}) creada por {Admin}.",
+            policy.Id.Value, policy.Name, policy.Type, admin.Username);
 
         return Results.Created($"/api/v1/policies/{policy.Id.Value}", ToDto(policy, admin.Username));
     }
@@ -161,6 +177,7 @@ public static class PoliciesEndpoints
         UpsertPolicyRequest request,
         OmakaseDbContext db,
         IEnumerable<IPolicyConfigValidator> validators,
+        ILoggerFactory loggerFactory,
         CancellationToken ct)
     {
         var validation = ValidateRequest(request, validators, out var type, out var config);
@@ -175,18 +192,31 @@ public static class PoliciesEndpoints
         if (policy is null)
             return NotFound(id);
 
+        var logger = loggerFactory.CreateLogger(nameof(PoliciesEndpoints));
+
         policy.Name     = request.Name.Trim();
         policy.Type     = type;
         policy.Config   = config!;
         policy.Weight   = request.Weight;
         policy.IsActive = request.IsActive;
 
-        await db.SaveChangesAsync(ct);
+        try
+        {
+            await db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException ex)
+        {
+            logger.LogError(ex, "Error de persistencia al actualizar la política {PolicyId}.", id);
+            return InternalError("No se pudo actualizar la política.");
+        }
+
+        logger.LogInformation("Política {PolicyId} '{PolicyName}' actualizada.", id, policy.Name);
 
         return Results.Ok(ToDto(policy));
     }
 
-    private static async Task<IResult> Delete(Guid id, OmakaseDbContext db, CancellationToken ct)
+    private static async Task<IResult> Delete(
+        Guid id, OmakaseDbContext db, ILoggerFactory loggerFactory, CancellationToken ct)
     {
         var policyId = AccessPolicyId.From(id);
         var policy = await db.AccessPolicies.FirstOrDefaultAsync(p => p.Id == policyId, ct);
@@ -194,10 +224,22 @@ public static class PoliciesEndpoints
         if (policy is null)
             return NotFound(id);
 
+        var logger = loggerFactory.CreateLogger(nameof(PoliciesEndpoints));
+
         // Soft-delete (T-047): el motor deja de evaluarla en la siguiente petición;
         // el histórico y las asociaciones service_policies se conservan.
         policy.IsActive = false;
-        await db.SaveChangesAsync(ct);
+        try
+        {
+            await db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException ex)
+        {
+            logger.LogError(ex, "Error de persistencia al eliminar (soft-delete) la política {PolicyId}.", id);
+            return InternalError("No se pudo eliminar la política.");
+        }
+
+        logger.LogInformation("Política {PolicyId} desactivada (soft-delete).", id);
 
         return Results.NoContent();
     }
@@ -283,4 +325,8 @@ public static class PoliciesEndpoints
 
     private static IResult NotFound(Guid id) =>
         Results.NotFound(new ErrorResponse("NOT_FOUND", $"Política '{id}' no encontrada.", TraceId()));
+
+    private static IResult InternalError(string message) =>
+        Results.Json(new ErrorResponse("INTERNAL_ERROR", message, TraceId()),
+            statusCode: StatusCodes.Status500InternalServerError);
 }
