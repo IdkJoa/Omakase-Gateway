@@ -2,6 +2,7 @@ using Infrastructure;
 using Infrastructure.Persistence;
 using Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi;
 using OG.Dashboard.Api.Endpoints;
 using ServiceDefaults;
 
@@ -62,6 +63,7 @@ builder.Services.AddScoped<OG.Dashboard.Features.Services.GetProtectedServiceHan
 builder.Services.AddScoped<OG.Dashboard.Features.Services.CreateProtectedServiceHandler>();
 builder.Services.AddScoped<OG.Dashboard.Features.Services.UpdateProtectedServiceHandler>();
 builder.Services.AddScoped<OG.Dashboard.Features.Services.DeleteProtectedServiceHandler>();
+builder.Services.AddScoped<OG.Dashboard.Features.Metrics.GetMetricsSummaryHandler>();
 
 var app = builder.Build();
 
