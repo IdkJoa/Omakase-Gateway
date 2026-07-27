@@ -38,11 +38,24 @@ if (app.Environment.IsDevelopment())
 
 app.MapAuditLogsEndpoints();
 app.MapMetricsEndpoints();
+// HU-028 T-058: autorización granular por endpoint (ReadAccess para lectura,
+// AdminOnly para escritura). Cada endpoint declara su propia policy.
+var apiGroup = app.MapGroup("");
+
+apiGroup.MapAuditLogsEndpoints();
+apiGroup.MapMetricsEndpoints();
+apiGroup.MapServicesEndpoints();
+apiGroup.MapUsersEndpoints();
+apiGroup.MapRolesEndpoints();
+
+// HU-023 / HU-025 / HU-026: endpoints reales — declaran su propia autorización
+// (AdminOnly en mutaciones, ReadAccess en lecturas).
 app.MapPoliciesEndpoints();
 app.MapRiskConfigEndpoints();
 app.MapRolesEndpoints();
 app.MapServicePoliciesEndpoints();
 app.MapServicesEndpoints();
 app.MapUsersEndpoints();
+app.MapUserProfileEndpoints();
 
 await app.RunAsync();
