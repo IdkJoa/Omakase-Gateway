@@ -76,6 +76,7 @@ public static class PoliciesEndpoints
 
     private static async Task<IResult> GetAll(
         OmakaseDbContext db,
+        IOutputSanitizer enc,
         CancellationToken ct,
         int page = 1,
         int pageSize = 25,
@@ -104,19 +105,19 @@ public static class PoliciesEndpoints
             .Take(pageSize)
             .ToListAsync(ct);
 
-        var data = pageEntities.Select(ToDto).ToList();
+        var data = pageEntities.Select(p => ToDto(p, enc)).ToList();
 
         return Results.Ok(new PagedResponse<PolicyDto>(page, pageSize, total, data));
     }
 
-    private static async Task<IResult> GetById(Guid id, OmakaseDbContext db, CancellationToken ct)
+    private static async Task<IResult> GetById(Guid id, OmakaseDbContext db, IOutputSanitizer enc, CancellationToken ct)
     {
         var policyId = AccessPolicyId.From(id);
         var policy = await db.AccessPolicies.AsNoTracking()
             .Include(p => p.CreatedBy)
             .FirstOrDefaultAsync(p => p.Id == policyId, ct);
 
-        return policy is null ? NotFound(id) : Results.Ok(ToDto(policy));
+        return policy is null ? NotFound(id) : Results.Ok(ToDto(policy, enc));
     }
 
     private static async Task<IResult> Create(
@@ -124,6 +125,8 @@ public static class PoliciesEndpoints
         OmakaseDbContext db,
         ICurrentUserService currentUser,
         IEnumerable<IPolicyConfigValidator> validators,
+        ILogSanitizer sanitizer,
+        IOutputSanitizer enc,
         ILoggerFactory loggerFactory,
         HttpContext http,
         CancellationToken ct)
@@ -167,9 +170,9 @@ public static class PoliciesEndpoints
 
         logger.LogInformation(
             "Política {PolicyId} '{PolicyName}' ({PolicyType}) creada por {Admin}.",
-            policy.Id.Value, policy.Name, policy.Type, admin.Username);
+            policy.Id.Value, sanitizer.Sanitize(policy.Name), policy.Type, sanitizer.Sanitize(admin.Username));
 
-        return Results.Created($"/api/v1/policies/{policy.Id.Value}", ToDto(policy, admin.Username));
+        return Results.Created($"/api/v1/policies/{policy.Id.Value}", ToDto(policy, enc, admin.Username));
     }
 
     private static async Task<IResult> Update(
@@ -177,6 +180,8 @@ public static class PoliciesEndpoints
         UpsertPolicyRequest request,
         OmakaseDbContext db,
         IEnumerable<IPolicyConfigValidator> validators,
+        ILogSanitizer sanitizer,
+        IOutputSanitizer enc,
         ILoggerFactory loggerFactory,
         CancellationToken ct)
     {
@@ -210,9 +215,9 @@ public static class PoliciesEndpoints
             return InternalError("No se pudo actualizar la política.");
         }
 
-        logger.LogInformation("Política {PolicyId} '{PolicyName}' actualizada.", id, policy.Name);
+        logger.LogInformation("Política {PolicyId} '{PolicyName}' actualizada.", id, sanitizer.Sanitize(policy.Name));
 
-        return Results.Ok(ToDto(policy));
+        return Results.Ok(ToDto(policy, enc));
     }
 
     private static async Task<IResult> Delete(
@@ -295,17 +300,18 @@ public static class PoliciesEndpoints
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    private static PolicyDto ToDto(AccessPolicy p) => ToDto(p, p.CreatedBy?.Username ?? string.Empty);
+    private static PolicyDto ToDto(AccessPolicy p, IOutputSanitizer enc) =>
+        ToDto(p, enc, p.CreatedBy?.Username ?? string.Empty);
 
-    private static PolicyDto ToDto(AccessPolicy p, string createdByUsername) => new(
+    private static PolicyDto ToDto(AccessPolicy p, IOutputSanitizer enc, string createdByUsername) => new(
         Id: p.Id.Value,
-        Name: p.Name,
+        Name: enc.Sanitize(p.Name),
         Type: p.Type.ToString(),
         Config: p.Config.RootElement.Clone(),
         Weight: p.Weight,
         IsActive: p.IsActive,
         CreatedById: p.CreatedById.Value,
-        CreatedByUsername: createdByUsername,
+        CreatedByUsername: enc.Sanitize(createdByUsername),
         CreatedAt: p.CreatedAt);
 
     /// <summary>

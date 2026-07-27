@@ -1,44 +1,14 @@
 using OG.Dashboard.Api.Contracts.Metrics;
+using OG.Dashboard.Features.Metrics;
 
 namespace OG.Dashboard.Api.Endpoints;
 
 /// <summary>
-/// Endpoints mock de métricas y KPIs del Dashboard principal.
-/// GET /api/v1/metrics/summary — Tarjetas de KPI y serie temporal del Risk Score.
+/// Endpoints de métricas y KPIs del Dashboard principal (HU-021 / T-062).
+/// GET /api/v1/metrics/summary — Tarjetas de KPI y serie temporal del Risk Score calculadas sobre audit_logs.
 /// </summary>
 public static class MetricsEndpoints
 {
-    // ── Datos mock ────────────────────────────────────────────────────────────
-
-    private static readonly MetricsSummaryDto MockSummary = new(
-        TotalEvaluations: 14_320,
-        AllowedCount: 11_200,
-        ChallengedCount: 2_500,
-        BlockedCount: 620,
-        AllowedPercent: 78.2,
-        ChallengedPercent: 17.5,
-        BlockedPercent: 4.3,
-        AverageRiskScore: 34.7,
-        UniqueUsers: 312,
-        RiskScoreSeries:
-        [
-            new(new DateTimeOffset(2026, 5, 29,  0, 0, 0, TimeSpan.Zero), 28.4, 580),
-            new(new DateTimeOffset(2026, 5, 29,  1, 0, 0, TimeSpan.Zero), 26.1, 210),
-            new(new DateTimeOffset(2026, 5, 29,  2, 0, 0, TimeSpan.Zero), 24.8, 130),
-            new(new DateTimeOffset(2026, 5, 29,  6, 0, 0, TimeSpan.Zero), 31.2, 620),
-            new(new DateTimeOffset(2026, 5, 29,  8, 0, 0, TimeSpan.Zero), 38.9, 1200),
-            new(new DateTimeOffset(2026, 5, 29, 10, 0, 0, TimeSpan.Zero), 41.3, 1540),
-            new(new DateTimeOffset(2026, 5, 29, 12, 0, 0, TimeSpan.Zero), 36.7, 1820),
-            new(new DateTimeOffset(2026, 5, 29, 14, 0, 0, TimeSpan.Zero), 44.1, 1630),
-            new(new DateTimeOffset(2026, 5, 29, 16, 0, 0, TimeSpan.Zero), 39.5, 1480),
-            new(new DateTimeOffset(2026, 5, 29, 18, 0, 0, TimeSpan.Zero), 33.2, 1100),
-            new(new DateTimeOffset(2026, 5, 29, 20, 0, 0, TimeSpan.Zero), 29.8,  820),
-            new(new DateTimeOffset(2026, 5, 29, 22, 0, 0, TimeSpan.Zero), 27.1,  510),
-        ]
-    );
-
-    // ── Registro de endpoints ─────────────────────────────────────────────────
-
     public static IEndpointRouteBuilder MapMetricsEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app
@@ -46,18 +16,51 @@ public static class MetricsEndpoints
             .WithTags("Metrics")
             .WithOpenApi();
 
-        // GET /api/v1/metrics/summary
+        // GET /api/v1/metrics/summary?from=2026-07-01T00:00:00Z&to=2026-07-27T23:59:59Z
         group.MapGet("/summary", GetSummary)
+            .RequireAuthorization("ReadAccess")
             .WithName("GetMetricsSummary")
             .WithSummary("Obtener resumen de KPIs del Dashboard")
             .WithDescription(
-                "Devuelve los KPIs principales: totales por veredicto, porcentajes, " +
+                "Devuelve los KPIs principales calculados sobre audit_logs: totales por veredicto, porcentajes, " +
                 "Risk Score promedio y la serie temporal para el gráfico de tendencia.");
 
         return app;
     }
 
-    // ── Handlers ──────────────────────────────────────────────────────────────
+    private static async Task<IResult> GetSummary(
+        GetMetricsSummaryHandler handler,
+        DateTimeOffset? from = null,
+        DateTimeOffset? to = null,
+        CancellationToken ct = default)
+    {
+        var result = await handler.GetMetricsSummaryAsync(from, to, ct);
 
-    private static IResult GetSummary() => Results.Ok(MockSummary);
+        if (result.IsFailure)
+        {
+            return Results.Problem(
+                detail: result.Error.Description,
+                statusCode: StatusCodes.Status500InternalServerError);
+        }
+
+        var m = result.Value;
+        var dto = new MetricsSummaryDto(
+            TotalEvaluations: m.TotalEvaluations,
+            AllowedCount: m.AllowedCount,
+            ChallengedCount: m.ChallengedCount,
+            BlockedCount: m.BlockedCount,
+            AllowedPercent: m.AllowedPercent,
+            ChallengedPercent: m.ChallengedPercent,
+            BlockedPercent: m.BlockedPercent,
+            AverageRiskScore: m.AverageRiskScore,
+            UniqueUsers: m.UniqueUsers,
+            RiskScoreSeries: m.RiskScoreSeries.Select(p => new RiskScorePointDto(
+                Timestamp: p.Timestamp,
+                AvgScore: p.AvgScore,
+                EvaluationCount: p.EvaluationCount
+            )).ToList()
+        );
+
+        return Results.Ok(dto);
+    }
 }
