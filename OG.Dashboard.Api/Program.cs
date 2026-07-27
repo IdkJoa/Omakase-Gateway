@@ -29,6 +29,8 @@ builder.Services.AddAuthorization(options =>
 // (access_policies.created_by, user_roles, audit_logs). SRS §9.5.
 builder.Services.AddSingleton<Application.Common.Security.ILogSanitizer,
                               Application.Common.Security.LogSanitizer>();
+builder.Services.AddSingleton<Application.Common.Security.IOutputSanitizer,
+                              Application.Common.Security.HtmlOutputSanitizer>();
 builder.Services.AddScoped<Application.Common.Security.ICurrentUserService,
                            Infrastructure.Security.KeycloakCurrentUserService>();
 
@@ -66,8 +68,9 @@ var app = builder.Build();
 // Habilitar CORS antes de mapear los endpoints.
 app.UseCors(FrontendCors);
 
-// app.UseAuthentication();
-// app.UseAuthorization();
+app.UseAuthentication();
+app.UseRbacAuthorization();   // HU-028 T-058: roles de BD (user_roles) reemplazan los del JWT
+app.UseAuthorization();
 
 //  Endpoints de diagnóstico Aspire (/health y /alive)
 app.MapDefaultEndpoints();
@@ -82,13 +85,9 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-// T-088: Contratos de API mock (Contract-First) — pendientes de implementación real.
+// HU-028 T-058: autorización granular por endpoint (ReadAccess para lectura,
+// AdminOnly para escritura). Cada endpoint declara su propia policy.
 var apiGroup = app.MapGroup("");
-
-if (!app.Environment.IsDevelopment())
-{
-    apiGroup.RequireAuthorization("AdminOnly");
-}
 
 apiGroup.MapAuditLogsEndpoints();
 apiGroup.MapMetricsEndpoints();

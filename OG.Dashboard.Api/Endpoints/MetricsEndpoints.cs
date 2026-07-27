@@ -48,6 +48,7 @@ public static class MetricsEndpoints
 
         // GET /api/v1/metrics/summary
         group.MapGet("/summary", GetSummary)
+            .RequireAuthorization("ReadAccess")
             .WithName("GetMetricsSummary")
             .WithSummary("Obtener resumen de KPIs del Dashboard")
             .WithDescription(

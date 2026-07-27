@@ -102,6 +102,7 @@ public static class AuditLogsEndpoints
 
         // GET /api/v1/logs — Lista paginada de logs con filtros opcionales.
         group.MapGet("/", GetLogs)
+            .RequireAuthorization("ReadAccess")
             .WithName("GetAuditLogs")
             .WithSummary("Listar logs de auditoría paginados")
             .WithDescription(
@@ -111,6 +112,7 @@ public static class AuditLogsEndpoints
 
         // GET /api/v1/logs/{evaluationId} — Detalle de un log individual.
         group.MapGet("/{evaluationId:guid}", GetLogById)
+            .RequireAuthorization("ReadAccess")
             .WithName("GetAuditLogById")
             .WithSummary("Obtener detalle de un log de auditoría por EvaluationId");
 

@@ -3,6 +3,7 @@ using Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using OG.Dashboard.Api.Contracts.Common;
 using OG.Dashboard.Api.Contracts.Policies;
+using Application.Common.Security;
 
 namespace OG.Dashboard.Api.Endpoints;
 
@@ -48,7 +49,7 @@ public static class ServicePoliciesEndpoints
 
     // ── Handlers ──────────────────────────────────────────────────────────────
 
-    private static async Task<IResult> GetAll(Guid serviceId, OmakaseDbContext db, CancellationToken ct)
+    private static async Task<IResult> GetAll(Guid serviceId, OmakaseDbContext db, IOutputSanitizer enc, CancellationToken ct)
     {
         var sid = ProtectedServiceId.From(serviceId);
 
@@ -60,13 +61,14 @@ public static class ServicePoliciesEndpoints
             .Include(sp => sp.AccessPolicy)
             .ToListAsync(ct);
 
-        return Results.Ok(associations.Select(ToDto).ToList());
+        return Results.Ok(associations.Select(sp => ToDto(sp, enc)).ToList());
     }
 
     private static async Task<IResult> Associate(
         Guid serviceId,
         AssociatePolicyRequest request,
         OmakaseDbContext db,
+        IOutputSanitizer enc,
         ILoggerFactory loggerFactory,
         CancellationToken ct)
     {
@@ -120,7 +122,7 @@ public static class ServicePoliciesEndpoints
 
         association.AccessPolicy = policy;
         return Results.Created(
-            $"/api/v1/services/{serviceId}/policies/{request.PolicyId}", ToDto(association));
+            $"/api/v1/services/{serviceId}/policies/{request.PolicyId}", ToDto(association, enc));
     }
 
     private static async Task<IResult> Disassociate(
@@ -164,10 +166,10 @@ public static class ServicePoliciesEndpoints
     private static bool IsUniqueViolation(DbUpdateException ex) =>
         ex.InnerException is Npgsql.PostgresException { SqlState: "23505" };
 
-    private static ServicePolicyDto ToDto(Domain.Entities.ServicePolicy sp) => new(
+    private static ServicePolicyDto ToDto(Domain.Entities.ServicePolicy sp, IOutputSanitizer enc) => new(
         Id: sp.Id.Value,
         PolicyId: sp.PolicyId.Value,
-        PolicyName: sp.AccessPolicy?.Name ?? string.Empty,
+        PolicyName: enc.Sanitize(sp.AccessPolicy?.Name ?? string.Empty),
         PolicyType: sp.AccessPolicy?.Type.ToString() ?? string.Empty,
         Weight: sp.AccessPolicy?.Weight ?? 0m,
         IsEnabled: sp.IsEnabled,

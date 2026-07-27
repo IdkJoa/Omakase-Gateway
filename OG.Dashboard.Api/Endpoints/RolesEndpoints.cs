@@ -4,6 +4,7 @@ using Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Domain.Entities;
 using Domain.ValueObjects;
+using Application.Common.Security;
 
 namespace OG.Dashboard.Api.Endpoints;
 
@@ -22,17 +23,20 @@ public static class RolesEndpoints
 
         // GET /api/v1/roles
         rolesGroup.MapGet("/", GetAll)
+            .RequireAuthorization("ReadAccess")
             .WithName("GetRoles")
             .WithSummary("Listar roles del sistema")
             .WithDescription("Devuelve el catálogo RBAC de roles con número de usuarios asignados.");
 
         // GET /api/v1/roles/{id}
         rolesGroup.MapGet("/{id:guid}", GetById)
+            .RequireAuthorization("ReadAccess")
             .WithName("GetRoleById")
             .WithSummary("Obtener un rol por ID");
 
         // POST /api/v1/roles
         rolesGroup.MapPost("/", Create)
+            .RequireAuthorization("AdminOnly")
             .WithName("CreateRole")
             .WithSummary("Crear un nuevo rol")
             .Produces<RoleDto>(StatusCodes.Status201Created)
@@ -40,12 +44,14 @@ public static class RolesEndpoints
 
         // DELETE /api/v1/roles/{id}
         rolesGroup.MapDelete("/{id:guid}", Delete)
+            .RequireAuthorization("AdminOnly")
             .WithName("DeleteRole")
             .WithSummary("Eliminar un rol (solo si no tiene usuarios asignados)")
             .Produces(StatusCodes.Status204NoContent);
 
         // PUT /api/v1/roles/{id}
         rolesGroup.MapPut("/{id:guid}", Update)
+            .RequireAuthorization("AdminOnly")
             .WithName("UpdateRole")
             .WithSummary("Actualizar un rol existente")
             .Produces(StatusCodes.Status204NoContent)
@@ -59,12 +65,14 @@ public static class RolesEndpoints
 
         // GET /api/v1/users/{userId}/roles
         userRolesGroup.MapGet("/", GetRolesForUser)
+            .RequireAuthorization("ReadAccess")
             .WithName("GetRolesForUser")
             .WithSummary("Listar roles de un usuario")
             .WithDescription("Devuelve los roles asignados a un usuario específico.");
 
         // POST /api/v1/users/{userId}/roles
         userRolesGroup.MapPost("/", AssignRoleToUser)
+            .RequireAuthorization("AdminOnly")
             .WithName("AssignRoleToUser")
             .WithSummary("Asignar un rol a un usuario")
             .Produces(StatusCodes.Status204NoContent)
@@ -72,6 +80,7 @@ public static class RolesEndpoints
 
         // DELETE /api/v1/users/{userId}/roles/{roleId}
         userRolesGroup.MapDelete("/{roleId:guid}", RevokeRoleFromUser)
+            .RequireAuthorization("AdminOnly")
             .WithName("RevokeRoleFromUser")
             .WithSummary("Revocar un rol de un usuario")
             .Produces(StatusCodes.Status204NoContent);
@@ -79,7 +88,7 @@ public static class RolesEndpoints
         return app;
     }
 
-    private static async Task<IResult> GetAll(OmakaseDbContext db)
+    private static async Task<IResult> GetAll(OmakaseDbContext db, IOutputSanitizer enc)
     {
         var roles = await db.Roles
             .AsNoTracking()
@@ -92,10 +101,17 @@ public static class RolesEndpoints
             ))
             .ToListAsync();
 
-        return Results.Ok(roles);
+        // T-060: Output encoding para prevención de XSS en campos de origen externo.
+        var encoded = roles.Select(r => r with
+        {
+            Name = enc.Sanitize(r.Name),
+            Description = r.Description is not null ? enc.Sanitize(r.Description) : null
+        }).ToList();
+
+        return Results.Ok(encoded);
     }
 
-    private static async Task<IResult> GetById(Guid id, OmakaseDbContext db)
+    private static async Task<IResult> GetById(Guid id, OmakaseDbContext db, IOutputSanitizer enc)
     {
         var roleId = RoleId.From(id);
         var role = await db.Roles
@@ -114,7 +130,13 @@ public static class RolesEndpoints
             return Results.NotFound(new ErrorResponse("NOT_FOUND", $"Rol '{id}' no encontrado.",
                 System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
 
-        return Results.Ok(role);
+        var encoded = role with
+        {
+            Name = enc.Sanitize(role.Name),
+            Description = role.Description is not null ? enc.Sanitize(role.Description) : null
+        };
+
+        return Results.Ok(encoded);
     }
 
     private static async Task<IResult> Create(CreateRoleRequest request, OmakaseDbContext db)

@@ -4,6 +4,7 @@ using Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Domain.Entities;
 using Domain.ValueObjects;
+using Application.Common.Security;
 
 namespace OG.Dashboard.Api.Endpoints;
 
@@ -22,6 +23,7 @@ public static class UsersEndpoints
 
         // GET /api/v1/users
         group.MapGet("/", GetAll)
+            .RequireAuthorization("ReadAccess")
             .WithName("GetUsers")
             .WithSummary("Listar usuarios del sistema")
             .WithDescription(
@@ -31,6 +33,7 @@ public static class UsersEndpoints
 
         // GET /api/v1/users/{id}
         group.MapGet("/{id:guid}", GetById)
+            .RequireAuthorization("ReadAccess")
             .WithName("GetUserById")
             .WithSummary("Obtener detalle completo de un usuario por ID");
 
@@ -39,6 +42,7 @@ public static class UsersEndpoints
 
     private static async Task<IResult> GetAll(
         OmakaseDbContext db,
+        IOutputSanitizer enc,
         int page = 1,
         int pageSize = 100,
         string? userType = null,
@@ -90,10 +94,16 @@ public static class UsersEndpoints
             ))
             .ToListAsync();
 
-        return Results.Ok(new PagedResponse<UserDto>(page, pageSize, total, users));
+        // T-060: Output encoding para prevención de XSS en campos de origen externo.
+        var encoded = users.Select(u => u with
+        {
+            Username = enc.Sanitize(u.Username)
+        }).ToList();
+
+        return Results.Ok(new PagedResponse<UserDto>(page, pageSize, total, encoded));
     }
 
-    private static async Task<IResult> GetById(Guid id, OmakaseDbContext db)
+    private static async Task<IResult> GetById(Guid id, OmakaseDbContext db, IOutputSanitizer enc)
     {
         var typedUserId = UserId.From(id);
         var user = await db.Users
@@ -109,7 +119,7 @@ public static class UsersEndpoints
 
         var dto = new UserDto(
             user.Id.Value,
-            user.Username,
+            enc.Sanitize(user.Username),
             user.Type.ToString(),
             user.IsActive,
             user.FailedAttempts,

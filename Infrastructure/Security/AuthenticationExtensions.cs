@@ -40,9 +40,11 @@ public static class AuthenticationExtensions
                     OnAuthenticationFailed = async context =>
                     {
                         var logger = context.HttpContext.RequestServices.GetRequiredService<Microsoft.Extensions.Logging.ILogger<JwtBearerHandler>>();
+                        var logSanitizer = context.HttpContext.RequestServices.GetService<Application.Common.Security.ILogSanitizer>()
+                            ?? new Application.Common.Security.LogSanitizer();
                         logger.LogWarning("AUDIT SEC-001: Fallo de autenticación JWT. Posible token inválido, expirado o manipulado detectado desde IP {Ip}. Detalles: {Exception}", 
-                            context.HttpContext.Connection.RemoteIpAddress, 
-                            context.Exception.Message);
+                            logSanitizer.Sanitize(context.HttpContext.Connection.RemoteIpAddress?.ToString()), 
+                            logSanitizer.Sanitize(context.Exception.Message));
                             
                         try
                         {
