@@ -16,7 +16,6 @@ public static class MetricsEndpoints
             .WithTags("Metrics")
             .WithOpenApi();
 
-        // GET /api/v1/metrics/summary?from=2026-07-01T00:00:00Z&to=2026-07-27T23:59:59Z
         group.MapGet("/summary", GetSummary)
             .RequireAuthorization("ReadAccess")
             .WithName("GetMetricsSummary")
