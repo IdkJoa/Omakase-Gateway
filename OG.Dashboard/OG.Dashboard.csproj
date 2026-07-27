@@ -17,7 +17,6 @@
         <Folder Include="Features\Policies\" />
         <Folder Include="Features\RiskConfig\" />
         <Folder Include="Features\Roles\" />
-        <Folder Include="Features\ServicePolicies\" />
         <Folder Include="Features\Users\" />
     </ItemGroup>
 

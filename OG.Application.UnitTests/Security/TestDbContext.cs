@@ -24,6 +24,14 @@ public sealed class TestDbContext : OmakaseDbContext
             v => v == null ? null : v.RootElement.GetRawText(),
             v => v == null ? null : JsonDocument.Parse(v));
 
+        var dateTimeOffsetConverter = new ValueConverter<DateTimeOffset, string>(
+            v => v.ToUniversalTime().ToString("O"),
+            v => DateTimeOffset.Parse(v));
+
+        var nullableDateTimeOffsetConverter = new ValueConverter<DateTimeOffset?, string?>(
+            v => v == null ? null : v.Value.ToUniversalTime().ToString("O"),
+            v => v == null ? null : DateTimeOffset.Parse(v));
+
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
         {
             foreach (var property in entityType.GetProperties())
@@ -31,6 +39,14 @@ public sealed class TestDbContext : OmakaseDbContext
                 if (property.ClrType == typeof(JsonDocument))
                 {
                     property.SetValueConverter(jsonConverter);
+                }
+                else if (property.ClrType == typeof(DateTimeOffset))
+                {
+                    property.SetValueConverter(dateTimeOffsetConverter);
+                }
+                else if (property.ClrType == typeof(DateTimeOffset?))
+                {
+                    property.SetValueConverter(nullableDateTimeOffsetConverter);
                 }
             }
         }

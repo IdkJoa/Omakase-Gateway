@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Routing;
 using OG.Dashboard.Api.Contracts.Common;
 using OG.Dashboard.Api.Contracts.Services;
 using OG.Dashboard.Features.Services;
+using Application.Common.Security;
 using System.Diagnostics;
 
 namespace OG.Dashboard.Api.Endpoints;
@@ -27,17 +28,20 @@ public static class ServicesEndpoints
 
         // GET /api/v1/services
         group.MapGet("/", GetAll)
+            .RequireAuthorization("ReadAccess")
             .WithName("GetServices")
             .WithSummary("Listar servicios protegidos")
             .WithDescription("Devuelve la lista paginada de servicios protegidos por el Gateway. Soporta filtro por isActive.");
 
         // GET /api/v1/services/{id}
         group.MapGet("/{id:guid}", GetById)
+            .RequireAuthorization("ReadAccess")
             .WithName("GetServiceById")
             .WithSummary("Obtener un servicio protegido por ID");
 
         // POST /api/v1/services
         group.MapPost("/", Create)
+            .RequireAuthorization("AdminOnly")
             .WithName("CreateService")
             .WithSummary("Registrar un nuevo servicio protegido")
             .Produces<ProtectedServiceDto>(StatusCodes.Status201Created)
@@ -45,12 +49,14 @@ public static class ServicesEndpoints
 
         // PUT /api/v1/services/{id}
         group.MapPut("/{id:guid}", Update)
+            .RequireAuthorization("AdminOnly")
             .WithName("UpdateService")
             .WithSummary("Actualizar un servicio protegido existente")
             .Produces<ProtectedServiceDto>(StatusCodes.Status200OK);
 
         // DELETE /api/v1/services/{id}
         group.MapDelete("/{id:guid}", Delete)
+            .RequireAuthorization("AdminOnly")
             .WithName("DeleteService")
             .WithSummary("Eliminar (soft-delete) un servicio protegido")
             .Produces(StatusCodes.Status204NoContent);
@@ -65,6 +71,7 @@ public static class ServicesEndpoints
         [FromQuery] int pageSize,
         [FromQuery] bool? isActive,
         [FromServices] GetProtectedServicesHandler handler,
+        [FromServices] IOutputSanitizer enc,
         CancellationToken ct)
     {
         var result = await handler.GetProtectedServicesAsync(page, pageSize, isActive, ct);
@@ -75,7 +82,7 @@ public static class ServicesEndpoints
 
         var (totalCount, services) = result.Value;
         var dtos = services.Select(s => new ProtectedServiceDto(
-            s.Id.Value, s.Name, s.UpstreamUrl, s.RequiresAuth, s.IsActive, s.CreatedAt, s.ServicePolicies.Count)).ToList();
+            s.Id.Value, enc.Sanitize(s.Name), enc.Sanitize(s.UpstreamUrl), s.RequiresAuth, s.IsActive, s.CreatedAt, s.ServicePolicies.Count)).ToList();
             
         return Results.Ok(new PagedResponse<ProtectedServiceDto>(page, pageSize, totalCount, dtos));
     }
@@ -83,6 +90,7 @@ public static class ServicesEndpoints
     private static async Task<IResult> GetById(
         Guid id,
         [FromServices] GetProtectedServiceHandler handler,
+        [FromServices] IOutputSanitizer enc,
         CancellationToken ct)
     {
         var result = await handler.GetProtectedServiceAsync(id, ct);
@@ -97,7 +105,7 @@ public static class ServicesEndpoints
             
         var service = result.Value;
         var dto = new ProtectedServiceDto(
-            service.Id.Value, service.Name, service.UpstreamUrl, service.RequiresAuth, service.IsActive, service.CreatedAt, service.ServicePolicies.Count);
+            service.Id.Value, enc.Sanitize(service.Name), enc.Sanitize(service.UpstreamUrl), service.RequiresAuth, service.IsActive, service.CreatedAt, service.ServicePolicies.Count);
             
         return Results.Ok(dto);
     }
@@ -105,6 +113,7 @@ public static class ServicesEndpoints
     private static async Task<IResult> Create(
         [FromBody] UpsertServiceRequest request,
         [FromServices] CreateProtectedServiceHandler handler,
+        [FromServices] IOutputSanitizer enc,
         CancellationToken ct)
     {
         var result = await handler.CreateProtectedServiceAsync(request.Name, request.UpstreamUrl, request.RequiresAuth, request.IsActive, ct);
@@ -121,7 +130,7 @@ public static class ServicesEndpoints
 
         var service = result.Value;
         var dto = new ProtectedServiceDto(
-            service.Id.Value, service.Name, service.UpstreamUrl, service.RequiresAuth, service.IsActive, service.CreatedAt, 0);
+            service.Id.Value, enc.Sanitize(service.Name), enc.Sanitize(service.UpstreamUrl), service.RequiresAuth, service.IsActive, service.CreatedAt, 0);
             
         return Results.Created($"/api/v1/services/{dto.Id}", dto);
     }
@@ -130,6 +139,7 @@ public static class ServicesEndpoints
         Guid id,
         [FromBody] UpsertServiceRequest request,
         [FromServices] UpdateProtectedServiceHandler handler,
+        [FromServices] IOutputSanitizer enc,
         CancellationToken ct)
     {
         var result = await handler.UpdateProtectedServiceAsync(id, request.Name, request.UpstreamUrl, request.RequiresAuth, request.IsActive, ct);
@@ -148,7 +158,7 @@ public static class ServicesEndpoints
 
         var service = result.Value;
         var dto = new ProtectedServiceDto(
-            service.Id.Value, service.Name, service.UpstreamUrl, service.RequiresAuth, service.IsActive, service.CreatedAt, service.ServicePolicies.Count);
+            service.Id.Value, enc.Sanitize(service.Name), enc.Sanitize(service.UpstreamUrl), service.RequiresAuth, service.IsActive, service.CreatedAt, service.ServicePolicies.Count);
             
         return Results.Ok(dto);
     }
