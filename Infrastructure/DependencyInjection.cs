@@ -52,61 +52,37 @@ public static class DependencyInjection
             var options = sp.GetRequiredService<IOptions<GeoLocationOptions>>().Value;
             client.BaseAddress = new Uri(options.BaseUrl);
             client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
-        });
+        })
+        .SetHandlerLifetime(TimeSpan.FromMinutes(5));
 
-        // HU-011 & T-022: Evaluador de regla Geofencing (contrato IRuleEvaluator, O/C)
         services.AddScoped<IRuleEvaluator, GeofenceRuleEvaluator>();
-
-        // HU-012 & T-023: Evaluador de regla Time-Window (contrato IRuleEvaluator, O/C)
         services.AddScoped<IRuleEvaluator, TimeWindowRuleEvaluator>();
-
-        // HU-013 & T-024: Servicio de huella digital de navegador
-        services.AddSingleton<IFingerprintService, FingerprintService>();
-
-        // HU-013 & T-025: Evaluador de regla Fingerprint (contrato IRuleEvaluator, O/C)
+        services.AddSingleton<IFingerprintService, FingerprintService>(); 
         services.AddScoped<IRuleEvaluator, FingerprintRuleEvaluator>();
-
-        // HU-014 & T-027: Servicio de último acceso del usuario
-        services.AddScoped<ILastAccessService, Infrastructure.Persistence.LastAccessService>();
-
-        // HU-014 & T-027: Evaluador de regla Viaje Imposible (contrato IRuleEvaluator, O/C)
+        services.AddScoped<ILastAccessService, LastAccessService>();
         services.AddScoped<IRuleEvaluator, ImpossibleTravelRuleEvaluator>();
-
-        // HU-015 & T-028/T-029: Motor de scoring. Puros y sin estado -> Singleton
-        // (una instancia; evita asignación en heap por petición).
         services.AddSingleton<IPolicyScoreCalculator, PolicyScoreCalculator>();
         services.AddSingleton<IRiskScoreConsolidator, RiskScoreConsolidator>();
-
-        // HU-015: Puertos de datos del motor (usan DbContext scoped -> Scoped).
         services.AddScoped<IServicePolicyProvider, ServicePolicyProvider>();
         services.AddScoped<IRiskConfigProvider, RiskConfigProvider>();
-
-        // HU-016/017: Detección de anomalías con RandomizedPCA (ML.NET). Reemplaza al StubAnomalyDetector.
-        // Config tipada (options pattern); overridable vía Configure<AnomalyDetectionOptions> en el host.
         services.AddOptions<AnomalyDetectionOptions>();
         services.AddSingleton(sp => sp.GetRequiredService<IOptions<AnomalyDetectionOptions>>().Value);
-
-        // Componentes puros/sin estado -> Singleton.
+        
         services.AddSingleton<IFeatureExtractor>(sp =>
             new FeatureExtractor(sp.GetRequiredService<AnomalyDetectionOptions>()));
+        
         services.AddSingleton(sp =>
             new AnomalyModelTrainer(sp.GetRequiredService<AnomalyDetectionOptions>()));
+        
         services.AddSingleton<IAnomalyModelCache, AnomalyModelCache>();
-
-        // Canal de actualización de perfil (fire-and-forget) + worker de persistencia asíncrona (T-033/T-034).
         services.AddSingleton<IProfileUpdateChannel, InMemoryProfileUpdateChannel>();
         services.AddHostedService<ProfileUpdateWorker>();
-
-        // HU-017 T-035: reentrenamiento periódico (invalida caché + actualiza last_trained_at).
         services.AddHostedService<AnomalyRetrainWorker>();
-
-        // Store de perfil (usa DbContext scoped) y detector real -> Scoped.
         services.AddScoped<IUserProfileStore, UserProfileStore>();
         services.AddScoped<IAnomalyDetector, RandomizedPcaAnomalyDetector>();
 
         // HU-017: services.AddSingleton<ISecretProvider, KeyVaultSecretProvider>();
 
-        // HU-019 / T-038: Autenticación de Client Users con JWT propio del Gateway.
         services.AddScoped<IGatewayTokenService, GatewayTokenService>();
         services.AddScoped<ILoginService, LoginService>();
 
@@ -115,8 +91,7 @@ public static class DependencyInjection
         // (mismo patrón que IRedisService). Puerto de estado MFA usa DbContext -> Scoped.
         services.AddSingleton<Application.Common.Security.Mfa.ITotpService,
                               Application.Common.Security.Mfa.TotpService>();
-        services.AddSingleton<Application.Common.Security.Mfa.ITotpSecretProtector,
-                              Infrastructure.Security.AesGcmTotpSecretProtector>();
+        services.AddSingleton<Application.Common.Security.Mfa.ITotpSecretProtector, AesGcmTotpSecretProtector>();
         services.AddSingleton<Application.Common.Security.Mfa.IChallengeStore, ChallengeStore>();
         services.AddSingleton<Application.Common.Security.Mfa.IStepUpStore, StepUpStore>();
         services.AddSingleton<Application.Common.Security.Mfa.IMfaAttemptStore, MfaAttemptStore>();
