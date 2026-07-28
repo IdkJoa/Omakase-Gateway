@@ -48,10 +48,12 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "OG Dashboard API v1"));
 }
 
-app.MapAuditLogsEndpoints();
-app.MapMetricsEndpoints();
 // HU-028 T-058: autorización granular por endpoint (ReadAccess para lectura,
 // AdminOnly para escritura). Cada endpoint declara su propia policy.
+// NOTA: cada endpoint se registra UNA sola vez. El grupo tiene prefijo vacío y sin
+// metadata, por lo que registrar además en `app` producía rutas duplicadas y rompía el
+// arranque (InvalidOperationException "Duplicate endpoint name"). Se conserva una sola
+// registración por endpoint (estructura previa al merge de rendimiento).
 var apiGroup = app.MapGroup("");
 
 apiGroup.MapAuditLogsEndpoints();
@@ -64,10 +66,7 @@ apiGroup.MapRolesEndpoints();
 // (AdminOnly en mutaciones, ReadAccess en lecturas).
 app.MapPoliciesEndpoints();
 app.MapRiskConfigEndpoints();
-app.MapRolesEndpoints();
 app.MapServicePoliciesEndpoints();
-app.MapServicesEndpoints();
-app.MapUsersEndpoints();
 app.MapUserProfileEndpoints();
 
 // HU-047: gestión de MFA (TOTP) por administrador — AdminOnly.
