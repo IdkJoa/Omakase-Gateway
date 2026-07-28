@@ -1,19 +1,16 @@
-using System.Text.RegularExpressions;
+using System.Buffers;
 
 namespace Application.Common.Security;
 
 /// <summary>
-/// Implementacion de <see cref="ILogSanitizer"/> basada en expresiones regulares compiladas.
-/// Registrar como Singleton (sin estado mutable).
+/// Implementación optimizada de <see cref="ILogSanitizer"/> con Fast-Path Zero-Allocation (HU-028 T-059).
+/// Neutraliza caracteres de inyección en logs sin generar objetos innecesarios en la Heap.
+/// Registrar como Singleton (thread-safe, sin estado mutable).
 /// </summary>
 public sealed class LogSanitizer : ILogSanitizer
 {
-    // Neutraliza caracteres que pueden falsificar entradas de log (log injection):
-    //   0x00-0x1F      controles ASCII (NUL, BS, HT, LF, VT, FF, CR),
-    //   0x7F-0x9F      DEL y controles C1 (incluye NEL, U+0085),
-    //   U+2028/U+2029  separadores de linea y de parrafo Unicode.
-    private static readonly Regex ControlCharacters =
-        new(@"[\x00-\x1F\x7F-\x9F\u2028\u2029]", RegexOptions.Compiled, TimeSpan.FromMilliseconds(100));
+    private static bool IsControlChar(char c) =>
+        c <= 0x1F || (c >= 0x7F && c <= 0x9F) || c == '\u2028' || c == '\u2029';
 
     /// <inheritdoc/>
     public string Sanitize(string? input, int maxLength = 512)
@@ -21,13 +18,51 @@ public sealed class LogSanitizer : ILogSanitizer
         if (string.IsNullOrWhiteSpace(input))
             return string.Empty;
 
-        // 1. Reemplazar caracteres de control con espacio (previene log injection)
-        var sanitized = ControlCharacters.Replace(input, " ");
+        ReadOnlySpan<char> span = input.AsSpan().Trim();
+        if (span.IsEmpty)
+            return string.Empty;
 
-        // 2. Truncar a longitud maxima
-        if (sanitized.Length > maxLength)
-            sanitized = sanitized[..maxLength];
+        if (span.Length > maxLength)
+            span = span[..maxLength];
 
-        return sanitized.Trim();
+        // 1. Fast-Path: Escanear si la cadena requiere modificación
+        bool needsSanitization = false;
+        foreach (char c in span)
+        {
+            if (IsControlChar(c))
+            {
+                needsSanitization = true;
+                break;
+            }
+        }
+
+        // Si la cadena no contiene caracteres de control y no requiere recortado respecto a la entrada:
+        if (!needsSanitization && span.Length == input.Length)
+            return input;
+
+        if (!needsSanitization)
+            return span.ToString();
+
+        // 2. Slow-Path: Reemplazar caracteres de control usando stackalloc char[]
+        char[]? rented = null;
+        Span<char> buffer = span.Length <= 512
+            ? stackalloc char[span.Length]
+            : (rented = ArrayPool<char>.Shared.Rent(span.Length));
+
+        try
+        {
+            for (int i = 0; i < span.Length; i++)
+            {
+                char c = span[i];
+                buffer[i] = IsControlChar(c) ? ' ' : c;
+            }
+
+            return buffer[..span.Length].Trim().ToString();
+        }
+        finally
+        {
+            if (rented != null)
+                ArrayPool<char>.Shared.Return(rented);
+        }
     }
 }
