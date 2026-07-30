@@ -2,6 +2,8 @@
   "realm": "omakase-gateway",
   "enabled": true,
   "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 36000,
+  "accessTokenLifespan": 300,
   "users": [
     {
       "username": "admin",
