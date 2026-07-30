@@ -11,7 +11,6 @@
       <Folder Include="GeoLocation\" />
       <Folder Include="KeyVault\" />
       <Folder Include="Persistence\" />
-      <Folder Include="Queries\" />
       <Folder Include="Redis\" />
     </ItemGroup>
 

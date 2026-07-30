@@ -1,34 +1,26 @@
+using Domain.Entities;
+using Infrastructure;
+using Microsoft.EntityFrameworkCore;
 using OG.Dashboard.Api.Contracts.Common;
 using OG.Dashboard.Api.Contracts.RiskConfig;
 
 namespace OG.Dashboard.Api.Endpoints;
 
 /// <summary>
-/// Endpoints mock de configuración del motor de evaluación de riesgo.
-/// GET /api/v1/risk-config  — Leer la configuración vigente.
-/// PUT /api/v1/risk-config  — Actualizar pesos y umbrales.
-///
-/// La entidad RiskScoreConfig es una fila única en BD; el sistema expone
-/// un único resource (sin colección) para representar esta singularidad.
-/// Fórmula: RiskScore = Wp*PolicyScore + Wa*AnomalyScore + ColdStartPenalty(n)
+/// Configuración del motor de evaluación de riesgo (HU-025 / T-052), sobre la fila única
+/// <c>risk_score_config</c>. Sustituye el mock Contract-First (T-088) conservando su contrato
+/// (nombres de campo y ruta <c>/api/v1/risk-config</c>) para no romper el front ya construido
+/// (editor de pesos de HU-045).
+/// <para>
+/// La entidad es una fila única (singleton global). El motor lee la config en cada evaluación
+/// (<c>RiskConfigProvider</c>, sin caché), por lo que un PUT surte efecto en la siguiente
+/// petición sin invalidación (criterio de aceptación de HU-025).
+/// </para>
+/// <para>Autorización: GET = <c>ReadAccess</c> (ADMIN|VIEWER); PUT = <c>AdminOnly</c>.</para>
 /// </summary>
 public static class RiskConfigEndpoints
 {
-    // ── Datos mock ────────────────────────────────────────────────────────────
-
-    // Estado mutable en memoria para el mock — simula lectura/escritura en BD.
-    private static RiskScoreConfigDto _current = new(
-        Id: Guid.Parse("c0de0001-0000-0000-0000-000000000000"),
-        PolicyWeight: 0.6m,
-        AnomalyWeight: 0.4m,
-        ColdStartPenalty: 30.0m,
-        ColdStartN: 10,
-        BlockThreshold: 75.0m,
-        ChallengeThreshold: 50.0m,
-        UpdatedAt: new DateTimeOffset(2026, 5, 1, 0, 0, 0, TimeSpan.Zero)
-    );
-
-    // ── Registro de endpoints ─────────────────────────────────────────────────
+    private const decimal WeightSumTolerance = 0.001m;
 
     public static IEndpointRouteBuilder MapRiskConfigEndpoints(this IEndpointRouteBuilder app)
     {
@@ -37,23 +29,15 @@ public static class RiskConfigEndpoints
             .WithTags("Risk Score Configuration")
             .WithOpenApi();
 
-        // GET /api/v1/risk-config
         group.MapGet("/", Get)
+            .RequireAuthorization("ReadAccess")
             .WithName("GetRiskConfig")
-            .WithSummary("Obtener la configuración vigente del motor de riesgo")
-            .WithDescription(
-                "Devuelve los pesos (PolicyWeight, AnomalyWeight), penalización cold-start " +
-                "y umbrales de veredicto (BlockThreshold, ChallengeThreshold). " +
-                "Corresponde a la fila única de risk_score_config en PostgreSQL.");
+            .WithSummary("Obtener la configuración vigente del motor de riesgo");
 
-        // PUT /api/v1/risk-config
         group.MapPut("/", Update)
+            .RequireAuthorization("AdminOnly")
             .WithName("UpdateRiskConfig")
-            .WithSummary("Actualizar la configuración del motor de riesgo")
-            .WithDescription(
-                "Persiste nuevos pesos y umbrales. " +
-                "Validación: PolicyWeight + AnomalyWeight debe ser igual a 1. " +
-                "ChallengeThreshold debe ser menor que BlockThreshold.")
+            .WithSummary("Actualizar pesos y umbrales del Risk Score")
             .Produces<RiskScoreConfigDto>(StatusCodes.Status200OK)
             .ProducesValidationProblem();
 
@@ -62,37 +46,130 @@ public static class RiskConfigEndpoints
 
     // ── Handlers ──────────────────────────────────────────────────────────────
 
-    private static IResult Get() => Results.Ok(_current);
-
-    private static IResult Update(UpdateRiskConfigRequest request)
+    private static async Task<IResult> Get(
+        OmakaseDbContext db, ILoggerFactory loggerFactory, CancellationToken ct)
     {
-        // Validación de negocio: pesos deben sumar 1
-        var weightSum = request.PolicyWeight + request.AnomalyWeight;
-        if (Math.Abs((double)weightSum - 1.0) > 0.001)
-            return Results.BadRequest(new ErrorResponse(
-                ErrorCode: "VALIDATION_ERROR",
-                Message: $"PolicyWeight ({request.PolicyWeight}) + AnomalyWeight ({request.AnomalyWeight}) debe ser igual a 1. Suma actual: {weightSum}.",
-                TraceId: System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
-
-        // Validación de negocio: umbrales coherentes
-        if (request.ChallengeThreshold >= request.BlockThreshold)
-            return Results.BadRequest(new ErrorResponse(
-                ErrorCode: "VALIDATION_ERROR",
-                Message: $"ChallengeThreshold ({request.ChallengeThreshold}) debe ser menor que BlockThreshold ({request.BlockThreshold}).",
-                TraceId: System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
-
-        // Mock: actualizar el estado en memoria.
-        _current = _current with
+        // Fila única (singleton): OrderBy explícito para una lectura determinista y silenciar
+        // la advertencia de EF sobre FirstOrDefault sin orden.
+        var config = await db.RiskScoreConfigs.AsNoTracking()
+            .OrderBy(r => r.UpdatedAt).FirstOrDefaultAsync(ct);
+        if (config is null)
         {
-            PolicyWeight = request.PolicyWeight,
-            AnomalyWeight = request.AnomalyWeight,
-            ColdStartPenalty = request.ColdStartPenalty,
-            ColdStartN = request.ColdStartN,
-            BlockThreshold = request.BlockThreshold,
-            ChallengeThreshold = request.ChallengeThreshold,
-            UpdatedAt = DateTimeOffset.UtcNow
-        };
+            loggerFactory.CreateLogger(nameof(RiskConfigEndpoints))
+                .LogWarning("risk_score_config no tiene filas al leer la configuración; falta el seed (HU-006).");
+            return ConfigMissing();
+        }
 
-        return Results.Ok(_current);
+        return Results.Ok(ToDto(config));
     }
+
+    private static async Task<IResult> Update(
+        UpdateRiskConfigRequest request, OmakaseDbContext db, ILoggerFactory loggerFactory, CancellationToken ct)
+    {
+        var validation = Validate(request);
+        if (validation is not null)
+            return validation;
+
+        var logger = loggerFactory.CreateLogger(nameof(RiskConfigEndpoints));
+
+        // Fila única: se lee rastreada para actualizarla en sitio (no AsNoTracking).
+        // OrderBy explícito → lectura determinista y sin la advertencia de EF.
+        var config = await db.RiskScoreConfigs.OrderBy(r => r.UpdatedAt).FirstOrDefaultAsync(ct);
+        if (config is null)
+        {
+            logger.LogWarning("risk_score_config no tiene filas al actualizar; falta el seed (HU-006).");
+            return ConfigMissing();
+        }
+
+        config.PolicyWeight       = request.PolicyWeight;
+        config.AnomalyWeight      = request.AnomalyWeight;
+        config.ColdStartPenalty   = request.ColdStartPenalty;
+        config.ColdStartN         = request.ColdStartN;
+        config.BlockThreshold     = request.BlockThreshold;
+        config.ChallengeThreshold = request.ChallengeThreshold;
+        config.UpdatedAt          = DateTimeOffset.UtcNow;
+
+        try
+        {
+            await db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException ex)
+        {
+            logger.LogError(ex, "Error de persistencia al actualizar risk_score_config.");
+            return InternalError("No se pudo guardar la configuración del Risk Score.");
+        }
+
+        logger.LogInformation(
+            "risk_score_config actualizada: Wp={PolicyWeight} Wa={AnomalyWeight} allow(challengeThreshold)={AllowCeiling} challenge(blockThreshold)={ChallengeCeiling}.",
+            request.PolicyWeight, request.AnomalyWeight, request.ChallengeThreshold, request.BlockThreshold);
+
+        return Results.Ok(ToDto(config));
+    }
+
+    // ── Validación (T-052) ──────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Reglas de T-052: pesos en [0,1] que suman 1.0 (±0.001), umbrales enteros en [0,100]
+    /// con el de desafío &lt; el de bloqueo, penalización en [0,100] y N ≥ 1. Devuelve el
+    /// 400 listo o null. (<c>ChallengeThreshold</c> es el techo de ALLOW y <c>BlockThreshold</c>
+    /// el de CHALLENGE, por eso la validación exige ChallengeThreshold &lt; BlockThreshold.)
+    /// </summary>
+    private static IResult? Validate(UpdateRiskConfigRequest r)
+    {
+        if (r.PolicyWeight is < 0m or > 1m || r.AnomalyWeight is < 0m or > 1m)
+            return Error("Los pesos (PolicyWeight, AnomalyWeight) deben estar en el rango [0,1].");
+
+        if (Math.Abs((r.PolicyWeight + r.AnomalyWeight) - 1m) > WeightSumTolerance)
+            return Error($"PolicyWeight ({r.PolicyWeight}) + AnomalyWeight ({r.AnomalyWeight}) " +
+                         $"debe ser igual a 1.0 (tolerancia ±{WeightSumTolerance}).");
+
+        if (!IsIntegerInRange(r.ChallengeThreshold, 0, 100))
+            return Error("ChallengeThreshold debe ser un entero en el rango [0,100].");
+
+        if (!IsIntegerInRange(r.BlockThreshold, 0, 100))
+            return Error("BlockThreshold debe ser un entero en el rango [0,100].");
+
+        if (r.ChallengeThreshold >= r.BlockThreshold)
+            return Error($"ChallengeThreshold ({r.ChallengeThreshold}), el techo de ALLOW, debe ser menor " +
+                         $"que BlockThreshold ({r.BlockThreshold}), el techo de CHALLENGE.");
+
+        if (r.ColdStartPenalty is < 0m or > 100m)
+            return Error("ColdStartPenalty debe estar en el rango [0,100].");
+
+        if (r.ColdStartN < 1)
+            return Error("ColdStartN debe ser un entero mayor o igual a 1.");
+
+        return null;
+    }
+
+    private static bool IsIntegerInRange(decimal value, decimal min, decimal max) =>
+        value == Math.Truncate(value) && value >= min && value <= max;
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private static RiskScoreConfigDto ToDto(RiskScoreConfig c) => new(
+        Id: c.Id.Value,
+        PolicyWeight: c.PolicyWeight,
+        AnomalyWeight: c.AnomalyWeight,
+        ColdStartPenalty: c.ColdStartPenalty,
+        ColdStartN: c.ColdStartN,
+        BlockThreshold: c.BlockThreshold,
+        ChallengeThreshold: c.ChallengeThreshold,
+        UpdatedAt: c.UpdatedAt);
+
+    private static string TraceId() =>
+        System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A";
+
+    private static IResult Error(string message) =>
+        Results.BadRequest(new ErrorResponse("VALIDATION_ERROR", message, TraceId()));
+
+    private static IResult ConfigMissing() =>
+        Results.NotFound(new ErrorResponse(
+            "NOT_FOUND",
+            "risk_score_config no tiene filas. Ejecuta el seed (HU-006) antes de operar.",
+            TraceId()));
+
+    private static IResult InternalError(string message) =>
+        Results.Json(new ErrorResponse("INTERNAL_ERROR", message, TraceId()),
+            statusCode: StatusCodes.Status500InternalServerError);
 }

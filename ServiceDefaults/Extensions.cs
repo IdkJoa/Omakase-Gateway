@@ -10,6 +10,7 @@ using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 using Microsoft.Extensions.Configuration;
+using OpenTelemetry.Resources;
 
 namespace ServiceDefaults;
 
@@ -28,7 +29,7 @@ public static class Extensions
         builder.Services.AddSerilog((services, lc) => lc
             .MinimumLevel.Information()
             .Enrich.FromLogContext()
-            .Enrich.WithProperty("Application", builder.Environment.ApplicationName)
+            .Enrich.WithProperty("OG.Gateway", builder.Environment.ApplicationName)
             .WriteTo.Console()
             .WriteTo.GrafanaLoki(lokiUrl));
 
@@ -66,6 +67,7 @@ public static class Extensions
         });
 
         builder.Services.AddOpenTelemetry()
+            .ConfigureResource(resource => resource.AddService(builder.Environment.ApplicationName))
             .WithMetrics(metrics =>
             {
                 metrics.AddAspNetCoreInstrumentation()

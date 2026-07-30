@@ -2,10 +2,10 @@ using System.Text;
 using Application.Common.Options;
 using Application.Common.Security;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 
-namespace Microsoft.Extensions.DependencyInjection;
+namespace OmakaseGateway.Api;
 
 public static class JwtConfigExtensions
 {

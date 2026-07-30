@@ -76,6 +76,7 @@ public static class PoliciesEndpoints
 
     private static async Task<IResult> GetAll(
         OmakaseDbContext db,
+        IOutputSanitizer enc,
         CancellationToken ct,
         int page = 1,
         int pageSize = 25,
@@ -104,19 +105,19 @@ public static class PoliciesEndpoints
             .Take(pageSize)
             .ToListAsync(ct);
 
-        var data = pageEntities.Select(ToDto).ToList();
+        var data = pageEntities.Select(p => ToDto(p, enc)).ToList();
 
         return Results.Ok(new PagedResponse<PolicyDto>(page, pageSize, total, data));
     }
 
-    private static async Task<IResult> GetById(Guid id, OmakaseDbContext db, CancellationToken ct)
+    private static async Task<IResult> GetById(Guid id, OmakaseDbContext db, IOutputSanitizer enc, CancellationToken ct)
     {
         var policyId = AccessPolicyId.From(id);
         var policy = await db.AccessPolicies.AsNoTracking()
             .Include(p => p.CreatedBy)
             .FirstOrDefaultAsync(p => p.Id == policyId, ct);
 
-        return policy is null ? NotFound(id) : Results.Ok(ToDto(policy));
+        return policy is null ? NotFound(id) : Results.Ok(ToDto(policy, enc));
     }
 
     private static async Task<IResult> Create(
@@ -124,6 +125,9 @@ public static class PoliciesEndpoints
         OmakaseDbContext db,
         ICurrentUserService currentUser,
         IEnumerable<IPolicyConfigValidator> validators,
+        ILogSanitizer sanitizer,
+        IOutputSanitizer enc,
+        ILoggerFactory loggerFactory,
         HttpContext http,
         CancellationToken ct)
     {
@@ -139,6 +143,8 @@ public static class PoliciesEndpoints
                     "No se pudo resolver la identidad del administrador desde el token.", TraceId()),
                 statusCode: StatusCodes.Status401Unauthorized);
 
+        var logger = loggerFactory.CreateLogger(nameof(PoliciesEndpoints));
+
         var policy = new AccessPolicy
         {
             Id          = AccessPolicyId.New(),
@@ -151,9 +157,22 @@ public static class PoliciesEndpoints
         };
 
         db.AccessPolicies.Add(policy);
-        await db.SaveChangesAsync(ct);
+        try
+        {
+            await db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException ex)
+        {
+            logger.LogError(ex,
+                "Error de persistencia al crear la política '{PolicyName}' ({PolicyType}).", policy.Name, policy.Type);
+            return InternalError("No se pudo crear la política.");
+        }
 
-        return Results.Created($"/api/v1/policies/{policy.Id.Value}", ToDto(policy, admin.Username));
+        logger.LogInformation(
+            "Política {PolicyId} '{PolicyName}' ({PolicyType}) creada por {Admin}.",
+            policy.Id.Value, sanitizer.Sanitize(policy.Name), policy.Type, sanitizer.Sanitize(admin.Username));
+
+        return Results.Created($"/api/v1/policies/{policy.Id.Value}", ToDto(policy, enc, admin.Username));
     }
 
     private static async Task<IResult> Update(
@@ -161,6 +180,9 @@ public static class PoliciesEndpoints
         UpsertPolicyRequest request,
         OmakaseDbContext db,
         IEnumerable<IPolicyConfigValidator> validators,
+        ILogSanitizer sanitizer,
+        IOutputSanitizer enc,
+        ILoggerFactory loggerFactory,
         CancellationToken ct)
     {
         var validation = ValidateRequest(request, validators, out var type, out var config);
@@ -175,18 +197,31 @@ public static class PoliciesEndpoints
         if (policy is null)
             return NotFound(id);
 
+        var logger = loggerFactory.CreateLogger(nameof(PoliciesEndpoints));
+
         policy.Name     = request.Name.Trim();
         policy.Type     = type;
         policy.Config   = config!;
         policy.Weight   = request.Weight;
         policy.IsActive = request.IsActive;
 
-        await db.SaveChangesAsync(ct);
+        try
+        {
+            await db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException ex)
+        {
+            logger.LogError(ex, "Error de persistencia al actualizar la política {PolicyId}.", id);
+            return InternalError("No se pudo actualizar la política.");
+        }
 
-        return Results.Ok(ToDto(policy));
+        logger.LogInformation("Política {PolicyId} '{PolicyName}' actualizada.", id, sanitizer.Sanitize(policy.Name));
+
+        return Results.Ok(ToDto(policy, enc));
     }
 
-    private static async Task<IResult> Delete(Guid id, OmakaseDbContext db, CancellationToken ct)
+    private static async Task<IResult> Delete(
+        Guid id, OmakaseDbContext db, ILoggerFactory loggerFactory, CancellationToken ct)
     {
         var policyId = AccessPolicyId.From(id);
         var policy = await db.AccessPolicies.FirstOrDefaultAsync(p => p.Id == policyId, ct);
@@ -194,10 +229,22 @@ public static class PoliciesEndpoints
         if (policy is null)
             return NotFound(id);
 
+        var logger = loggerFactory.CreateLogger(nameof(PoliciesEndpoints));
+
         // Soft-delete (T-047): el motor deja de evaluarla en la siguiente petición;
         // el histórico y las asociaciones service_policies se conservan.
         policy.IsActive = false;
-        await db.SaveChangesAsync(ct);
+        try
+        {
+            await db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException ex)
+        {
+            logger.LogError(ex, "Error de persistencia al eliminar (soft-delete) la política {PolicyId}.", id);
+            return InternalError("No se pudo eliminar la política.");
+        }
+
+        logger.LogInformation("Política {PolicyId} desactivada (soft-delete).", id);
 
         return Results.NoContent();
     }
@@ -253,17 +300,18 @@ public static class PoliciesEndpoints
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    private static PolicyDto ToDto(AccessPolicy p) => ToDto(p, p.CreatedBy?.Username ?? string.Empty);
+    private static PolicyDto ToDto(AccessPolicy p, IOutputSanitizer enc) =>
+        ToDto(p, enc, p.CreatedBy?.Username ?? string.Empty);
 
-    private static PolicyDto ToDto(AccessPolicy p, string createdByUsername) => new(
+    private static PolicyDto ToDto(AccessPolicy p, IOutputSanitizer enc, string createdByUsername) => new(
         Id: p.Id.Value,
-        Name: p.Name,
+        Name: enc.Sanitize(p.Name),
         Type: p.Type.ToString(),
         Config: p.Config.RootElement.Clone(),
         Weight: p.Weight,
         IsActive: p.IsActive,
         CreatedById: p.CreatedById.Value,
-        CreatedByUsername: createdByUsername,
+        CreatedByUsername: enc.Sanitize(createdByUsername),
         CreatedAt: p.CreatedAt);
 
     /// <summary>
@@ -283,4 +331,8 @@ public static class PoliciesEndpoints
 
     private static IResult NotFound(Guid id) =>
         Results.NotFound(new ErrorResponse("NOT_FOUND", $"Política '{id}' no encontrada.", TraceId()));
+
+    private static IResult InternalError(string message) =>
+        Results.Json(new ErrorResponse("INTERNAL_ERROR", message, TraceId()),
+            statusCode: StatusCodes.Status500InternalServerError);
 }
