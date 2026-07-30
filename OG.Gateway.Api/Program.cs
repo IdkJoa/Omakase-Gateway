@@ -1,5 +1,6 @@
 using Application.Middlewares;
 using Infrastructure;
+using Infrastructure.Security;
 using OG.Gateway.Api.Endpoints;
 using Infrastructure.Persistence.Seeding;
 using Microsoft.EntityFrameworkCore;
@@ -67,6 +68,16 @@ builder.Services.Configure<Application.Common.Security.Mfa.MfaOptions>(
 builder.Services.Configure<Application.Common.Options.JwtOptions>(
     builder.Configuration.GetSection(Application.Common.Options.JwtOptions.SectionName));
 
+// CORS para permitir peticiones del front Angular (localhost:4200)
+const string FrontendCors = "FrontendCors";
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(FrontendCors, policy =>
+        policy.WithOrigins("http://localhost:4200", "https://localhost:4200")
+              .AllowAnyHeader()
+              .AllowAnyMethod());
+});
+
 // HU-020: Configurar JWT Bearer y Blacklist
 builder.Services.AddGatewayAuthentication();
 
@@ -105,6 +116,10 @@ var app = builder.Build();
 
 // Habilitar el procesamiento de cabeceras reenviadas antes de cualquier middleware (T-019)
 app.UseForwardedHeaders();
+
+app.UseCors(FrontendCors);
+
+app.UseMiddleware<SecurityHeadersMiddleware>();
 
 // Habilitar el control de tasa de peticiones (Rate Limiting) por IP (T-020)
 app.UseMiddleware<RateLimitMiddleware>();

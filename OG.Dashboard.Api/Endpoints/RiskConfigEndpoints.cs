@@ -18,7 +18,7 @@ public static class RiskConfigEndpoints
 
     // Estado mutable en memoria para el mock — simula lectura/escritura en BD.
     private static RiskScoreConfigDto _current = new(
-        Id: Guid.Parse("config-001-0000-0000-0000-000000000000"),
+        Id: Guid.Parse("c0de0001-0000-0000-0000-000000000000"),
         PolicyWeight: 0.6m,
         AnomalyWeight: 0.4m,
         ColdStartPenalty: 30.0m,

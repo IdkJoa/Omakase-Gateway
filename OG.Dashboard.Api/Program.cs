@@ -63,6 +63,8 @@ builder.Services.AddScoped<OG.Dashboard.Features.Services.DeleteProtectedService
 
 var app = builder.Build();
 
+app.UseMiddleware<SecurityHeadersMiddleware>();
+
 // Habilitar CORS antes de mapear los endpoints.
 app.UseCors(FrontendCors);
 

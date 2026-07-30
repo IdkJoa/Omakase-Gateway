@@ -1,6 +1,7 @@
 {
   "realm": "omakase-gateway",
   "enabled": true,
+  "ssoSessionIdleTimeout": 1800,
   "users": [
     {
       "username": "admin",
