@@ -77,6 +77,8 @@ public static class ServicesEndpoints
         var result = await handler.GetProtectedServicesAsync(page, pageSize, isActive, ct);
         if (result.IsFailure)
         {
+            if (result.Error.Code.Contains("Unhandled"))
+                return Results.Json(new ErrorResponse("INTERNAL_ERROR", result.Error.Description, Activity.Current?.TraceId.ToString() ?? "N/A"), statusCode: StatusCodes.Status500InternalServerError);
             return Results.BadRequest(new ErrorResponse("ERROR", result.Error.Description, Activity.Current?.TraceId.ToString() ?? "N/A"));
         }
 
@@ -100,6 +102,10 @@ public static class ServicesEndpoints
             {
                 return Results.NotFound(new ErrorResponse("NOT_FOUND", result.Error.Description, Activity.Current?.TraceId.ToString() ?? "N/A"));
             }
+            if (result.Error.Code.Contains("Unhandled"))
+            {
+                return Results.Json(new ErrorResponse("INTERNAL_ERROR", result.Error.Description, Activity.Current?.TraceId.ToString() ?? "N/A"), statusCode: StatusCodes.Status500InternalServerError);
+            }
             return Results.BadRequest(new ErrorResponse("ERROR", result.Error.Description, Activity.Current?.TraceId.ToString() ?? "N/A"));
         }
             
@@ -120,10 +126,14 @@ public static class ServicesEndpoints
         
         if (result.IsFailure)
         {
+            if (result.Error.Code.Contains("ReservedName"))
+                return Results.BadRequest(new ErrorResponse("RESERVED_NAME", result.Error.Description, Activity.Current?.TraceId.ToString() ?? "N/A"));
             if (result.Error.Code.Contains("InvalidUrl"))
                 return Results.BadRequest(new ErrorResponse("INVALID_URL", result.Error.Description, Activity.Current?.TraceId.ToString() ?? "N/A"));
             if (result.Error.Code.Contains("Conflict"))
                 return Results.Conflict(new ErrorResponse("CONFLICT", result.Error.Description, Activity.Current?.TraceId.ToString() ?? "N/A"));
+            if (result.Error.Code.Contains("Unhandled"))
+                return Results.Json(new ErrorResponse("INTERNAL_ERROR", result.Error.Description, Activity.Current?.TraceId.ToString() ?? "N/A"), statusCode: StatusCodes.Status500InternalServerError);
                 
             return Results.BadRequest(new ErrorResponse("ERROR", result.Error.Description, Activity.Current?.TraceId.ToString() ?? "N/A"));
         }
@@ -148,10 +158,14 @@ public static class ServicesEndpoints
         {
             if (result.Error.Code.Contains("NotFound"))
                 return Results.NotFound(new ErrorResponse("NOT_FOUND", result.Error.Description, Activity.Current?.TraceId.ToString() ?? "N/A"));
+            if (result.Error.Code.Contains("ReservedName"))
+                return Results.BadRequest(new ErrorResponse("RESERVED_NAME", result.Error.Description, Activity.Current?.TraceId.ToString() ?? "N/A"));
             if (result.Error.Code.Contains("InvalidUrl"))
                 return Results.BadRequest(new ErrorResponse("INVALID_URL", result.Error.Description, Activity.Current?.TraceId.ToString() ?? "N/A"));
             if (result.Error.Code.Contains("Conflict"))
                 return Results.Conflict(new ErrorResponse("CONFLICT", result.Error.Description, Activity.Current?.TraceId.ToString() ?? "N/A"));
+            if (result.Error.Code.Contains("Unhandled"))
+                return Results.Json(new ErrorResponse("INTERNAL_ERROR", result.Error.Description, Activity.Current?.TraceId.ToString() ?? "N/A"), statusCode: StatusCodes.Status500InternalServerError);
                 
             return Results.BadRequest(new ErrorResponse("ERROR", result.Error.Description, Activity.Current?.TraceId.ToString() ?? "N/A"));
         }
@@ -174,6 +188,8 @@ public static class ServicesEndpoints
         {
             if (result.Error.Code.Contains("NotFound"))
                 return Results.NotFound(new ErrorResponse("NOT_FOUND", result.Error.Description, Activity.Current?.TraceId.ToString() ?? "N/A"));
+            if (result.Error.Code.Contains("Unhandled"))
+                return Results.Json(new ErrorResponse("INTERNAL_ERROR", result.Error.Description, Activity.Current?.TraceId.ToString() ?? "N/A"), statusCode: StatusCodes.Status500InternalServerError);
             return Results.BadRequest(new ErrorResponse("ERROR", result.Error.Description, Activity.Current?.TraceId.ToString() ?? "N/A"));
         }
             

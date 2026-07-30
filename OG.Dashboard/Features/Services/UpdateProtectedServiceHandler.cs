@@ -33,6 +33,12 @@ public sealed class UpdateProtectedServiceHandler(OmakaseDbContext context, IRed
                 return Result.Failure<ProtectedService>(new Error("ProtectedService.NotFound", $"Servicio '{id}' no encontrado."));
             }
 
+            if (ProtectedService.ReservedNames.Contains(name.Trim()))
+            {
+                logger.LogWarning("Validación fallida: El nombre {Name} está reservado por el sistema", name);
+                return Result.Failure<ProtectedService>(new Error("ProtectedService.ReservedName", $"El nombre '{name}' está reservado por el sistema y no se puede utilizar."));
+            }
+
             if (!IsValidUrl(upstreamUrl))
             {
                 logger.LogWarning("Validación fallida: UpstreamUrl inválida ({UpstreamUrl}) para el servicio {Id}", upstreamUrl, id);
@@ -65,7 +71,7 @@ public sealed class UpdateProtectedServiceHandler(OmakaseDbContext context, IRed
         catch (Exception e)
         {
             logger.LogError(e, "Ocurrió un error inesperado al actualizar el servicio protegido: {Id}", id);
-            return Result.Failure<ProtectedService>(new Error("UnhandledException", $"Ocurrió un error inesperado al actualizar el servicio: {e.Message}"));
+            return Result.Failure<ProtectedService>(new Error("UnhandledException", "Ocurrió un error inesperado al actualizar el servicio."));
         }
     }
 

@@ -136,4 +136,64 @@ public class ProtectedServicesHandlersTests : IDisposable
         // Verify Redis Publish was called to trigger YARP reload
         await _redisServiceMock.Received(1).PublishAsync("yarp-reload-channel", "reload");
     }
+
+    [Theory]
+    [InlineData("health")]
+    [InlineData("auth")]
+    [InlineData("alive")]
+    [InlineData("openapi")]
+    [InlineData("HEALTH")]
+    public async Task Create_ShouldFail_WhenNameIsReserved(string reservedName)
+    {
+        // Arrange
+        var loggerMock = Substitute.For<ILogger<CreateProtectedServiceHandler>>();
+        var handler = new CreateProtectedServiceHandler(_context, _redisServiceMock, loggerMock);
+
+        // Act
+        var result = await handler.CreateProtectedServiceAsync(
+            reservedName, 
+            "http://test-upstream", 
+            false, 
+            true);
+
+        // Assert
+        Assert.True(result.IsFailure);
+        Assert.Equal("ProtectedService.ReservedName", result.Error.Code);
+    }
+
+    [Theory]
+    [InlineData("health")]
+    [InlineData("auth")]
+    [InlineData("alive")]
+    [InlineData("openapi")]
+    public async Task Update_ShouldFail_WhenNameIsReserved(string reservedName)
+    {
+        // Arrange
+        var serviceId = ProtectedServiceId.New();
+        var existingService = new ProtectedService 
+        { 
+            Id = serviceId, 
+            Name = "valid-name", 
+            UpstreamUrl = "http://old-url",
+            IsActive = true,
+            RequiresAuth = false
+        };
+        _context.ProtectedServices.Add(existingService);
+        await _context.SaveChangesAsync();
+
+        var loggerMock = Substitute.For<ILogger<UpdateProtectedServiceHandler>>();
+        var handler = new UpdateProtectedServiceHandler(_context, _redisServiceMock, loggerMock);
+
+        // Act
+        var result = await handler.UpdateProtectedServiceAsync(
+            serviceId.Value,
+            reservedName,
+            "http://new-url",
+            true,
+            false);
+
+        // Assert
+        Assert.True(result.IsFailure);
+        Assert.Equal("ProtectedService.ReservedName", result.Error.Code);
+    }
 }

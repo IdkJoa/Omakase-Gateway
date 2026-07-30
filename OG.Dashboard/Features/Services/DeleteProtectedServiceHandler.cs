@@ -35,7 +35,7 @@ public sealed class DeleteProtectedServiceHandler(OmakaseDbContext context, IRed
         catch (Exception e)
         {
             logger.LogError(e, "Ocurrió un error inesperado al eliminar el servicio protegido: {Id}", id);
-            return Result.Failure(new Error("UnhandledException", $"Ocurrió un error inesperado al eliminar el servicio: {e.Message}"));
+            return Result.Failure(new Error("UnhandledException", "Ocurrió un error inesperado al eliminar el servicio."));
         }
     }
 }
