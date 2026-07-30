@@ -21,6 +21,12 @@ public sealed class CreateProtectedServiceHandler(OmakaseDbContext context, IRed
         logger.LogInformation("Iniciando creación de servicio protegido: {Name}", name);
         try
         {
+            if (ProtectedService.ReservedNames.Contains(name.Trim()))
+            {
+                logger.LogWarning("Validación fallida: El nombre {Name} está reservado por el sistema", name);
+                return Result.Failure<ProtectedService>(new Error("ProtectedService.ReservedName", $"El nombre '{name}' está reservado por el sistema y no se puede utilizar."));
+            }
+
             if (!IsValidUrl(upstreamUrl))
             {
                 logger.LogWarning("Validación fallida: UpstreamUrl inválida ({UpstreamUrl}) para el servicio {Name}", upstreamUrl, name);
@@ -56,7 +62,7 @@ public sealed class CreateProtectedServiceHandler(OmakaseDbContext context, IRed
         catch (Exception e)
         {
             logger.LogError(e, "Ocurrió un error inesperado al crear el servicio protegido: {Name}", name);
-            return Result.Failure<ProtectedService>(new Error("UnhandledException", $"Ocurrió un error inesperado al crear el servicio: {e.Message}"));
+            return Result.Failure<ProtectedService>(new Error("UnhandledException", "Ocurrió un error inesperado al crear el servicio."));
         }
     }
 

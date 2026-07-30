@@ -9,6 +9,11 @@ namespace Domain.Entities;
 /// </summary>
 public class ProtectedService
 {
+    public static readonly HashSet<string> ReservedNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "auth", "health", "alive", "openapi"
+    };
+
     public ProtectedServiceId Id { get; init; }
 
     /// <summary>Logical name, used as the YARP cluster ID.</summary>

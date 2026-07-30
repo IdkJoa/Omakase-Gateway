@@ -42,7 +42,7 @@ public sealed class GetProtectedServicesHandler(OmakaseDbContext context, ILogge
         catch (Exception e)
         {
             logger.LogError(e, "Ocurrió un error inesperado al obtener la lista de servicios protegidos.");
-            return Result.Failure<(int TotalCount, List<ProtectedService> Services)>(new Error("UnhandledException", $"Ocurrió un error inesperado al obtener los servicios: {e.Message}"));
+            return Result.Failure<(int TotalCount, List<ProtectedService> Services)>(new Error("UnhandledException", "Ocurrió un error inesperado al obtener los servicios."));
         }
     }
 }
