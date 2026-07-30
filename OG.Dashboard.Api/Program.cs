@@ -33,6 +33,8 @@ builder.Services.AddScoped<OG.Dashboard.Features.Mfa.MfaAdminService>();
 
 var app = builder.Build();
 
+app.UseMiddleware<SecurityHeadersMiddleware>();
+
 // ── Middleware Pipeline ────────────────────────────────────────────────────────
 app.UseCors(ApiExtensions.FrontendCorsPolicy);
 app.UseAuthentication();

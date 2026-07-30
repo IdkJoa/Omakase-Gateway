@@ -1,10 +1,15 @@
 using OG.Dashboard.Api.Contracts.Common;
 using OG.Dashboard.Api.Contracts.Roles;
-using Infrastructure;
-using Microsoft.EntityFrameworkCore;
-using Domain.Entities;
-using Domain.ValueObjects;
+using OG.Dashboard.Features.Roles;
 using Application.Common.Security;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Routing;
+using System;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace OG.Dashboard.Api.Endpoints;
 
@@ -88,212 +93,181 @@ public static class RolesEndpoints
         return app;
     }
 
-    private static async Task<IResult> GetAll(OmakaseDbContext db, IOutputSanitizer enc)
+    private static async Task<IResult> GetAll(
+        [FromServices] RolesHandler handler,
+        [FromServices] IOutputSanitizer enc,
+        CancellationToken ct)
     {
-        var roles = await db.Roles
-            .AsNoTracking()
-            .Select(r => new RoleDto(
-                r.Id.Value,
-                r.Name,
-                r.Description,
-                r.CreatedAt,
-                r.UserRoles.Count
-            ))
-            .ToListAsync();
-
-        // T-060: Output encoding para prevención de XSS en campos de origen externo.
-        var encoded = roles.Select(r => r with
+        var result = await handler.GetRolesAsync(ct);
+        if (result.IsFailure)
         {
-            Name = enc.Sanitize(r.Name),
-            Description = r.Description is not null ? enc.Sanitize(r.Description) : null
-        }).ToList();
+            return Results.BadRequest(new ErrorResponse("ERROR", result.Error.Description, System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
+        }
 
-        return Results.Ok(encoded);
+        var dtos = result.Value.Select(r => new RoleDto(
+            r.Id.Value,
+            enc.Sanitize(r.Name),
+            r.Description is not null ? enc.Sanitize(r.Description) : null,
+            r.CreatedAt,
+            r.UserRoles.Count
+        )).ToList();
+
+        return Results.Ok(dtos);
     }
 
-    private static async Task<IResult> GetById(Guid id, OmakaseDbContext db, IOutputSanitizer enc)
+    private static async Task<IResult> GetById(
+        Guid id,
+        [FromServices] RolesHandler handler,
+        [FromServices] IOutputSanitizer enc,
+        CancellationToken ct)
     {
-        var roleId = RoleId.From(id);
-        var role = await db.Roles
-            .AsNoTracking()
-            .Where(r => r.Id == roleId)
-            .Select(r => new RoleDto(
-                r.Id.Value,
-                r.Name,
-                r.Description,
-                r.CreatedAt,
-                r.UserRoles.Count
-            ))
-            .FirstOrDefaultAsync();
-
-        if (role is null)
-            return Results.NotFound(new ErrorResponse("NOT_FOUND", $"Rol '{id}' no encontrado.",
-                System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
-
-        var encoded = role with
+        var result = await handler.GetRoleByIdAsync(id, ct);
+        if (result.IsFailure)
         {
-            Name = enc.Sanitize(role.Name),
-            Description = role.Description is not null ? enc.Sanitize(role.Description) : null
-        };
+            return Results.NotFound(new ErrorResponse("NOT_FOUND", result.Error.Description, System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
+        }
 
-        return Results.Ok(encoded);
-    }
-
-    private static async Task<IResult> Create(CreateRoleRequest request, OmakaseDbContext db)
-    {
-        var nameUpper = request.Name.Trim().ToUpperInvariant();
-        var exists = await db.Roles.AnyAsync(r => r.Name.ToUpper() == nameUpper);
-        if (exists)
-            return Results.Conflict(new ErrorResponse("CONFLICT",
-                $"Ya existe un rol con el nombre '{request.Name}'.",
-                System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
-
-        var role = new Role
-        {
-            Id = RoleId.New(),
-            Name = request.Name.Trim(),
-            Description = request.Description?.Trim(),
-            IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow
-        };
-
-        db.Roles.Add(role);
-        await db.SaveChangesAsync();
-
+        var r = result.Value;
         var dto = new RoleDto(
-            role.Id.Value,
-            role.Name,
-            role.Description,
-            role.CreatedAt,
+            r.Id.Value,
+            enc.Sanitize(r.Name),
+            r.Description is not null ? enc.Sanitize(r.Description) : null,
+            r.CreatedAt,
+            r.UserRoles.Count
+        );
+
+        return Results.Ok(dto);
+    }
+
+    private static async Task<IResult> Create(
+        CreateRoleRequest request,
+        [FromServices] RolesHandler handler,
+        CancellationToken ct)
+    {
+        var result = await handler.CreateRoleAsync(request.Name, request.Description, ct);
+        if (result.IsFailure)
+        {
+            if (result.Error.Code == "Roles.Conflict")
+            {
+                return Results.Conflict(new ErrorResponse("CONFLICT", result.Error.Description, System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
+            }
+            return Results.BadRequest(new ErrorResponse("ERROR", result.Error.Description, System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
+        }
+
+        var r = result.Value;
+        var dto = new RoleDto(
+            r.Id.Value,
+            r.Name,
+            r.Description,
+            r.CreatedAt,
             0
         );
 
-        return Results.Created($"/api/v1/roles/{role.Id.Value}", dto);
+        return Results.Created($"/api/v1/roles/{r.Id.Value}", dto);
     }
 
-    private static async Task<IResult> Delete(Guid id, OmakaseDbContext db)
+    private static async Task<IResult> Delete(
+        Guid id,
+        [FromServices] RolesHandler handler,
+        CancellationToken ct)
     {
-        var roleId = RoleId.From(id);
-        var role = await db.Roles
-            .Include(r => r.UserRoles)
-            .FirstOrDefaultAsync(r => r.Id == roleId);
-
-        if (role is null)
-            return Results.NotFound(new ErrorResponse("NOT_FOUND", $"Rol '{id}' no encontrado.",
-                System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
-
-        if (role.UserRoles.Any())
-            return Results.Conflict(new ErrorResponse("CONFLICT",
-                $"El rol '{role.Name}' tiene usuarios asignados. Revoque los accesos antes de eliminar.",
-                System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
-
-        db.Roles.Remove(role);
-        await db.SaveChangesAsync();
-
-        return Results.NoContent();
-    }
-
-    private static async Task<IResult> Update(Guid id, UpdateRoleRequest request, OmakaseDbContext db)
-    {
-        var roleId = RoleId.From(id);
-        var role = await db.Roles.FirstOrDefaultAsync(r => r.Id == roleId);
-
-        if (role is null)
-            return Results.NotFound(new ErrorResponse("NOT_FOUND", $"Rol '{id}' no encontrado.",
-                System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
-
-        var nameUpper = request.Name.Trim().ToUpperInvariant();
-        var exists = await db.Roles.AnyAsync(r => r.Name.ToUpper() == nameUpper && r.Id != roleId);
-        if (exists)
-            return Results.Conflict(new ErrorResponse("CONFLICT",
-                $"Ya existe otro rol con el nombre '{request.Name}'.",
-                System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
-
-        role.Name = request.Name.Trim();
-        role.Description = request.Description?.Trim();
-
-        db.Roles.Update(role);
-        await db.SaveChangesAsync();
-
-        return Results.NoContent();
-    }
-
-    private static async Task<IResult> GetRolesForUser(Guid userId, OmakaseDbContext db)
-    {
-        var typedUserId = UserId.From(userId);
-        var userExists = await db.Users.AnyAsync(u => u.Id == typedUserId);
-        if (!userExists)
-            return Results.NotFound(new ErrorResponse("NOT_FOUND", $"Usuario '{userId}' no encontrado.",
-                System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
-
-        var roles = await db.UserRoles
-            .AsNoTracking()
-            .Where(ur => ur.UserId == typedUserId)
-            .Select(ur => new RoleDto(
-                ur.Role!.Id.Value,
-                ur.Role.Name,
-                ur.Role.Description,
-                ur.Role.CreatedAt,
-                ur.Role.UserRoles.Count
-            ))
-            .ToListAsync();
-
-        return Results.Ok(roles);
-    }
-
-    private static async Task<IResult> AssignRoleToUser(Guid userId, AssignRoleToUserRequest request, OmakaseDbContext db)
-    {
-        var typedUserId = UserId.From(userId);
-        var userExists = await db.Users.AnyAsync(u => u.Id == typedUserId);
-        if (!userExists)
-            return Results.NotFound(new ErrorResponse("NOT_FOUND", $"Usuario '{userId}' no encontrado.",
-                System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
-
-        var typedRoleId = RoleId.From(request.RoleId);
-        var role = await db.Roles.FirstOrDefaultAsync(r => r.Id == typedRoleId);
-        if (role is null)
-            return Results.NotFound(new ErrorResponse("NOT_FOUND", $"Rol '{request.RoleId}' no encontrado.",
-                System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
-
-        if (!role.IsActive)
-            return Results.BadRequest(new ErrorResponse("BAD_REQUEST", $"El rol '{role.Name}' no está activo.",
-                System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
-
-        // Validar combinación única
-        var exists = await db.UserRoles.AnyAsync(ur => ur.UserId == typedUserId && ur.RoleId == typedRoleId);
-        if (exists)
-            return Results.Conflict(new ErrorResponse("CONFLICT",
-                $"El usuario ya tiene asignado el rol '{role.Name}'.",
-                System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
-
-        var userRole = new UserRole
+        var result = await handler.DeleteRoleAsync(id, ct);
+        if (result.IsFailure)
         {
-            Id = UserRoleId.New(),
-            UserId = typedUserId,
-            RoleId = typedRoleId,
-            AssignedAt = DateTimeOffset.UtcNow
-        };
-
-        db.UserRoles.Add(userRole);
-        await db.SaveChangesAsync();
+            if (result.Error.Code == "Roles.NotFound")
+            {
+                return Results.NotFound(new ErrorResponse("NOT_FOUND", result.Error.Description, System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
+            }
+            if (result.Error.Code == "Roles.Conflict")
+            {
+                return Results.Conflict(new ErrorResponse("CONFLICT", result.Error.Description, System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
+            }
+            return Results.BadRequest(new ErrorResponse("ERROR", result.Error.Description, System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
+        }
 
         return Results.NoContent();
     }
 
-    private static async Task<IResult> RevokeRoleFromUser(Guid userId, Guid roleId, OmakaseDbContext db)
+    private static async Task<IResult> Update(
+        Guid id,
+        UpdateRoleRequest request,
+        [FromServices] RolesHandler handler,
+        CancellationToken ct)
     {
-        var typedUserId = UserId.From(userId);
-        var typedRoleId = RoleId.From(roleId);
+        var result = await handler.UpdateRoleAsync(id, request.Name, request.Description, ct);
+        if (result.IsFailure)
+        {
+            if (result.Error.Code == "Roles.NotFound")
+            {
+                return Results.NotFound(new ErrorResponse("NOT_FOUND", result.Error.Description, System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
+            }
+            if (result.Error.Code == "Roles.Conflict")
+            {
+                return Results.Conflict(new ErrorResponse("CONFLICT", result.Error.Description, System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
+            }
+            return Results.BadRequest(new ErrorResponse("ERROR", result.Error.Description, System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
+        }
 
-        var userRole = await db.UserRoles
-            .FirstOrDefaultAsync(ur => ur.UserId == typedUserId && ur.RoleId == typedRoleId);
+        return Results.NoContent();
+    }
 
-        if (userRole is null)
-            return Results.NotFound(new ErrorResponse("NOT_FOUND", "Asignación de rol no encontrada.",
-                System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
+    private static async Task<IResult> GetRolesForUser(
+        Guid userId,
+        [FromServices] RolesHandler handler,
+        [FromServices] IOutputSanitizer enc,
+        CancellationToken ct)
+    {
+        var result = await handler.GetRolesForUserAsync(userId, ct);
+        if (result.IsFailure)
+        {
+            return Results.NotFound(new ErrorResponse("NOT_FOUND", result.Error.Description, System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
+        }
 
-        db.UserRoles.Remove(userRole);
-        await db.SaveChangesAsync();
+        var dtos = result.Value.Select(r => new RoleDto(
+            r.Id.Value,
+            enc.Sanitize(r.Name),
+            r.Description is not null ? enc.Sanitize(r.Description) : null,
+            r.CreatedAt,
+            r.UserRoles.Count
+        )).ToList();
+
+        return Results.Ok(dtos);
+    }
+
+    private static async Task<IResult> AssignRoleToUser(
+        Guid userId,
+        AssignRoleToUserRequest request,
+        [FromServices] RolesHandler handler,
+        CancellationToken ct)
+    {
+        var result = await handler.AssignRoleToUserAsync(userId, request.RoleId, ct);
+        if (result.IsFailure)
+        {
+            if (result.Error.Code.Contains("NotFound"))
+            {
+                return Results.NotFound(new ErrorResponse("NOT_FOUND", result.Error.Description, System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
+            }
+            if (result.Error.Code == "Roles.Conflict")
+            {
+                return Results.Conflict(new ErrorResponse("CONFLICT", result.Error.Description, System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
+            }
+            return Results.BadRequest(new ErrorResponse("BAD_REQUEST", result.Error.Description, System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
+        }
+
+        return Results.NoContent();
+    }
+
+    private static async Task<IResult> RevokeRoleFromUser(
+        Guid userId,
+        Guid roleId,
+        [FromServices] RolesHandler handler,
+        CancellationToken ct)
+    {
+        var result = await handler.RevokeRoleFromUserAsync(userId, roleId, ct);
+        if (result.IsFailure)
+        {
+            return Results.NotFound(new ErrorResponse("NOT_FOUND", result.Error.Description, System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
+        }
 
         return Results.NoContent();
     }

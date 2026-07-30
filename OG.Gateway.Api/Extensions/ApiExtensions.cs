@@ -10,6 +10,8 @@ namespace OG.Gateway.Api.Extensions;
 
 public static class ApiExtensions
 {
+    public const string FrontendCorsPolicy = "FrontendCors";
+
     /// <summary>
     /// Registra la configuración referente a la API del Gateway (YARP Reverse Proxy, Forwarded Headers, Autenticación y Workers de API).
     /// </summary>
@@ -18,6 +20,7 @@ public static class ApiExtensions
         IConfiguration configuration)
     {
         services.AddOpenApi();
+        services.AddCorsConfiguration();
 
         // ── YARP Reverse Proxy con Hidratación Dinámica ────────────────────────────
         services.AddReverseProxy();
@@ -64,5 +67,19 @@ public static class ApiExtensions
         });
 
         return services;
+    }
+
+    /// <summary>
+    /// Registra la política de CORS para el Frontend.
+    /// </summary>
+    public static IServiceCollection AddCorsConfiguration(this IServiceCollection services)
+    {
+        return services.AddCors(options =>
+        {
+            options.AddPolicy(FrontendCorsPolicy, policy =>
+                policy.WithOrigins("http://localhost:4200", "https://localhost:4200")
+                      .AllowAnyHeader()
+                      .AllowAnyMethod());
+        });
     }
 }

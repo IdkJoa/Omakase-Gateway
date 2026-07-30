@@ -1,6 +1,7 @@
 using Application;
 using Application.Middlewares;
 using Infrastructure;
+using Infrastructure.Security;
 using Infrastructure.Persistence;
 using Infrastructure.Persistence.Seeding;
 using Microsoft.EntityFrameworkCore;
@@ -29,6 +30,10 @@ var app = builder.Build();
 
 // ── Middleware Pipeline ────────────────────────────────────────────────────────
 app.UseForwardedHeaders();
+
+app.UseCors(ApiExtensions.FrontendCorsPolicy);
+app.UseMiddleware<SecurityHeadersMiddleware>();
+
 app.UseMiddleware<RateLimitMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
