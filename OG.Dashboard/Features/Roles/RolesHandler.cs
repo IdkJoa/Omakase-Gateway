@@ -64,6 +64,13 @@ public sealed class RolesHandler(OmakaseDbContext context, ILogger<RolesHandler>
         logger.LogInformation("Creando nuevo rol: {Name}", name);
         try
         {
+            if (!IsValidRoleName(name))
+            {
+                logger.LogWarning("Validación fallida: nombre de rol inválido.");
+                return Result.Failure<Role>(new Error("Roles.InvalidName",
+                    "El nombre del rol es obligatorio (2-64 caracteres, sin espacios en blanco al inicio/fin)."));
+            }
+
             var nameUpper = name.Trim().ToUpperInvariant();
             var exists = await context.Roles.AnyAsync(r => r.Name.ToUpper() == nameUpper, ct);
             if (exists)
@@ -106,6 +113,13 @@ public sealed class RolesHandler(OmakaseDbContext context, ILogger<RolesHandler>
             {
                 logger.LogWarning("Intento de actualización fallido: No existe el rol {Id}", id);
                 return Result.Failure(new Error("Roles.NotFound", $"Rol '{id}' no encontrado."));
+            }
+
+            if (!IsValidRoleName(name))
+            {
+                logger.LogWarning("Validación fallida: nombre de rol inválido para {Id}.", id);
+                return Result.Failure(new Error("Roles.InvalidName",
+                    "El nombre del rol es obligatorio (2-64 caracteres, sin espacios en blanco al inicio/fin)."));
             }
 
             var nameUpper = name.Trim().ToUpperInvariant();
@@ -279,4 +293,12 @@ public sealed class RolesHandler(OmakaseDbContext context, ILogger<RolesHandler>
             return Result.Failure(new Error("UnhandledException", $"Ocurrió un error inesperado al revocar el rol: {e.Message}"));
         }
     }
+
+    /// <summary>
+    /// El nombre del rol es la clave RBAC (se compara contra ADMIN/VIEWER en la evaluación de acceso):
+    /// debe ser no vacío y de longitud razonable. Evita roles con nombre en blanco y el NRE de <c>name.Trim()</c>
+    /// cuando llega <c>null</c> (que degradaba a 500 en vez de un 400 limpio).
+    /// </summary>
+    private static bool IsValidRoleName(string? name) =>
+        !string.IsNullOrWhiteSpace(name) && name.Trim().Length is >= 2 and <= 64;
 }
