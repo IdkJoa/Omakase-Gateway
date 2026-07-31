@@ -33,6 +33,13 @@ public sealed class UpdateProtectedServiceHandler(OmakaseDbContext context, IRed
                 return Result.Failure<ProtectedService>(new Error("ProtectedService.NotFound", $"Servicio '{id}' no encontrado."));
             }
 
+            if (!IsValidServiceName(name))
+            {
+                logger.LogWarning("Validación fallida: nombre de servicio inválido ({Name})", name);
+                return Result.Failure<ProtectedService>(new Error("ProtectedService.InvalidName",
+                    "El nombre es obligatorio y solo admite letras, números, punto, guion y guion bajo (1-64 caracteres, sin espacios ni '/')."));
+            }
+
             if (ProtectedService.ReservedNames.Contains(name.Trim()))
             {
                 logger.LogWarning("Validación fallida: El nombre {Name} está reservado por el sistema", name);
@@ -80,4 +87,12 @@ public sealed class UpdateProtectedServiceHandler(OmakaseDbContext context, IRed
         return Uri.TryCreate(url, UriKind.Absolute, out var uriResult)
                && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
     }
+
+    /// <summary>
+    /// El nombre se publica como segmento de ruta en YARP (<c>/{name}/**</c>): debe ser no vacío y
+    /// solo letras/números/punto/guion/guion bajo (sin espacios ni '/'), 1-64 chars. Evita rutas rotas.
+    /// </summary>
+    private static bool IsValidServiceName(string? name) =>
+        !string.IsNullOrWhiteSpace(name)
+        && System.Text.RegularExpressions.Regex.IsMatch(name.Trim(), "^[a-zA-Z0-9._-]{1,64}$");
 }

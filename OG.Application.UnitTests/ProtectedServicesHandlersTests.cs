@@ -196,4 +196,23 @@ public class ProtectedServicesHandlersTests : IDisposable
         Assert.True(result.IsFailure);
         Assert.Equal("ProtectedService.ReservedName", result.Error.Code);
     }
+
+    // #5: el nombre se publica como segmento de ruta YARP → rechazar vacío/null/espacios/slashes.
+    [Theory]
+    [InlineData(null)]           // antes reventaba con NRE en name.Trim()
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData("con espacio")]
+    [InlineData("con/slash")]
+    [InlineData("mal$char")]
+    public async Task Create_ShouldFail_WhenNameIsInvalid(string? invalidName)
+    {
+        var loggerMock = Substitute.For<ILogger<CreateProtectedServiceHandler>>();
+        var handler = new CreateProtectedServiceHandler(_context, _redisServiceMock, loggerMock);
+
+        var result = await handler.CreateProtectedServiceAsync(invalidName!, "http://test-upstream", false, true);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("ProtectedService.InvalidName", result.Error.Code);
+    }
 }
