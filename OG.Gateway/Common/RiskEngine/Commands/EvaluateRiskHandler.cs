@@ -83,6 +83,13 @@ public sealed class EvaluateRiskHandler
             if (set is not null)
             {
                 serviceId = set.ServiceId.Value;
+
+                // SRS §7.5 (HU-024): si el servicio exige autenticación (requires_auth) y la petición
+                // no trae identidad resuelta, se deniega ANTES de evaluar — no se corren reglas ni ML.
+                // El middleware traduce la bandera a 401 AUTHENTICATION_REQUIRED (no 403 de Block).
+                if (set.RequiresAuth && string.IsNullOrWhiteSpace(context.UserId))
+                    return AuthenticationRequiredResult(serviceId);
+
                 foreach (var policy in set.Policies)
                 {
                     var evaluator = _evaluators.FirstOrDefault(e => e.Type == policy.Type);
@@ -124,6 +131,34 @@ public sealed class EvaluateRiskHandler
             geoJson,
             triggeredJson,
             serviceId);
+    }
+
+    /// <summary>
+    /// Precondición fallida (SRS §7.5): el servicio exige <c>requires_auth</c> y la petición llegó sin
+    /// identidad. Se corta antes de evaluar reglas/ML. Verdict=Block + score máximo para la auditoría;
+    /// la bandera <c>AuthenticationRequired</c> hace que el middleware responda 401, no 403.
+    /// </summary>
+    private static RiskEvaluationResult AuthenticationRequiredResult(Guid? serviceId)
+    {
+        var triggered = JsonSerializer.SerializeToDocument(new[]
+        {
+            new
+            {
+                rule = "AUTH_REQUIRED",
+                score = 100m,
+                detail = (string?)"el servicio exige autenticacion (requires_auth) y la peticion no trae identidad",
+            }
+        });
+
+        return new RiskEvaluationResult(
+            Verdict.Block,
+            RiskScore: 100m,
+            PolicyScore: 0m,
+            AnomalyScore: 0m,
+            Geo: null,
+            TriggeredRules: triggered,
+            ServiceId: serviceId,
+            AuthenticationRequired: true);
     }
 
     /// <summary>

@@ -28,7 +28,7 @@ public static class AuthenticationExtensions
                 {
                     ValidateIssuer = true,
                     ValidIssuer = options.Authority,
-                    ValidateAudience = false, // Dashboard is a public client, might not set audience
+                    ValidateAudience = false, // Cliente público: la audiencia se acota por el claim `azp` en OnTokenValidated (abajo).
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
                     NameClaimType = "preferred_username"
@@ -74,7 +74,19 @@ public static class AuthenticationExtensions
                         var identity = context.Principal?.Identity as ClaimsIdentity;
                         if (identity != null)
                         {
-                            var sub = identity.FindFirst(ClaimTypes.NameIdentifier)?.Value 
+                            // Hardening: se acota la audiencia por el claim `azp` (authorized party) —
+                            // solo se aceptan tokens emitidos PARA este cliente. Es la forma recomendada
+                            // por Keycloak de validar la audiencia en un cliente público sin depender de
+                            // un audience-mapper del realm. Fail-closed ante un azp ajeno.
+                            var expectedClient = configuration["Authentication:Keycloak:ClientId"] ?? "omakase-dashboard";
+                            var azp = identity.FindFirst("azp")?.Value;
+                            if (!string.IsNullOrEmpty(azp) && !string.Equals(azp, expectedClient, StringComparison.Ordinal))
+                            {
+                                context.Fail($"Token azp '{azp}' no autorizado para el cliente '{expectedClient}'.");
+                                return;
+                            }
+
+                            var sub = identity.FindFirst(ClaimTypes.NameIdentifier)?.Value
                                       ?? identity.FindFirst("sub")?.Value;
                             var username = identity.FindFirst("preferred_username")?.Value 
                                            ?? identity.Name;

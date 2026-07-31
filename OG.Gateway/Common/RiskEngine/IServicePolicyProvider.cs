@@ -4,7 +4,16 @@ using Domain.ValueObjects;
 namespace Application.Common.RiskEngine;
 
 /// <summary>The destination service (its id) plus the active policies to evaluate for it.</summary>
-public sealed record ServicePolicySet(ProtectedServiceId ServiceId, IReadOnlyList<AccessPolicy> Policies);
+/// <param name="ServiceId">Id of the resolved active service.</param>
+/// <param name="Policies">Active deterministic policies linked to the service.</param>
+/// <param name="RequiresAuth">
+/// SRS §7.5: when true the service demands a valid JWT before any risk evaluation; an anonymous
+/// request is denied with 401 up front (never reaches rules/ML). Defaults to false (open service).
+/// </param>
+public sealed record ServicePolicySet(
+    ProtectedServiceId ServiceId,
+    IReadOnlyList<AccessPolicy> Policies,
+    bool RequiresAuth = false);
 
 /// <summary>
 /// Provides the active deterministic policies associated with a given service

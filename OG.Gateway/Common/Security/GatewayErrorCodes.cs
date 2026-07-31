@@ -4,6 +4,9 @@ public static class GatewayErrorCodes
 {
     public const string ChallengeRequired = "CHALLENGE_REQUIRED";
     public const string AccessDenied = "ACCESS_DENIED";
+
+    /// <summary>SRS §7.5: el servicio destino exige JWT (requires_auth) y la petición llegó sin identidad.</summary>
+    public const string AuthenticationRequired = "AUTHENTICATION_REQUIRED";
     public const string TooManyRequests = "TOO_MANY_REQUESTS";
     public const string ServiceUnavailable = "SERVICE_UNAVAILABLE";
 

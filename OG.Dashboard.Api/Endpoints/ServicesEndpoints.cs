@@ -128,6 +128,8 @@ public static class ServicesEndpoints
         {
             if (result.Error.Code.Contains("ReservedName"))
                 return Results.BadRequest(new ErrorResponse("RESERVED_NAME", result.Error.Description, Activity.Current?.TraceId.ToString() ?? "N/A"));
+            if (result.Error.Code.Contains("InvalidName"))
+                return Results.BadRequest(new ErrorResponse("INVALID_NAME", result.Error.Description, Activity.Current?.TraceId.ToString() ?? "N/A"));
             if (result.Error.Code.Contains("InvalidUrl"))
                 return Results.BadRequest(new ErrorResponse("INVALID_URL", result.Error.Description, Activity.Current?.TraceId.ToString() ?? "N/A"));
             if (result.Error.Code.Contains("Conflict"))
@@ -160,6 +162,8 @@ public static class ServicesEndpoints
                 return Results.NotFound(new ErrorResponse("NOT_FOUND", result.Error.Description, Activity.Current?.TraceId.ToString() ?? "N/A"));
             if (result.Error.Code.Contains("ReservedName"))
                 return Results.BadRequest(new ErrorResponse("RESERVED_NAME", result.Error.Description, Activity.Current?.TraceId.ToString() ?? "N/A"));
+            if (result.Error.Code.Contains("InvalidName"))
+                return Results.BadRequest(new ErrorResponse("INVALID_NAME", result.Error.Description, Activity.Current?.TraceId.ToString() ?? "N/A"));
             if (result.Error.Code.Contains("InvalidUrl"))
                 return Results.BadRequest(new ErrorResponse("INVALID_URL", result.Error.Description, Activity.Current?.TraceId.ToString() ?? "N/A"));
             if (result.Error.Code.Contains("Conflict"))
