@@ -8,6 +8,7 @@
     {
       "username": "admin",
       "enabled": true,
+      "email": "admin@omakase.local",
       "emailVerified": true,
       "firstName": "Security",
       "lastName": "Admin",
@@ -18,7 +19,7 @@
           "temporary": false
         }
       ],
-      "requiredActions": [ "CONFIGURE_TOTP" ],
+      "requiredActions": [],
       "realmRoles": [ "ADMIN" ]
     },
     {
@@ -35,7 +36,7 @@
           "temporary": false
         }
       ],
-      "requiredActions": [ "" ],
+      "requiredActions": [],
       "realmRoles": [ "ADMIN" ]
     }
   ],
