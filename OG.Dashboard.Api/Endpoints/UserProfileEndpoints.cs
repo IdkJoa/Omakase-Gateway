@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Application.Common.RiskEngine.AnomalyDetection;
+using Application.Common.Security;
 using Domain.Entities;
 using Domain.ValueObjects;
 using Infrastructure;
@@ -39,7 +40,7 @@ public static class UserProfileEndpoints
     }
 
     private static async Task<IResult> Get(
-        Guid id, OmakaseDbContext db, ILoggerFactory loggerFactory, CancellationToken ct)
+        Guid id, OmakaseDbContext db, IOutputSanitizer enc, ILoggerFactory loggerFactory, CancellationToken ct)
     {
         var userId = UserId.From(id);
 
@@ -60,7 +61,7 @@ public static class UserProfileEndpoints
         {
             return Results.Ok(new UserProfileDto(
                 user.Id.Value,
-                user.Username,
+                enc.Sanitize(user.Username),
                 profile?.AccessCount ?? 0,
                 IsColdStart: true,
                 profile?.BaseRiskPenalty ?? 0m,
@@ -80,7 +81,7 @@ public static class UserProfileEndpoints
 
         return Results.Ok(new UserProfileDto(
             user.Id.Value,
-            user.Username,
+            enc.Sanitize(user.Username),
             profile.AccessCount,
             profile.IsColdStart,
             profile.BaseRiskPenalty,
