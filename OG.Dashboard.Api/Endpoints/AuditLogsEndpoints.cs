@@ -1,97 +1,26 @@
+using System.Text.Json;
+using Domain.Entities;
+using Domain.ValueObjects;
+using Infrastructure;
+using Microsoft.EntityFrameworkCore;
 using OG.Dashboard.Api.Contracts.AuditLogs;
 using OG.Dashboard.Api.Contracts.Common;
 
 namespace OG.Dashboard.Api.Endpoints;
 
 /// <summary>
-/// Endpoints mock de exploración de logs de auditoría.
-/// GET /api/v1/logs — Contrato definido en SRS §4.1.
-/// Devuelve datos estáticos representativos para que el frontend Angular avance en paralelo.
+/// Exploración de logs de auditoría (HU-022) sobre <c>audit_logs</c> REAL (SRS §4.1).
+/// <list type="bullet">
+///   <item><c>GET /api/v1/logs</c> — lista paginada con filtros (verdict, userId, rango de fechas, IP, servicio).</item>
+///   <item><c>GET /api/v1/logs/{evaluationId}</c> — detalle de una evaluación.</item>
+/// </list>
+/// Reemplaza el mock de Contract-First (T-088) cableándolo a datos reales, manteniendo el MISMO
+/// contrato para que la vista de logs del front no cambie. Solo lectura (<c>ReadAccess</c>).
 /// </summary>
 public static class AuditLogsEndpoints
 {
-    // ── Datos mock ────────────────────────────────────────────────────────────
-
-    private static readonly IReadOnlyList<AuditLogDto> MockLogs =
-    [
-        new(
-            EvaluationId: Guid.Parse("a3f1c2e8-7b94-4d2a-9c1f-0e5b6d8a1234"),
-            Timestamp: new DateTimeOffset(2026, 5, 29, 14, 32, 7, TimeSpan.Zero),
-            UserId: "user-2048",
-            Username: "jperez",
-            ServiceName: "orders-service",
-            SourceIp: "190.166.12.45",
-            Geo: new GeoDto("DO", "Santo Domingo", 18.4861, -69.9312),
-            UserAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-            PolicyScore: 35,
-            AnomalyScore: 82,
-            RiskScore: 71,
-            Verdict: "CHALLENGE",
-            TriggeredRules: ["IMPOSSIBLE_TRAVEL", "ANOMALY_VOLUME"]
-        ),
-        new(
-            EvaluationId: Guid.Parse("b1c2d3e4-f5a6-7b8c-9d0e-1f2a3b4c5d6e"),
-            Timestamp: new DateTimeOffset(2026, 5, 29, 14, 28, 0, TimeSpan.Zero),
-            UserId: "user-1001",
-            Username: "mgarcia",
-            ServiceName: "payments-service",
-            SourceIp: "8.8.8.8",
-            Geo: new GeoDto("US", "Mountain View", 37.3861, -122.0839),
-            UserAgent: "PostmanRuntime/7.32.0",
-            PolicyScore: 90,
-            AnomalyScore: 88,
-            RiskScore: 89,
-            Verdict: "BLOCK",
-            TriggeredRules: ["IP_BLACKLIST", "GEOFENCE", "ANOMALY_VOLUME"]
-        ),
-        new(
-            EvaluationId: Guid.Parse("c2d3e4f5-a6b7-8c9d-0e1f-2a3b4c5d6e7f"),
-            Timestamp: new DateTimeOffset(2026, 5, 29, 14, 15, 33, TimeSpan.Zero),
-            UserId: "user-3312",
-            Username: "lrodriguez",
-            ServiceName: "inventory-service",
-            SourceIp: "192.168.1.100",
-            Geo: new GeoDto("DO", "Santiago", 19.4517, -70.6970),
-            UserAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0)",
-            PolicyScore: 10,
-            AnomalyScore: 15,
-            RiskScore: 12,
-            Verdict: "ALLOW",
-            TriggeredRules: []
-        ),
-        new(
-            EvaluationId: Guid.Parse("d3e4f5a6-b7c8-9d0e-1f2a-3b4c5d6e7f8a"),
-            Timestamp: new DateTimeOffset(2026, 5, 29, 13, 55, 0, TimeSpan.Zero),
-            UserId: null,
-            Username: null,
-            ServiceName: null,
-            SourceIp: "45.33.32.156",
-            Geo: new GeoDto("US", "Fremont", 37.5485, -121.9886),
-            UserAgent: "python-requests/2.31.0",
-            PolicyScore: 100,
-            AnomalyScore: 95,
-            RiskScore: 98,
-            Verdict: "BLOCK",
-            TriggeredRules: ["IP_BLACKLIST", "GEOFENCE", "RATE_LIMIT"]
-        ),
-        new(
-            EvaluationId: Guid.Parse("e4f5a6b7-c8d9-0e1f-2a3b-4c5d6e7f8a9b"),
-            Timestamp: new DateTimeOffset(2026, 5, 29, 13, 30, 47, TimeSpan.Zero),
-            UserId: "user-0099",
-            Username: "alopez",
-            ServiceName: "orders-service",
-            SourceIp: "10.0.0.55",
-            Geo: new GeoDto("DO", "Santo Domingo", 18.4861, -69.9312),
-            UserAgent: "Angular/17.0 (internal)",
-            PolicyScore: 8,
-            AnomalyScore: 12,
-            RiskScore: 10,
-            Verdict: "ALLOW",
-            TriggeredRules: []
-        ),
-    ];
-
-    // ── Registro de endpoints ─────────────────────────────────────────────────
+    private const int DefaultPageSize = 25;
+    private const int MaxPageSize = 100;
 
     public static IEndpointRouteBuilder MapAuditLogsEndpoints(this IEndpointRouteBuilder app)
     {
@@ -100,17 +29,14 @@ public static class AuditLogsEndpoints
             .WithTags("Audit Logs")
             .WithOpenApi();
 
-        // GET /api/v1/logs — Lista paginada de logs con filtros opcionales.
         group.MapGet("/", GetLogs)
             .RequireAuthorization("ReadAccess")
             .WithName("GetAuditLogs")
-            .WithSummary("Listar logs de auditoría paginados")
+            .WithSummary("Listar logs de auditoría paginados (datos reales)")
             .WithDescription(
-                "Devuelve una lista paginada de logs de evaluación de riesgo. " +
-                "Soporta filtros por veredicto, usuario, rango de fechas, IP y servicio. " +
-                "Contrato definido en el SRS §4.1.");
+                "Lista paginada de audit_logs con filtros opcionales por veredicto, userId, rango de " +
+                "fechas, IP de origen y servicio. Más reciente primero. Contrato SRS §4.1.");
 
-        // GET /api/v1/logs/{evaluationId} — Detalle de un log individual.
         group.MapGet("/{evaluationId:guid}", GetLogById)
             .RequireAuthorization("ReadAccess")
             .WithName("GetAuditLogById")
@@ -121,58 +47,149 @@ public static class AuditLogsEndpoints
 
     // ── Handlers ──────────────────────────────────────────────────────────────
 
-    private static IResult GetLogs(
+    private static async Task<IResult> GetLogs(
+        OmakaseDbContext db,
         int page = 1,
-        int pageSize = 25,
+        int pageSize = DefaultPageSize,
         string? verdict = null,
         string? userId = null,
         DateTimeOffset? from = null,
         DateTimeOffset? to = null,
         string? sourceIp = null,
-        string? serviceName = null)
+        string? serviceName = null,
+        CancellationToken ct = default)
     {
-        // Validación básica de paginación
         if (page < 1) page = 1;
-        if (pageSize is < 1 or > 100) pageSize = 25;
+        if (pageSize is < 1 or > MaxPageSize) pageSize = DefaultPageSize;
 
-        // Aplicar filtros sobre la colección mock
-        var filtered = MockLogs.AsEnumerable();
+        var query = db.AuditLogs.AsNoTracking().AsQueryable();
 
-        if (!string.IsNullOrWhiteSpace(verdict))
-            filtered = filtered.Where(l => l.Verdict.Equals(verdict, StringComparison.OrdinalIgnoreCase));
+        if (!string.IsNullOrWhiteSpace(verdict) && Enum.TryParse<Verdict>(verdict, ignoreCase: true, out var v))
+            query = query.Where(a => a.Verdict == v);
 
-        if (!string.IsNullOrWhiteSpace(userId))
-            filtered = filtered.Where(l => l.UserId == userId);
+        if (!string.IsNullOrWhiteSpace(userId) && Guid.TryParse(userId, out var uid))
+        {
+            var typed = UserId.From(uid);
+            query = query.Where(a => a.UserId == typed);
+        }
 
-        if (from.HasValue)
-            filtered = filtered.Where(l => l.Timestamp >= from.Value);
-
-        if (to.HasValue)
-            filtered = filtered.Where(l => l.Timestamp <= to.Value);
-
-        if (!string.IsNullOrWhiteSpace(sourceIp))
-            filtered = filtered.Where(l => l.SourceIp == sourceIp);
-
+        if (from.HasValue) query = query.Where(a => a.EvaluatedAt >= from.Value);
+        if (to.HasValue) query = query.Where(a => a.EvaluatedAt <= to.Value);
+        if (!string.IsNullOrWhiteSpace(sourceIp)) query = query.Where(a => a.SourceIp == sourceIp);
         if (!string.IsNullOrWhiteSpace(serviceName))
-            filtered = filtered.Where(l => l.ServiceName?.Equals(serviceName, StringComparison.OrdinalIgnoreCase) == true);
+            query = query.Where(a => a.ProtectedService != null && a.ProtectedService.Name == serviceName);
 
-        var list = filtered.ToList();
-        var totalRecords = list.Count;
-        var data = list.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+        var totalRecords = await query.CountAsync(ct);
 
+        var rows = await query
+            .OrderByDescending(a => a.EvaluatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(a => new LogRow(
+                a.EvaluationId,
+                a.EvaluatedAt,
+                a.UserId,
+                a.User != null ? a.User.Username : null,
+                a.ProtectedService != null ? a.ProtectedService.Name : null,
+                a.SourceIp,
+                a.Geo,
+                a.UserAgent,
+                a.PolicyScore,
+                a.AnomalyScore,
+                a.RiskScore,
+                a.Verdict,
+                a.TriggeredRules))
+            .ToListAsync(ct);
+
+        var data = rows.Select(ToDto).ToList();
         return Results.Ok(new PagedResponse<AuditLogDto>(page, pageSize, totalRecords, data));
     }
 
-    private static IResult GetLogById(Guid evaluationId)
+    private static async Task<IResult> GetLogById(Guid evaluationId, OmakaseDbContext db, CancellationToken ct)
     {
-        var log = MockLogs.FirstOrDefault(l => l.EvaluationId == evaluationId);
+        var row = await db.AuditLogs.AsNoTracking()
+            .Where(a => a.EvaluationId == evaluationId)
+            .Select(a => new LogRow(
+                a.EvaluationId,
+                a.EvaluatedAt,
+                a.UserId,
+                a.User != null ? a.User.Username : null,
+                a.ProtectedService != null ? a.ProtectedService.Name : null,
+                a.SourceIp,
+                a.Geo,
+                a.UserAgent,
+                a.PolicyScore,
+                a.AnomalyScore,
+                a.RiskScore,
+                a.Verdict,
+                a.TriggeredRules))
+            .FirstOrDefaultAsync(ct);
 
-        if (log is null)
-            return Results.NotFound(new Contracts.Common.ErrorResponse(
-                ErrorCode: "NOT_FOUND",
-                Message: $"No se encontró un log con EvaluationId '{evaluationId}'.",
-                TraceId: System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
+        if (row is null)
+            return Results.NotFound(new ErrorResponse(
+                "NOT_FOUND",
+                $"No se encontró un log con EvaluationId '{evaluationId}'.",
+                System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
 
-        return Results.Ok(log);
+        return Results.Ok(ToDto(row));
+    }
+
+    // ── Mapeo entidad → DTO (mismo contrato que el mock anterior) ───────────────
+
+    private sealed record LogRow(
+        Guid EvaluationId, DateTimeOffset EvaluatedAt, UserId? UserId, string? Username, string? ServiceName,
+        string SourceIp, JsonDocument? Geo, string? UserAgent,
+        decimal PolicyScore, decimal AnomalyScore, decimal RiskScore, Verdict Verdict, JsonDocument? TriggeredRules);
+
+    private static AuditLogDto ToDto(LogRow a) => new(
+        a.EvaluationId,
+        a.EvaluatedAt,
+        a.UserId is { } uid ? uid.Value.ToString() : null,
+        a.Username,
+        a.ServiceName,
+        a.SourceIp,
+        ParseGeo(a.Geo),
+        a.UserAgent,
+        a.PolicyScore,
+        a.AnomalyScore,
+        a.RiskScore,
+        a.Verdict.ToString().ToUpperInvariant(),
+        ParseTriggeredRules(a.TriggeredRules));
+
+    /// <summary>Decodifica el JSONB de geolocalización a <see cref="GeoDto"/>; null si no hay país/ciudad.</summary>
+    private static GeoDto? ParseGeo(JsonDocument? geo)
+    {
+        if (geo is null) return null;
+        var root = geo.RootElement;
+
+        string Str(string k) => root.TryGetProperty(k, out var e) && e.ValueKind == JsonValueKind.String ? e.GetString() ?? "" : "";
+        double? Num(string k) => root.TryGetProperty(k, out var e) && e.ValueKind == JsonValueKind.Number ? e.GetDouble() : null;
+
+        var country = Str("country");
+        var city = Str("city");
+        if (string.IsNullOrEmpty(country) && string.IsNullOrEmpty(city)) return null;
+
+        return new GeoDto(country, city, Num("latitude"), Num("longitude"));
+    }
+
+    /// <summary>
+    /// Extrae los nombres de regla del JSONB <c>triggered_rules</c>. Soporta el formato real del motor
+    /// (<c>[{rule,score,detail}]</c>) y el legado (<c>["RULE"]</c>).
+    /// </summary>
+    private static IReadOnlyList<string> ParseTriggeredRules(JsonDocument? rules)
+    {
+        if (rules is null || rules.RootElement.ValueKind != JsonValueKind.Array)
+            return Array.Empty<string>();
+
+        var list = new List<string>();
+        foreach (var el in rules.RootElement.EnumerateArray())
+        {
+            if (el.ValueKind == JsonValueKind.String)
+                list.Add(el.GetString() ?? "");
+            else if (el.ValueKind == JsonValueKind.Object
+                     && el.TryGetProperty("rule", out var r) && r.ValueKind == JsonValueKind.String)
+                list.Add(r.GetString() ?? "");
+        }
+        return list;
     }
 }
