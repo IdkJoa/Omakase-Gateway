@@ -20,6 +20,17 @@ builder.AddRedisClient("redis");
 // ── 1. Capa de Aplicación (Mediador, Comandos, Opciones & Reglas de Negocio) ─
 builder.Services.AddGatewayApplication(builder.Configuration);
 
+// Fail-closed (SRS §6.3.1 / T-068): en Producción la clave que firma los JWT propios DEBE venir de
+// Azure Key Vault — ≥32 bytes y sin el placeholder commiteado. Si no, el proceso NO arranca (nunca
+// corre prod con una clave forjable). En Development se permite el marcador reproducible del appsettings.
+builder.Services.AddOptions<Application.Common.Options.JwtOptions>()
+    .Validate(o => builder.Environment.IsDevelopment()
+                   || (!string.IsNullOrWhiteSpace(o.SecretKey)
+                       && !o.SecretKey.Contains("CHANGE_ME")
+                       && System.Text.Encoding.UTF8.GetByteCount(o.SecretKey) >= 32),
+        "Jwt:SecretKey invalida para Produccion: inyecte una clave >=32 bytes desde Azure Key Vault (T-068), no el placeholder.")
+    .ValidateOnStart();
+
 // ── 2. Capa de Infraestructura (EF Core, Redis, ML.NET, Seeder, GeoLocation) ─
 builder.Services.AddInfrastructure();
 
