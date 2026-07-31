@@ -147,6 +147,10 @@ public static class RolesEndpoints
         var result = await handler.CreateRoleAsync(request.Name, request.Description, ct);
         if (result.IsFailure)
         {
+            if (result.Error.Code == "Roles.InvalidName")
+            {
+                return Results.BadRequest(new ErrorResponse("INVALID_NAME", result.Error.Description, System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
+            }
             if (result.Error.Code == "Roles.Conflict")
             {
                 return Results.Conflict(new ErrorResponse("CONFLICT", result.Error.Description, System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
@@ -200,6 +204,10 @@ public static class RolesEndpoints
             if (result.Error.Code == "Roles.NotFound")
             {
                 return Results.NotFound(new ErrorResponse("NOT_FOUND", result.Error.Description, System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
+            }
+            if (result.Error.Code == "Roles.InvalidName")
+            {
+                return Results.BadRequest(new ErrorResponse("INVALID_NAME", result.Error.Description, System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
             }
             if (result.Error.Code == "Roles.Conflict")
             {
