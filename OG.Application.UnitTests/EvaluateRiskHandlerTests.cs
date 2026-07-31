@@ -189,6 +189,55 @@ public class EvaluateRiskHandlerTests
 
         Assert.Equal(35m, result.RiskScore);
     }
+
+    // ── HU-024 / SRS §7.5: requires_auth (exige JWT antes de evaluar) ────────────
+
+    [Fact]
+    public async Task ServiceRequiresAuth_NoIdentity_ShortCircuits_BeforeRulesAndMl()
+    {
+        var serviceId = ProtectedServiceId.New();
+        _policyProvider.GetByServiceNameAsync("nominas", Arg.Any<CancellationToken>())
+            .Returns(new ServicePolicySet(serviceId, new List<AccessPolicy> { GeoPolicy() }, RequiresAuth: true));
+
+        // Petición ANÓNIMA (sin UserId) a un servicio con requires_auth. Aunque haya una regla severa,
+        // debe cortarse ANTES de evaluar: AuthenticationRequired, sin correr reglas ni ML.
+        var result = await CreateSut(new IRuleEvaluator[] { new StubGeofence(100m) }).HandleAsync(CommandFor("nominas"));
+
+        Assert.True(result.AuthenticationRequired);
+        Assert.Equal(serviceId.Value, result.ServiceId);
+        Assert.Equal(0m, result.PolicyScore);   // reglas NO corridas
+        Assert.Equal(0m, result.AnomalyScore);  // ML NO corrido
+    }
+
+    [Fact]
+    public async Task ServiceRequiresAuth_WithIdentity_EvaluatesNormally()
+    {
+        var serviceId = ProtectedServiceId.New();
+        _policyProvider.GetByServiceNameAsync("nominas", Arg.Any<CancellationToken>())
+            .Returns(new ServicePolicySet(serviceId, new List<AccessPolicy> { GeoPolicy() }, RequiresAuth: true));
+        GivenProfileAccessCount("u1", 10); // usuario establecido, sin cold-start
+
+        var cmd = new EvaluateRiskCommand(new RequestContext
+        {
+            SourceIp = "190.166.12.45", ServiceName = "nominas", UserId = "u1"
+        });
+        var result = await CreateSut(new IRuleEvaluator[] { new StubGeofence(0m) }).HandleAsync(cmd);
+
+        Assert.False(result.AuthenticationRequired); // con identidad no corta
+        Assert.Equal(Verdict.Allow, result.Verdict);
+    }
+
+    [Fact]
+    public async Task ServiceWithoutRequiresAuth_NoIdentity_EvaluatesNormally()
+    {
+        var serviceId = ProtectedServiceId.New();
+        _policyProvider.GetByServiceNameAsync("publico", Arg.Any<CancellationToken>())
+            .Returns(new ServicePolicySet(serviceId, new List<AccessPolicy>(), RequiresAuth: false));
+
+        var result = await CreateSut(Array.Empty<IRuleEvaluator>()).HandleAsync(CommandFor("publico"));
+
+        Assert.False(result.AuthenticationRequired); // requires_auth=false → sin gate
+    }
 }
 
 /// <summary>Stub de anomalía: 50 en Sprint 2.</summary>

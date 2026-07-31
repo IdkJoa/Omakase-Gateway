@@ -155,7 +155,27 @@ public sealed class RiskEvaluationMiddleware
                 evaluationId);
         }
 
-        // Despacho de veredicto 
+        // Precondición de autenticación (SRS §7.5 / HU-024): el servicio exige JWT (requires_auth) y
+        // la petición no trae identidad → 401 AUTHENTICATION_REQUIRED, antes del veredicto de riesgo.
+        if (result.AuthenticationRequired)
+        {
+            _logger.LogWarning(
+                "[RiskEvaluationMiddleware] Autenticación requerida (requires_auth) sin identidad. EvaluationId={EvaluationId} Servicio={Service}",
+                evaluationId, serviceName ?? "unknown");
+
+            context.Response.StatusCode  = StatusCodes.Status401Unauthorized;
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsJsonAsync(new
+            {
+                errorCode    = GatewayErrorCodes.AuthenticationRequired,
+                message      = "El servicio solicitado requiere autenticación.",
+                evaluationId = evaluationId,
+                traceId      = context.TraceIdentifier
+            });
+            return;
+        }
+
+        // Despacho de veredicto
         switch (result.Verdict)
         {
             case Verdict.Allow:

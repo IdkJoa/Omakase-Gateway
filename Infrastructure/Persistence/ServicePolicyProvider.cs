@@ -38,6 +38,6 @@ public sealed class ServicePolicyProvider : IServicePolicyProvider
             return null;
 
         var policies = await GetActivePoliciesAsync(service.Id, cancellationToken);
-        return new ServicePolicySet(service.Id, policies);
+        return new ServicePolicySet(service.Id, policies, service.RequiresAuth);
     }
 }

@@ -24,6 +24,11 @@ public sealed record EvaluateRiskCommand(RequestContext Context)
 /// <param name="Geo">Geolocalización del origen como JSON, o null si no se resolvió.</param>
 /// <param name="TriggeredRules">Reglas disparadas con su score parcial, como JSON.</param>
 /// <param name="ServiceId">Id del servicio destino evaluado, o null si no se resolvió.</param>
+/// <param name="AuthenticationRequired">
+/// Precondición fallida (SRS §7.5): el servicio destino exige JWT (<c>requires_auth</c>) y la
+/// petición llegó sin identidad. El middleware responde 401 (autenticar) en vez del veredicto de
+/// riesgo. Por defecto false.
+/// </param>
 public sealed record RiskEvaluationResult(
     Verdict Verdict,
     decimal RiskScore,
@@ -31,4 +36,5 @@ public sealed record RiskEvaluationResult(
     decimal AnomalyScore,
     JsonDocument? Geo,
     JsonDocument? TriggeredRules,
-    Guid? ServiceId);
+    Guid? ServiceId,
+    bool AuthenticationRequired = false);
