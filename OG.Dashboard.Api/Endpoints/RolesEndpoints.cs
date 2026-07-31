@@ -142,6 +142,7 @@ public static class RolesEndpoints
     private static async Task<IResult> Create(
         CreateRoleRequest request,
         [FromServices] RolesHandler handler,
+        [FromServices] IOutputSanitizer enc,
         CancellationToken ct)
     {
         var result = await handler.CreateRoleAsync(request.Name, request.Description, ct);
@@ -159,10 +160,12 @@ public static class RolesEndpoints
         }
 
         var r = result.Value;
+        // Output-encoding consistente con GetAll/GetById y con los Create de policies/services:
+        // se sanitiza el nombre/descripcion en la respuesta (defensa en profundidad).
         var dto = new RoleDto(
             r.Id.Value,
-            r.Name,
-            r.Description,
+            enc.Sanitize(r.Name),
+            r.Description is not null ? enc.Sanitize(r.Description) : null,
             r.CreatedAt,
             0
         );

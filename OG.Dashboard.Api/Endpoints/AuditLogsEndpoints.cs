@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Application.Common.Security;
 using Domain.Entities;
 using Domain.ValueObjects;
 using Infrastructure;
@@ -49,6 +50,7 @@ public static class AuditLogsEndpoints
 
     private static async Task<IResult> GetLogs(
         OmakaseDbContext db,
+        IOutputSanitizer enc,
         int page = 1,
         int pageSize = DefaultPageSize,
         string? verdict = null,
@@ -101,11 +103,11 @@ public static class AuditLogsEndpoints
                 a.TriggeredRules))
             .ToListAsync(ct);
 
-        var data = rows.Select(ToDto).ToList();
+        var data = rows.Select(r => ToDto(r, enc)).ToList();
         return Results.Ok(new PagedResponse<AuditLogDto>(page, pageSize, totalRecords, data));
     }
 
-    private static async Task<IResult> GetLogById(Guid evaluationId, OmakaseDbContext db, CancellationToken ct)
+    private static async Task<IResult> GetLogById(Guid evaluationId, OmakaseDbContext db, IOutputSanitizer enc, CancellationToken ct)
     {
         var row = await db.AuditLogs.AsNoTracking()
             .Where(a => a.EvaluationId == evaluationId)
@@ -131,7 +133,7 @@ public static class AuditLogsEndpoints
                 $"No se encontró un log con EvaluationId '{evaluationId}'.",
                 System.Diagnostics.Activity.Current?.TraceId.ToString() ?? "N/A"));
 
-        return Results.Ok(ToDto(row));
+        return Results.Ok(ToDto(row, enc));
     }
 
     // ── Mapeo entidad → DTO (mismo contrato que el mock anterior) ───────────────
@@ -141,15 +143,15 @@ public static class AuditLogsEndpoints
         string SourceIp, JsonDocument? Geo, string? UserAgent,
         decimal PolicyScore, decimal AnomalyScore, decimal RiskScore, Verdict Verdict, JsonDocument? TriggeredRules);
 
-    private static AuditLogDto ToDto(LogRow a) => new(
+    private static AuditLogDto ToDto(LogRow a, IOutputSanitizer enc) => new(
         a.EvaluationId,
         a.EvaluatedAt,
         a.UserId is { } uid ? uid.Value.ToString() : null,
-        a.Username,
-        a.ServiceName,
+        a.Username is null ? null : enc.Sanitize(a.Username),
+        a.ServiceName is null ? null : enc.Sanitize(a.ServiceName),
         a.SourceIp,
         ParseGeo(a.Geo),
-        a.UserAgent,
+        a.UserAgent is null ? null : enc.Sanitize(a.UserAgent),
         a.PolicyScore,
         a.AnomalyScore,
         a.RiskScore,
