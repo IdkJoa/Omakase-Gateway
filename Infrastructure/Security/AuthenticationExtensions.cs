@@ -46,6 +46,14 @@ public static class AuthenticationExtensions
                             logSanitizer.Sanitize(context.HttpContext.Connection.RemoteIpAddress?.ToString()), 
                             logSanitizer.Sanitize(context.Exception.Message));
                             
+                        var activity = System.Diagnostics.Activity.Current;
+                        if (activity != null)
+                        {
+                            activity.SetStatus(System.Diagnostics.ActivityStatusCode.Error, "Dependency failure: Keycloak");
+                            activity.SetTag("error", true);
+                            activity.SetTag("dependency.name", "Keycloak");
+                        }
+
                         try
                         {
                             var dbContext = context.HttpContext.RequestServices.GetRequiredService<Infrastructure.OmakaseDbContext>();
@@ -59,7 +67,7 @@ public static class AuthenticationExtensions
                                 PolicyScore = 100,
                                 AnomalyScore = 100,
                                 RiskScore = 100,
-                                TriggeredRules = JsonDocument.Parse("[\"INVALID_TOKEN\"]")
+                                TriggeredRules = JsonDocument.Parse("[{\"rule\":\"SERVICE_DEGRADATION\",\"score\":0,\"detail\":\"keycloak_inoperativo\"},\"INVALID_TOKEN\"]")
                             };
                             dbContext.AuditLogs.Add(auditLog);
                             await dbContext.SaveChangesAsync();

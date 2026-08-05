@@ -1,5 +1,6 @@
 using Application.Common.RiskEngine;
 using Application.Common.RiskEngine.AnomalyDetection;
+using Microsoft.Extensions.Logging;
 
 namespace Infrastructure.AnomalyDetection;
 
@@ -23,38 +24,58 @@ public sealed class RandomizedPcaAnomalyDetector : IAnomalyDetector
     private readonly AnomalyModelTrainer _trainer;
     private readonly IAnomalyModelCache _modelCache;
     private readonly AnomalyDetectionOptions _options;
+    private readonly Microsoft.Extensions.Logging.ILogger<RandomizedPcaAnomalyDetector>? _logger;
 
     public RandomizedPcaAnomalyDetector(
         IUserProfileStore store,
         IFeatureExtractor extractor,
         AnomalyModelTrainer trainer,
         IAnomalyModelCache modelCache,
-        AnomalyDetectionOptions options)
+        AnomalyDetectionOptions options,
+        Microsoft.Extensions.Logging.ILogger<RandomizedPcaAnomalyDetector>? logger = null)
     {
         _store = store;
         _extractor = extractor;
         _trainer = trainer;
         _modelCache = modelCache;
         _options = options;
+        _logger = logger;
     }
 
     /// <inheritdoc/>
     public async Task<decimal> GetAnomalyScoreAsync(RequestContext context, CancellationToken cancellationToken = default)
     {
-        // Sin identidad resuelta no hay a quién perfilar → incertidumbre (RF-M9).
-        if (string.IsNullOrWhiteSpace(context.UserId))
+        try
+        {
+            // Sin identidad resuelta no hay a quién perfilar → incertidumbre (RF-M9).
+            if (string.IsNullOrWhiteSpace(context.UserId))
+                return NeutralScore;
+
+            var profile = await _store.GetAsync(context.UserId, cancellationToken);
+
+            // Historial insuficiente (cold-start, HU-017): no se entrena un modelo poco fiable. La elevación
+            // de riesgo la aporta el ColdStartPenalty en el consolidador, no este score.
+            if (profile is null || profile.TrainingWindow.Count < _options.MinTrainingSamples)
+                return NeutralScore;
+
+            var model = _modelCache.GetOrBuild(context.UserId, () => _trainer.Train(profile.TrainingWindow));
+            var features = _extractor.Extract(context, profile.RecentAccesses);
+
+            return (decimal)model.Score(features);
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogWarning(ex, "Fallo en la inferencia de ML.NET (RandomizedPcaAnomalyDetector). Degradando a AnomalyScore neutro (50).");
+
+            var activity = System.Diagnostics.Activity.Current;
+            if (activity != null)
+            {
+                activity.SetStatus(System.Diagnostics.ActivityStatusCode.Error, "Dependency failure: ML.NET");
+                activity.SetTag("error", true);
+                activity.SetTag("dependency.name", "ML.NET");
+            }
+
             return NeutralScore;
-
-        var profile = await _store.GetAsync(context.UserId, cancellationToken);
-
-        // Historial insuficiente (cold-start, HU-017): no se entrena un modelo poco fiable. La elevación
-        // de riesgo la aporta el ColdStartPenalty en el consolidador, no este score.
-        if (profile is null || profile.TrainingWindow.Count < _options.MinTrainingSamples)
-            return NeutralScore;
-
-        var model = _modelCache.GetOrBuild(context.UserId, () => _trainer.Train(profile.TrainingWindow));
-        var features = _extractor.Extract(context, profile.RecentAccesses);
-
-        return (decimal)model.Score(features);
+        }
     }
 }
