@@ -101,11 +101,62 @@ public sealed class EvaluateRiskHandler
             }
         }
 
-        // 2. Policy Score ponderado (T-028).
-        var policyScore = _policyCalculator.Calculate(ruleResults);
+        // 1b. Verificar degradación de Geolocalización (HU-032 / T-069 / T-070)
+        bool geoDegraded = false;
+        try
+        {
+            var geoCheck = await _geoLocation.ResolveAsync(context.SourceIp, cancellationToken);
+            if (geoCheck.IsFailure)
+            {
+                geoDegraded = true;
+                var activity = System.Diagnostics.Activity.Current;
+                if (activity != null)
+                {
+                    activity.SetStatus(System.Diagnostics.ActivityStatusCode.Error, "Dependency failure: GeoLocation");
+                    activity.SetTag("error", true);
+                    activity.SetTag("dependency.name", "GeoLocation");
+                }
+            }
+        }
+        catch (Exception)
+        {
+            geoDegraded = true;
+            var activity = System.Diagnostics.Activity.Current;
+            if (activity != null)
+            {
+                activity.SetStatus(System.Diagnostics.ActivityStatusCode.Error, "Dependency failure: GeoLocation");
+                activity.SetTag("error", true);
+                activity.SetTag("dependency.name", "GeoLocation");
+            }
+        }
 
-        // 3. Anomaly Score (modelo ML.NET real; 50 si sin identidad/cold-start).
-        var anomalyScore = await _anomalyDetector.GetAnomalyScoreAsync(context, cancellationToken);
+        // 2. Policy Score ponderado (T-028) + degradación por GeoLocation (+15).
+        var policyScore = _policyCalculator.Calculate(ruleResults);
+        if (geoDegraded)
+        {
+            policyScore = Math.Min(100m, policyScore + 15m);
+        }
+
+        // 3. Anomaly Score (modelo ML.NET real; 50 si sin identidad/cold-start o fallo HU-032).
+        decimal anomalyScore;
+        bool mlDegraded = false;
+        try
+        {
+            anomalyScore = await _anomalyDetector.GetAnomalyScoreAsync(context, cancellationToken);
+        }
+        catch (Exception)
+        {
+            anomalyScore = 50m;
+            mlDegraded = true;
+
+            var activity = System.Diagnostics.Activity.Current;
+            if (activity != null)
+            {
+                activity.SetStatus(System.Diagnostics.ActivityStatusCode.Error, "Dependency failure: ML.NET");
+                activity.SetTag("error", true);
+                activity.SetTag("dependency.name", "ML.NET");
+            }
+        }
 
         // 4. Risk Score + veredicto (T-029) con el access_count real del perfil (T-034 / HU-017).
         var accessCount = await ResolveAccessCountAsync(context, config, cancellationToken);
@@ -119,9 +170,9 @@ public sealed class EvaluateRiskHandler
         // 5. Alimentar el perfil de forma asíncrona (T-033 + base_risk_penalty T-034): fuera de la ruta crítica.
         EnqueueProfileUpdate(context, consolidated, config);
 
-        // 6. Desglose de auditoría (T-030): geo + reglas disparadas.
+        // 6. Desglose de auditoría (T-030): geo + reglas disparadas (incluyendo degradaciones HU-032).
         var geoJson = await BuildGeoAsync(context.SourceIp, cancellationToken);
-        var triggeredJson = BuildTriggeredRules(ruleResults, mfaRules);
+        var triggeredJson = BuildTriggeredRules(ruleResults, mfaRules, geoDegraded, mlDegraded);
 
         return new RiskEvaluationResult(
             consolidated.Verdict,
@@ -176,18 +227,6 @@ public sealed class EvaluateRiskHandler
 
     /// <summary>
     /// Encola la actualización del perfil (T-033 + base_risk_penalty T-034). Solo con identidad; fire-and-forget.
-    /// <para>
-    /// Solo alimentan el perfil los accesos efectivamente CONCEDIDOS (incluidos los que se concedieron
-    /// tras un step-up MFA válido, ya degradados a Allow en este punto). Un intento desafiado o bloqueado
-    /// no es «comportamiento real» del usuario (HU-017) y no debe:
-    /// <list type="bullet">
-    ///   <item>extinguir la penalización de cold-start — si no, una cuenta nueva con credenciales robadas
-    ///   agota el cold-start a base de peticiones rechazadas y termina evaluada como confiable sin
-    ///   completar nunca el segundo factor, dejando abierto el punto ciego que el SRS §9.3 cierra;</item>
-    ///   <item>entrar en el baseline del modelo de anomalías — el tráfico rechazado envenenaría el perfil
-    ///   que RandomizedPCA aprende como normal (RF-M3).</item>
-    /// </list>
-    /// </para>
     /// </summary>
     private void EnqueueProfileUpdate(RequestContext context, ConsolidatedRisk consolidated, RiskScoreConfig config)
     {
@@ -224,8 +263,7 @@ public sealed class EvaluateRiskHandler
     /// <summary>
     /// Ajusta el veredicto Challenge según el flujo de step-up MFA (SRS §3.6):
     /// no interactivo → Block (fail-closed, T-106); step-up vigente ligado al mismo
-    /// dispositivo → Allow (T-105). El Risk Score NO se reduce: el step-up autoriza
-    /// continuar pese al riesgo, de forma acotada y auditada.
+    /// dispositivo → Allow (T-105).
     /// </summary>
     private async Task<(ConsolidatedRisk Risk, IReadOnlyList<(string Rule, string Detail)> MfaRules)> ApplyStepUpPolicyAsync(
         RequestContext context, ConsolidatedRisk consolidated, CancellationToken cancellationToken)
@@ -236,7 +274,6 @@ public sealed class EvaluateRiskHandler
         var mfaInfo = await _userMfaInfo.GetAsync(context.UserId, cancellationToken);
         if (mfaInfo is { IsInteractive: false })
         {
-            // T-106: registrar MFA_FAILED y la escalada, en auditoría y OpenTelemetry.
             System.Diagnostics.Activity.Current?.AddEvent(
                 new System.Diagnostics.ActivityEvent("mfa.challenge.non_interactive_escalated"));
             return (consolidated with { Verdict = Verdict.Block }, new[]
@@ -272,15 +309,27 @@ public sealed class EvaluateRiskHandler
         return string.Equals(stepUp.FingerprintHash, currentHash, StringComparison.Ordinal);
     }
 
-    /// <summary>Serializa las reglas disparadas con su score parcial (triggered_rules JSONB).</summary>
+    /// <summary>Serializa las reglas disparadas con su score parcial y degradaciones (triggered_rules JSONB).</summary>
     private static JsonDocument BuildTriggeredRules(
         IReadOnlyList<RuleEvaluationResult> ruleResults,
-        IReadOnlyList<(string Rule, string Detail)> mfaRules)
+        IReadOnlyList<(string Rule, string Detail)> mfaRules,
+        bool geoDegraded = false,
+        bool mlDegraded = false)
     {
         var triggered = ruleResults
             .Where(r => r.Triggered)
             .Select(r => new { rule = r.RuleName, score = r.Score, detail = (string?)r.Detail })
             .ToList();
+
+        if (geoDegraded)
+        {
+            triggered.Add(new { rule = "SERVICE_DEGRADATION", score = 15m, detail = (string?)"geolocalizacion_inoperativa" });
+        }
+
+        if (mlDegraded)
+        {
+            triggered.Add(new { rule = "SERVICE_DEGRADATION", score = 0m, detail = (string?)"ml_net_inoperativo" });
+        }
 
         foreach (var (rule, detail) in mfaRules)
             triggered.Add(new { rule, score = 0m, detail = (string?)detail });
