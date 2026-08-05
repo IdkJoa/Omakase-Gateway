@@ -38,6 +38,23 @@
       ],
       "requiredActions": [],
       "realmRoles": [ "ADMIN" ]
+    },
+    {
+      "username": "viewer",
+      "enabled": true,
+      "email": "viewer@omakase.local",
+      "emailVerified": true,
+      "firstName": "Read",
+      "lastName": "Only",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "viewer",
+          "temporary": false
+        }
+      ],
+      "requiredActions": [],
+      "realmRoles": [ "VIEWER" ]
     }
   ],
   "roles": {

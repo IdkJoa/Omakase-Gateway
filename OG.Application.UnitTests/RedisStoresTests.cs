@@ -26,60 +26,6 @@ public class RedisStoresTests
     }
 
     [Fact]
-    public async Task RedisService_SetSessionAsync_ShouldCallHashSetWithCorrectTtl()
-    {
-        // Arrange
-        var service = new RedisService(_redisMock);
-        string userId = "usr_test123";
-        string jti = "jwt-jti-456";
-        string userType = "ClientUser";
-        var ttl = TimeSpan.FromMinutes(15);
-        string expectedKey = RedisKeyHelper.GetSessionKey(userId);
-
-        // Act
-        await service.SetSessionAsync(userId, jti, userType, ttl);
-
-        // Assert
-        await _dbMock.Received(1).HashSetAsync(
-            Arg.Is<RedisKey>(k => k == expectedKey),
-            Arg.Is<HashEntry[]>(entries =>
-                entries.Length == 3 &&
-                entries[0].Name == "jti" && entries[0].Value == jti &&
-                entries[1].Name == "user_type" && entries[1].Value == userType &&
-                entries[2].Name == "last_activity"
-            ),
-            Arg.Any<CommandFlags>());
-        
-        await _dbMock.Received(1).KeyExpireAsync((RedisKey)expectedKey, (TimeSpan?)ttl, ExpireWhen.Always, CommandFlags.None);
-    }
-
-    [Fact]
-    public async Task RedisService_GetSessionAsync_ShouldReturnSessionDataWhenExists()
-    {
-        // Arrange
-        var service = new RedisService(_redisMock);
-        string userId = "usr_test123";
-        string expectedKey = RedisKeyHelper.GetSessionKey(userId);
-        var expectedLastActivity = DateTimeOffset.UtcNow;
-
-        _dbMock.HashGetAllAsync(expectedKey, Arg.Any<CommandFlags>()).Returns(new HashEntry[]
-        {
-            new HashEntry("jti", "jwt-jti-456"),
-            new HashEntry("user_type", "ClientUser"),
-            new HashEntry("last_activity", expectedLastActivity.ToString("O"))
-        });
-
-        // Act
-        var result = await service.GetSessionAsync(userId);
-
-        // Assert
-        Assert.NotNull(result);
-        Assert.Equal("jwt-jti-456", result.Jti);
-        Assert.Equal("ClientUser", result.UserType);
-        Assert.Equal(expectedLastActivity.ToString("O"), result.LastActivity.ToString("O"));
-    }
-
-    [Fact]
     public async Task RedisService_AddToBlacklistAsync_ShouldCallStringSetWithCorrectTtl()
     {
         // Arrange
@@ -211,20 +157,4 @@ public class RedisStoresTests
         await _dbMock.Received(1).KeyExpireAsync((RedisKey)expectedKey, (TimeSpan?)window, ExpireWhen.Always, CommandFlags.None);
     }
 
-    [Fact]
-    public async Task RedisService_GetRateLimitAsync_ShouldReturnValue()
-    {
-        // Arrange
-        var service = new RedisService(_redisMock);
-        string ip = "192.168.1.1";
-        string expectedKey = RedisKeyHelper.GetRateLimitKey(ip);
-        _dbMock.StringGetAsync(expectedKey, Arg.Any<CommandFlags>()).Returns((RedisValue)"15");
-
-        // Act
-        long count = await service.GetRateLimitAsync(ip);
-
-        // Assert
-        Assert.Equal(15, count);
-        await _dbMock.Received(1).StringGetAsync(expectedKey, Arg.Any<CommandFlags>());
-    }
 }

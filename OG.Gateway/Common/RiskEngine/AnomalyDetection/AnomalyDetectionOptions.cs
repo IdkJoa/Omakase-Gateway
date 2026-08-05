@@ -32,6 +32,24 @@ public sealed class AnomalyDetectionOptions
     public int MinTrainingSamples { get; set; } = 20;
 
     /// <summary>
+    /// Mínimo de accesos DENTRO de la ventana de frecuencia para que las features de volumen se
+    /// consideren medibles. Por debajo, el detector degrada a incertidumbre en vez de puntuar.
+    /// <para>
+    /// Motivo estadístico: <c>diversity = únicos / total</c> es un ratio sobre la muestra de la
+    /// ventana. Con 1 acceso solo puede valer 1.0, con 2 solo 0.5 o 1.0 — una rejilla degenerada que
+    /// no aparece en el baseline (donde ronda 0.2–0.3) y que empuja el percentil al extremo. Medido
+    /// en vivo (2026-08-01): un único acceso previo bastaba para que un usuario legítimo puntuara
+    /// 92.5, o sea que su SEGUNDA petición de la hora habría sido desafiada.
+    /// </para>
+    /// <para>
+    /// Default 5: es el conteo más bajo con granularidad razonable, y coincide con el usuario normal
+    /// que describe el SRS (~5 accesos/día). Un ataque por volumen (50 peticiones) lo supera de sobra,
+    /// así que la detección no se pierde.
+    /// </para>
+    /// </summary>
+    public int MinWindowSamples { get; set; } = 5;
+
+    /// <summary>
     /// Vigencia de la caché Redis del perfil (<c>profile:{userId}</c>), en minutos, para no pegar a
     /// PostgreSQL en la ruta crítica (T-033). Default: 60 (1 hora, por especificación del SRS).
     /// </summary>

@@ -43,7 +43,22 @@ public static class ApiExtensions
             options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
 
             var configSection = configuration.GetSection("ForwardedHeaders");
-            var trustAll = configSection.GetValue<bool>("TrustAll", true);
+
+            // Seguro por defecto: si la clave falta, NO se confia en la cabecera. El default anterior
+            // era true, asi que una configuracion incompleta dejaba al Gateway aceptando cualquier
+            // X-Forwarded-For — un atacante falsificaba su IP y burlaba geofencing, viaje imposible
+            // y el rate-limit por IP. Development lo activa explicitamente para simular ataques (HU-034).
+            //
+            // Semantica verificada en ForwardedHeadersHardeningTests:
+            //  - TrustAll=true vacia ambas listas y ASP.NET entonces OMITE la comprobacion de proxy
+            //    conocido, es decir acepta la cabecera de cualquier cliente.
+            //  - TrustAll=false conserva los defaults del framework (loopback) y descarta la cabecera
+            //    de cualquier cliente remoto.
+            // RIESGO RESIDUAL DECLARADO: con TrustAll=false, un proceso en la MISMA maquina sigue
+            // pudiendo falsificar la IP, porque ASP.NET confia en loopback por defecto. No se limpian
+            // esas listas aqui a proposito: dejarlas vacias sin KnownProxies declarados haria que el
+            // framework aceptara la cabecera de todo el mundo, que es justo lo contrario.
+            var trustAll = configSection.GetValue<bool>("TrustAll", false);
 
             if (trustAll)
             {
