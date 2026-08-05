@@ -13,6 +13,12 @@ namespace Infrastructure.AnomalyDetection;
 /// construcción del modelo está fuera del presupuesto de ≤15 ms (solo la inferencia lo está); el primer
 /// request de un usuario tras arrancar el proceso paga el entrenamiento una vez (o lo pre-calienta T-035).
 /// </para>
+/// <para>
+/// El detector degrada a <see cref="NeutralScore"/> en TRES situaciones distintas, todas bajo la misma
+/// política de RF-M9 —ante la duda, incertidumbre, nunca una señal inventada—: sin identidad, sin
+/// historial suficiente para entrenar (cold-start, HU-017), sin muestras suficientes en la ventana para
+/// medir volumen (HU-035), y ante un fallo de la dependencia de ML.NET (HU-032).
+/// </para>
 /// </summary>
 public sealed class RandomizedPcaAnomalyDetector : IAnomalyDetector
 {
@@ -58,6 +64,24 @@ public sealed class RandomizedPcaAnomalyDetector : IAnomalyDetector
             if (profile is null || profile.TrainingWindow.Count < _options.MinTrainingSamples)
                 return NeutralScore;
 
+            // Dos de las cuatro features (frecuencia y diversidad) se miden SOBRE la ventana reciente. Con
+            // pocos accesos dentro de ella no valen "poco": son estadísticamente inservibles. La diversidad
+            // es un ratio únicos/total, así que con 1 acceso solo puede dar 1.0 y con 2 solo 0.5 o 1.0 —
+            // valores que el baseline no contiene (allí ronda 0.2–0.3) y que disparan el percentil.
+            //
+            // Medido en vivo (2026-08-01), ambos casos con usuario y perfil legítimos:
+            //   · sin accesos en la ventana  → el mismo acceso puntuaba 12.0 en una siembra y 89.5 en otra
+            //   · con UN acceso previo       → 92.5, es decir la SEGUNDA petición de la hora habría sido
+            //                                  desafiada, y quedaba pegada al ataque en ráfaga (98.0)
+            // Con esa varianza no hay reparto de pesos que separe legítimo de ataque: no era calibración.
+            //
+            // Se aplica la MISMA política que ya rige para el cold-start (RF-M9): si los datos no alcanzan,
+            // se devuelve incertidumbre en vez de inventar una señal. El riesgo por volumen solo se evalúa
+            // cuando hay volumen medible; las reglas deterministas siguen actuando igual, y un ataque por
+            // volumen supera el mínimo de sobra, así que no se pierde detección.
+            if (CountInFrequencyWindow(context.Timestamp, profile.RecentAccesses) < _options.MinWindowSamples)
+                return NeutralScore;
+
             var model = _modelCache.GetOrBuild(context.UserId, () => _trainer.Train(profile.TrainingWindow));
             var features = _extractor.Extract(context, profile.RecentAccesses);
 
@@ -77,5 +101,28 @@ public sealed class RandomizedPcaAnomalyDetector : IAnomalyDetector
 
             return NeutralScore;
         }
+    }
+
+    /// <summary>
+    /// Cuenta los accesos del usuario dentro de la ventana con la que se miden frecuencia y diversidad.
+    /// Replica exactamente el criterio de <see cref="IFeatureExtractor"/> —misma ventana, mismos
+    /// límites— para que "hay datos suficientes" signifique lo mismo en ambos sitios.
+    /// </summary>
+    private int CountInFrequencyWindow(
+        DateTimeOffset now, IReadOnlyList<UserAccessSample> recentAccesses)
+    {
+        if (recentAccesses.Count == 0)
+            return 0;
+
+        var windowStart = now - TimeSpan.FromMinutes(_options.FrequencyWindowMinutes);
+        var count = 0;
+
+        foreach (var access in recentAccesses)
+        {
+            if (access.Timestamp > windowStart && access.Timestamp <= now)
+                count++;
+        }
+
+        return count;
     }
 }
