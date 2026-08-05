@@ -6,6 +6,7 @@ using Application.Common.Security;
 using Application.Features.Auth;
 using Infrastructure.AnomalyDetection;
 using Infrastructure.GeoLocation;
+using Infrastructure.KeyVault;
 using Infrastructure.Persistence;
 using Infrastructure.Persistence.Seeding;
 using Infrastructure.Redis;
@@ -88,7 +89,11 @@ public static class DependencyInjection
         services.AddScoped<IUserProfileStore, UserProfileStore>();
         services.AddScoped<IAnomalyDetector, RandomizedPcaAnomalyDetector>();
 
-        // HU-017: services.AddSingleton<ISecretProvider, KeyVaultSecretProvider>();
+        // HU-017 & T-068: Registro de Azure Key Vault y Validador de Startup (HU-031)
+        services.AddOptions<KeyVaultOptions>()
+            .BindConfiguration(KeyVaultOptions.SectionName);
+        services.AddSingleton<ISecretProvider, KeyVaultSecretProvider>();
+        services.AddSingleton<KeyVaultStartupValidator>();
 
         services.AddScoped<IGatewayTokenService, GatewayTokenService>();
         services.AddScoped<ILoginService, LoginService>();

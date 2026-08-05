@@ -40,6 +40,9 @@ builder.Services.AddGatewayApiConfiguration(builder.Configuration);
 
 var app = builder.Build();
 
+// HU-031 & T-068: Validación estricta de secretos en Azure Key Vault durante el inicio (Fail-Closed)
+await app.ValidateKeyVaultOnStartupAsync();
+
 // ── Middleware Pipeline ────────────────────────────────────────────────────────
 app.UseForwardedHeaders();
 
