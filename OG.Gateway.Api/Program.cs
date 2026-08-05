@@ -2,6 +2,7 @@ using Application;
 using Application.Middlewares;
 using Infrastructure;
 using Infrastructure.Security;
+using Infrastructure.Resilience;
 using Infrastructure.Persistence;
 using Infrastructure.Persistence.Seeding;
 using Microsoft.EntityFrameworkCore;
@@ -44,6 +45,9 @@ app.UseForwardedHeaders();
 
 app.UseCors(ApiExtensions.FrontendCorsPolicy);
 app.UseMiddleware<SecurityHeadersMiddleware>();
+
+// HU-031 & T-067: Middleware de resiliencia Fail-Closed (503 ante fallos de Redis / PostgreSQL)
+app.UseMiddleware<DependencyCircuitBreakerMiddleware>();
 
 app.UseMiddleware<RateLimitMiddleware>();
 app.UseAuthentication();
