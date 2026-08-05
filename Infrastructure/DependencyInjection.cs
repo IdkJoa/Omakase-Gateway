@@ -65,14 +65,38 @@ public static class DependencyInjection
         services.AddSingleton<IRiskScoreConsolidator, RiskScoreConsolidator>();
         services.AddScoped<IServicePolicyProvider, ServicePolicyProvider>();
         services.AddScoped<IRiskConfigProvider, RiskConfigProvider>();
-        services.AddOptions<AnomalyDetectionOptions>();
+        // La seccion "AnomalyDetection" NO estaba enlazada: pese a documentarse como options pattern,
+        // los valores quedaban clavados a los defaults de la clase y no habia forma de calibrar el motor
+        // desde appsettings (necesario para HU-035). Se enlaza y se valida al arrancar.
+        services.AddOptions<AnomalyDetectionOptions>()
+            .BindConfiguration(AnomalyDetectionOptions.SectionName)
+            .Validate(o => o.PcaRank >= 1 && o.PcaRank < AnomalyFeatureVector.Dimension,
+                $"AnomalyDetection:PcaRank debe estar en [1, {AnomalyFeatureVector.Dimension - 1}]: "
+                + "el rango del PCA tiene que ser menor que la dimension del vector de features.")
+            .Validate(o => o.MinTrainingSamples >= 1,
+                "AnomalyDetection:MinTrainingSamples debe ser >= 1.")
+            .Validate(o => o.FrequencySaturation >= 1,
+                "AnomalyDetection:FrequencySaturation debe ser >= 1 (es divisor de la frecuencia).")
+            .Validate(o => o.FrequencyWindowMinutes >= 1,
+                "AnomalyDetection:FrequencyWindowMinutes debe ser >= 1.")
+            .Validate(o => o.TrainingWindowMax >= o.MinTrainingSamples,
+                "AnomalyDetection:TrainingWindowMax no puede ser menor que MinTrainingSamples: "
+                + "la ventana nunca alcanzaria el minimo para entrenar.")
+            .ValidateOnStart();
+
         services.AddSingleton(sp => sp.GetRequiredService<IOptions<AnomalyDetectionOptions>>().Value);
-        
+
         services.AddSingleton<IFeatureExtractor>(sp =>
             new FeatureExtractor(sp.GetRequiredService<AnomalyDetectionOptions>()));
-        
+
         services.AddSingleton(sp =>
             new AnomalyModelTrainer(sp.GetRequiredService<AnomalyDetectionOptions>()));
+
+        // T-089: baseline sintetico reproducible para que el modelo tenga historial que aprender
+        // sin esperar semanas de trafico real (ver BehaviorBaselineBootstrapper).
+        services.AddSingleton(sp => new BehaviorBaselineBootstrapper(
+            sp.GetRequiredService<IFeatureExtractor>(),
+            sp.GetRequiredService<AnomalyDetectionOptions>()));
         
         services.AddSingleton<IAnomalyModelCache, AnomalyModelCache>();
         services.AddSingleton<IProfileUpdateChannel, InMemoryProfileUpdateChannel>();
