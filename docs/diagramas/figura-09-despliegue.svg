@@ -1,11 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2020 1360" width="2020" height="1360">
 <rect width="2020" height="1360" fill="#FFFFFF"/>
-<defs>
-<marker id="arrow-5B7A9E" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#5B7A9E"/></marker>
-<marker id="arrow-2E7D4F" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#2E7D4F"/></marker>
-<marker id="arrow-B47600" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#B47600"/></marker>
-<marker id="arrow-B3261E" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#B3261E"/></marker>
-</defs>
 <text x="1010.0" y="36" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="20" font-weight="600" fill="#1F3864" text-anchor="middle">Omakase-Gateway — Vista de despliegue</text>
 <rect x="60" y="90" width="1400" height="900" fill="#FAFCFF" stroke="#1F3864" stroke-width="1.4" rx="4" stroke-dasharray="7 4"/>
 <text x="760.0" y="114" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="14" font-weight="600" fill="#1F3864" text-anchor="middle"></text>
@@ -97,28 +91,40 @@
 <text x="1750.0" y="869" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="10.5" fill="#5A6472" text-anchor="middle">GitHub + Azure Pipelines:</text>
 <text x="1750.0" y="885" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="10.5" fill="#5A6472" text-anchor="middle">build, pruebas, SAST (Roslyn)</text>
 <text x="1750.0" y="901" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="10.5" fill="#5A6472" text-anchor="middle">y construccion de imagenes</text>
-<path d="M 1540 300 L 1420 300 L 1420 325 L 1344 325" fill="none" stroke="#5B7A9E" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrow-5B7A9E)"/>
+<path d="M 1540 300 L 1420 300 L 1420 325 L 1344 325" fill="none" stroke="#5B7A9E" stroke-width="2" stroke-linejoin="round"/>
+<path d="M 1344 325 L 1353.0 321.22 L 1353.0 328.78 z" fill="#5B7A9E" stroke="none"/>
 <text x="1432" y="292" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" font-weight="400" text-anchor="start" stroke="#FFFFFF" stroke-width="4" paint-order="stroke" fill="#5A6472">HTTPS</text>
-<path d="M 1540 265 L 1480 265 L 1480 190 L 290 190 L 290 250" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-dasharray="6 4" stroke-linejoin="round" marker-end="url(#arrow-5B7A9E)"/>
+<path d="M 1540 265 L 1480 265 L 1480 190 L 290 190 L 290 250" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-dasharray="6 4" stroke-linejoin="round"/>
+<path d="M 290 250 L 286.22 241.0 L 293.78 241.0 z" fill="#5B7A9E" stroke="none"/>
 <text x="760" y="182" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" font-weight="400" text-anchor="middle" stroke="#FFFFFF" stroke-width="4" paint-order="stroke" fill="#5A6472">panel de administracion</text>
-<path d="M 480 325 L 520 325" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow-5B7A9E)"/>
-<path d="M 1320 375 L 1400 375 L 1400 495 L 1540 495" fill="none" stroke="#2E7D4F" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrow-2E7D4F)"/>
+<path d="M 480 325 L 520 325" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M 520 325 L 511.0 328.78 L 511.0 321.22 z" fill="#5B7A9E" stroke="none"/>
+<path d="M 1320 375 L 1400 375 L 1400 495 L 1540 495" fill="none" stroke="#2E7D4F" stroke-width="2" stroke-linejoin="round"/>
+<path d="M 1540 495 L 1531.0 498.78 L 1531.0 491.22 z" fill="#2E7D4F" stroke="none"/>
 <text x="1408" y="465" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" font-weight="400" text-anchor="start" stroke="#FFFFFF" stroke-width="4" paint-order="stroke" fill="#2E7D4F">reenvio tras ALLOW</text>
-<path d="M 1540 685 L 1380 685 L 1380 480 L 1130 480 L 1130 424" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-dasharray="6 4" stroke-linejoin="round" marker-end="url(#arrow-5B7A9E)"/>
+<path d="M 1540 685 L 1380 685 L 1380 480 L 1130 480 L 1130 424" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-dasharray="6 4" stroke-linejoin="round"/>
+<path d="M 1130 424 L 1133.78 433.0 L 1126.22 433.0 z" fill="#5B7A9E" stroke="none"/>
 <path d="M 710 400 L 710 530" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-dasharray="6 4" stroke-linejoin="round"/>
 <path d="M 1130 400 L 1130 480" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-dasharray="6 4" stroke-linejoin="round"/>
 <path d="M 1130 480 L 1130 530" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-dasharray="6 4" stroke-linejoin="round"/>
 <path d="M 290 530 L 1130 530" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-dasharray="6 4" stroke-linejoin="round"/>
-<path d="M 290 530 L 290 606" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-dasharray="6 4" stroke-linejoin="round" marker-end="url(#arrow-5B7A9E)"/>
-<path d="M 710 530 L 710 606" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-dasharray="6 4" stroke-linejoin="round" marker-end="url(#arrow-5B7A9E)"/>
-<path d="M 1130 530 L 1130 606" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-dasharray="6 4" stroke-linejoin="round" marker-end="url(#arrow-5B7A9E)"/>
+<path d="M 290 530 L 290 606" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-dasharray="6 4" stroke-linejoin="round"/>
+<path d="M 290 606 L 286.22 597.0 L 293.78 597.0 z" fill="#5B7A9E" stroke="none"/>
+<path d="M 710 530 L 710 606" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-dasharray="6 4" stroke-linejoin="round"/>
+<path d="M 710 606 L 706.22 597.0 L 713.78 597.0 z" fill="#5B7A9E" stroke="none"/>
+<path d="M 1130 530 L 1130 606" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-dasharray="6 4" stroke-linejoin="round"/>
+<path d="M 1130 606 L 1126.22 597.0 L 1133.78 597.0 z" fill="#5B7A9E" stroke="none"/>
 <text x="910" y="520" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" font-weight="400" text-anchor="middle" stroke="#FFFFFF" stroke-width="4" paint-order="stroke" font-style="italic" fill="#5A6472">dependencias resueltas por nombre logico</text>
 <path d="M 1380 400 L 1380 790" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-dasharray="6 4" stroke-linejoin="round"/>
 <path d="M 1380 790 L 245 790" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-dasharray="6 4" stroke-linejoin="round"/>
-<path d="M 245 790 L 245 856" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-dasharray="6 4" stroke-linejoin="round" marker-end="url(#arrow-5B7A9E)"/>
-<path d="M 555 790 L 555 856" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-dasharray="6 4" stroke-linejoin="round" marker-end="url(#arrow-5B7A9E)"/>
-<path d="M 865 790 L 865 856" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-dasharray="6 4" stroke-linejoin="round" marker-end="url(#arrow-5B7A9E)"/>
-<path d="M 1175 790 L 1175 856" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-dasharray="6 4" stroke-linejoin="round" marker-end="url(#arrow-5B7A9E)"/>
+<path d="M 245 790 L 245 856" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-dasharray="6 4" stroke-linejoin="round"/>
+<path d="M 245 856 L 241.22 847.0 L 248.78 847.0 z" fill="#5B7A9E" stroke="none"/>
+<path d="M 555 790 L 555 856" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-dasharray="6 4" stroke-linejoin="round"/>
+<path d="M 555 856 L 551.22 847.0 L 558.78 847.0 z" fill="#5B7A9E" stroke="none"/>
+<path d="M 865 790 L 865 856" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-dasharray="6 4" stroke-linejoin="round"/>
+<path d="M 865 856 L 861.22 847.0 L 868.78 847.0 z" fill="#5B7A9E" stroke="none"/>
+<path d="M 1175 790 L 1175 856" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-dasharray="6 4" stroke-linejoin="round"/>
+<path d="M 1175 856 L 1171.22 847.0 L 1178.78 847.0 z" fill="#5B7A9E" stroke="none"/>
 <text x="1000" y="780" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" font-weight="400" text-anchor="middle" stroke="#FFFFFF" stroke-width="4" paint-order="stroke" font-style="italic" fill="#5A6472">telemetria OTLP</text>
 <rect x="60" y="1030" width="1900" height="140" fill="#DCE6F1" stroke="#4472A8" stroke-width="1.4" rx="4"/>
 <text x="1010.0" y="1054" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="14" font-weight="600" fill="#1F3864" text-anchor="middle"></text>

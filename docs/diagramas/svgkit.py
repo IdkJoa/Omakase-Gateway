@@ -61,31 +61,41 @@ def label(x, y, text, size=12, color=MUTED, anchor="middle", weight="400", itali
     return "\n".join(out)
 
 
+def _head(tip, prev, color, size=9):
+    """
+    Punta de flecha como triangulo explicito.
+
+    Se dibuja a mano en vez de usar <marker> porque los rasterizadores que convierten
+    el SVG a PNG para insertarlo en Word no siempre implementan marker-end, y una
+    flecha sin punta convierte un diagrama de flujo en un diagrama de cajas.
+    """
+    (tx, ty), (px, py) = tip, prev
+    dx, dy = tx - px, ty - py
+    n = (dx * dx + dy * dy) ** 0.5 or 1
+    ux, uy = dx / n, dy / n           # direccion de avance
+    nx, ny = -uy, ux                  # normal
+    bx, by = tx - ux * size, ty - uy * size
+    w = size * 0.42
+    return (f'<path d="M {tx} {ty} L {bx + nx * w} {by + ny * w} '
+            f'L {bx - nx * w} {by - ny * w} z" fill="{color}" stroke="none"/>')
+
+
 def arrow(points, color=LINE, width=1.6, dashed=False, head=True, head_at="end"):
-    """Polilinea con punta de flecha. points = [(x, y), ...]."""
+    """Polilinea con punta de flecha opcional. points = [(x, y), ...]."""
     d = "M " + " L ".join(f"{px} {py}" for px, py in points)
     dash = ' stroke-dasharray="6 4"' if dashed else ""
-    marker = f' marker-{head_at}="url(#arrow-{color.lstrip("#")})"' if head else ""
-    return (f'<path d="{d}" fill="none" stroke="{color}" stroke-width="{width}"'
-            f'{dash} stroke-linejoin="round"{marker}/>')
-
-
-def defs(colors):
-    """Marcadores de flecha, uno por color usado."""
-    out = ["<defs>"]
-    for c in colors:
-        out.append(
-            f'<marker id="arrow-{c.lstrip("#")}" viewBox="0 0 10 10" refX="9" refY="5" '
-            f'markerWidth="7" markerHeight="7" orient="auto-start-reverse">'
-            f'<path d="M 0 0 L 10 5 L 0 10 z" fill="{c}"/></marker>'
-        )
-    out.append("</defs>")
+    out = [f'<path d="{d}" fill="none" stroke="{color}" stroke-width="{width}"'
+           f'{dash} stroke-linejoin="round"/>']
+    if head:
+        if head_at == "end":
+            out.append(_head(points[-1], points[-2], color))
+        else:
+            out.append(_head(points[0], points[1], color))
     return "\n".join(out)
 
 
-def canvas(w, h, title, body, colors=(LINE, GREEN, AMBER, RED)):
+def canvas(w, h, title, body, colors=()):
     return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w} {h}" width="{w}" height="{h}">\n'
             f'<rect width="{w}" height="{h}" fill="#FFFFFF"/>\n'
-            f'{defs(colors)}\n'
             f'{label(w / 2, 36, title, size=20, color=INK, weight="600")}\n'
             f'{body}\n</svg>\n')
