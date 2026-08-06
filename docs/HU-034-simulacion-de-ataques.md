@@ -1,8 +1,13 @@
 # HU-034 — Simulación de ataques con credenciales comprometidas
 
-> **Épica:** EP-11 — Pruebas, Calibración y Defensa · **Sprint 5** · **5 pts**
-> **Tareas cubiertas:** T-073 (escenarios documentados) · T-074 (ejecución y veredictos)
+> **Épica:** EP-11 — Pruebas, Calibración y Defensa · **Sprint 5**
+> **Tareas cubiertas:** T-073 (escenarios documentados) · T-074 (ejecución y veredictos) ·
+> **T-075** (análisis de distribución y calibración, §10) · aporta a **T-072** (cifras de
+> rendimiento observadas, §10.6.5)
 > **Alimenta:** Tesis Cap. IV §4.2.5 (tasa de detección y tasa de falsos positivos)
+>
+> La §10 es el entregable escrito de **HU-035**: §10.1–10.5 con los datos de las simulaciones de
+> ataque, y **§10.6 con la prueba de estrés de 201.217 evaluaciones** que cierra la historia.
 
 El objetivo no es "probar que bloquea". Es construir un **banco de casos etiquetados**
 (legítimos vs. maliciosos), ejecutarlo contra el Gateway real y medir dos números
@@ -611,11 +616,235 @@ desafiado.
 
 ### 10.5 Alcance de esta calibración
 
-HU-035 exige datos de **pruebas de estrés (HU-033) y simulaciones de ataque (HU-034)**. Aquí solo
-están los segundos. Es una **calibración preliminar** sólida y justificada, pendiente de refinarse
-con la distribución de carga cuando HU-033 esté disponible. El margen actual (~4.75 puntos) es
-estrecho frente a la varianza observada en el Anomaly Score (±10), así que conviene revisarlo con
-más muestras antes de la defensa.
+HU-035 exige datos de **pruebas de estrés (HU-033) y simulaciones de ataque (HU-034)**. Hasta aquí
+solo estaban los segundos: era una **calibración preliminar**, sólida y justificada, pendiente de
+contrastarse con la distribución bajo carga. El margen de ~4.75 puntos era estrecho frente a la
+varianza del Anomaly Score (±10), así que había que revisarlo con más muestras.
+
+**La §10.6 cierra ese pendiente** con 201.217 evaluaciones bajo 100 usuarios concurrentes.
+
+---
+
+### 10.6 Calibración bajo carga (cierre de HU-035)
+
+Esta sección contrasta la calibración preliminar de §10.4 contra la **prueba de estrés de HU-033**,
+que era el dato que faltaba para satisfacer el criterio de aceptación.
+
+#### 10.6.1 Metodología y dos ajustes necesarios del entorno
+
+Corrida del **6 de agosto de 2026, 03:05:26 UTC**: 100 VUs sostenidos durante 5 minutos (más 30 s de
+rampa y 30 s de bajada), con JWT válido de `demo.cliente`, 12 IPs sintéticas y User-Agents variados.
+**201.217 peticiones a 558,9 req/s, cero fallos de transporte.**
+
+Dos cambios de entorno fueron imprescindibles, y ambos son metodología, no trampa:
+
+| Ajuste | Por qué |
+|---|---|
+| **Upstream local** (contenedor `httpbin` en vez de `httpbin.org`) | Con un upstream por internet los VUs pasan el tiempo esperando a la red y la carga real que llega al motor es una fracción: el p95 saldría **optimista**. Además evita ~200.000 peticiones contra un servicio público gratuito |
+| **`RateLimiting:Limit` elevado** durante la corrida | `RateLimitMiddleware` se ejecuta **antes** del motor de riesgo y corta con 429 sin evaluar. Con el límite de 100 req/min por IP y 12 IPs, una corrida previa demostró que **el 94,67 % del tráfico moría en el rate limiter** (112.578 enviadas, 6.000 evaluadas = 12 × 100 × 5, cuadra exacto). El rate limit es una defensa **anterior** al motor y no forma parte del overhead que mide el criterio |
+
+> El segundo punto es en sí un hallazgo: una prueba de estrés que no eleve el rate limit **no está
+> midiendo el motor**, está midiendo el rate limiter. La versión inicial del script además aceptaba
+> 429 como estado válido, así que reportaba `checks 100 %` mientras el 95 % del tráfico rebotaba.
+
+#### 10.6.2 La distribución bajo carga es un punto, no una distribución
+
+| Veredicto | Peticiones | Risk Score (mín – máx) |
+|---|---|---|
+| ALLOW | **18** | 3.25 – 27.00 |
+| CHALLENGE | **201.199** | 34.00 – 36.25 |
+
+```
+percentiles del risk_score:   p01 = p50 = p99 = 36.25
+```
+
+**El 99,99 % de las peticiones colapsa a un único valor.** La causa está en el desglose del Anomaly
+Score:
+
+| Anomaly Score | Peticiones |
+|---|---|
+| 6.50 · 14.50 · 28.50 | 5 |
+| 49.00 · 50.00 · 54.00 | 13 |
+| 68.00 | 4 |
+| **72.50** | **201.195** |
+
+El modelo sube durante la rampa y **satura en 72.50**. Con `policy_score = 0` (sin políticas
+asociadas), `risk = 0.5 · 72.50 = 36.25`, constante.
+
+**El modelo tiene razón.** El baseline de `demo.cliente` son ~40 peticiones **por jornada laboral**;
+la prueba hace **559 por segundo**. Eso *es* anómalo, y CHALLENGE es el veredicto correcto.
+
+> **Verificación de que el modelo puntúa de verdad:** solo **5 de 201.217** (0,0025 %) devolvieron el
+> neutro 50.00 del fallback. El resto son inferencias reales de RandomizedPCA. El modelo no está
+> degradado ni inactivo.
+
+#### 10.6.3 Limitación estructural: no se puede estresar un modelo conductual por usuario
+
+`FrequencyWindowMinutes = 60` y `FrequencySaturation = 60`: la feature de frecuencia **satura por
+encima de 60 peticiones/hora**, es decir **una por minuto**.
+
+> **Cualquier prueba de carga que supere 1 petición por minuto y por usuario es, por construcción,
+> máximamente anómala para ese usuario.**
+
+De ahí se sigue algo que hay que decir sin rodeos: **no existe una "población legítima bajo carga"**
+para un usuario cuyo baseline es de 40 accesos diarios. La prueba de estrés no puede aportar una
+muestra de tráfico legítimo de alto volumen, porque tal cosa es una contradicción para el modelo.
+
+Es una tensión real entre dos requisitos del propio sistema, y afecta a cómo debe leerse el criterio
+de HU-035: la calibración de umbrales se sostiene sobre los datos de HU-034; la prueba de estrés
+aporta otra cosa, igual de valiosa, que es el apartado siguiente.
+
+#### 10.6.4 Las tres poblaciones y por qué NO se tocan los umbrales
+
+| Población | Risk Score | Origen | n |
+|---|---|---|---|
+| Legítimo de bajo volumen | 20.75 – 28.25 | HU-034 | ~10 |
+| **Carga sostenida (100 VU)** | **34.00 – 36.25** | esta corrida | **201.199** |
+| Ataque por ráfaga | 37.75 – 49.00 | HU-034 | ~5 |
+
+```
+legítimo bajo volumen:  20.75 ────── 28.25
+                                       ↕  hueco
+                                        33  ← umbral de ALLOW
+                                       ↕
+alto volumen (carga y ataque):        34.00 ────── 49.00
+```
+
+**Decisión: los valores de §10.4 se confirman, no se modifican.** Tres razones:
+
+1. **El umbral de 33 cae exactamente en el hueco empírico** entre las dos poblaciones, ahora
+   confirmado con **201.199 muestras** en vez de un puñado. El caso legítimo más alto medido llega a
+   28.25 y el de alto volumen más bajo a 34.00: el umbral queda centrado, con margen a ambos lados.
+2. **Subirlo por encima de 36.25 para "dejar pasar" la carga cegaría al sistema ante el ataque por
+   volumen** del Escenario 2 (37.75–49.00). Se cambiaría una detección real por un falso positivo
+   que no es falso.
+3. La población de carga **no representa comportamiento legítimo** para ese usuario (§10.6.3).
+
+Calibrar incluye confirmar: se analizó la distribución, se contrastaron los valores contra una
+población nueva de 201.199 muestras y la justificación queda documentada. `cold_start_penalty` y
+`cold_start_n` tampoco intervinieron en ningún falso positivo bajo carga.
+
+**Un límite del diseño que conviene declarar antes de que lo pregunten:** el eje de anomalía aporta
+como máximo `0.5 × 100 = 50`, por debajo del `block_threshold` de 70. Un ataque **puramente por
+volumen** tope en CHALLENGE y nunca alcanza BLOCK; solo las reglas deterministas llegan a denegar.
+Es coherente con la justificación de §10.4 —probabilidad → desafío, certeza determinista → denegación—
+pero es una propiedad del modelo, no un accidente.
+
+#### 10.6.5 Rendimiento: el requisito de ≤50 ms (T-072)
+
+La primera corrida instrumentada **incumplió** el presupuesto. T-072 exige en ese caso identificar el
+cuello de botella y optimizar, así que se instrumentó el coste por fase (`EvaluationTimings`) y se
+midió sobre **1.000 muestras** que excedieron los 50 ms:
+
+| Fase | Antes | Qué hace |
+|---|---|---|
+| `PoliciesMs` | **17,33 ms (27,4 %)** | 2 consultas a PostgreSQL (servicio + políticas) |
+| `StepUpMs` | 16,28 ms (25,7 %) | PostgreSQL (estado MFA) + Redis (ventana de step-up) |
+| `AccessCountMs` | 10,65 ms (16,8 %) | Perfil de comportamiento |
+| `AnomalyMs` | 10,57 ms (16,7 %) | Perfil **otra vez** + inferencia ML |
+| `ConfigMs` | 8,16 ms (12,9 %) | PostgreSQL (`risk_score_config`) |
+| `RulesMs` · `GeoCheckMs` | ~0 ms | — |
+
+**El 83 % del presupuesto era I/O; la inferencia de ML.NET era una fracción del 16,7 %.** Y había
+trabajo repetido: el perfil se resolvía **dos veces en la misma evaluación**.
+
+Correcciones aplicadas, todas por **decorador** (ninguna clase existente se modificó):
+
+| Corrección | Efecto medido |
+|---|---|
+| Caché de políticas por servicio (TTL 5 s) | 17,33 → **0,72 ms** (−96 %) |
+| Caché de `risk_score_config` (TTL 5 s) | 8,16 → **0,06 ms** (−99 %) |
+| Caché del estado MFA por usuario (TTL 5 s) | incluida en la caída de `StepUpMs` |
+| **Memo del perfil por petición** (sin TTL) | 10,65 → **0,03 ms** (−99,7 %) |
+| EF Core a `Warning` | ~9 → ~4,4 líneas de log por petición |
+
+Cada TTL acota la ventana en que un cambio administrativo tarda en verse, y **un TTL de 0 desactiva
+esa caché** delegando siempre en la consulta real: es la válvula para descartarla como causa sin
+recompilar. El memo del perfil no tiene ventana de obsolescencia posible — muere con el ámbito de la
+petición.
+
+**Resultado, misma prueba y mismas condiciones:**
+
+| Métrica | Antes | Después | |
+|---|---|---|---|
+| **p95 extremo a extremo (k6)** | 103,56 ms ✗ | **27,72 ms ✓** | −73 % |
+| p90 e2e | 84,50 ms | 19,27 ms | −77 % |
+| media e2e | 51,22 ms | 13,59 ms | −73 % |
+| **p95 del motor (Loki)** | — | **5,28 – 19,47 ms** | |
+| p50 del motor | — | 3,69 – 4,90 ms | |
+| Throughput | 453,9 req/s | **558,9 req/s** | +23 % |
+| Peticiones sobre presupuesto | **> 5 %** | **0,33 %** (660 de 201.217) | ~15× menos |
+
+El throughput subió un 23 % **con los mismos 100 VUs**: cada evaluación es más rápida, así que los
+usuarios virtuales completan más ciclos.
+
+**Alcance de la medición, dicho con precisión.** `DurationMs` se cronometra dentro de
+`RiskEvaluationMiddleware`; antes de ese punto corren las cabeceras de seguridad, el rate limit y la
+autenticación. El "intercepción → veredicto" del criterio es por tanto algo mayor que esa cifra. No
+compromete la conclusión, porque el número de k6 ya incluye **todo** el recorrido más el upstream:
+
+```
+27,72 ms (e2e, lo incluye todo)  ≥  overhead real  ≥  5–19 ms (medido)
+                        presupuesto: 50 ms
+```
+
+La cota superior por sí sola cumple el requisito.
+
+#### 10.6.6 Coste de I/O por evaluación
+
+La arquitectura del SRS §4 sitúa deliberadamente el estado de alta frecuencia en Redis para evitar
+disco en la ruta crítica. Una evaluación autenticada que resuelve CHALLENGE realiza **cuatro
+operaciones Redis**:
+
+| Operación | Dónde | Clave (SRS §7.11.2) |
+|---|---|---|
+| Contador de frecuencia por IP | `RateLimitMiddleware` | `ratelimit:{ip}` |
+| Lista negra de access tokens | validación del JWT | `blacklist:{jti}` |
+| Caché del perfil | detector de anomalías | `profile:{userId}` |
+| Ventana de step-up | consolidador de veredicto | `stepup:{userId}` |
+
+A 558,9 req/s son **~2.240 operaciones Redis por segundo**. Es el diseño previsto, no deuda técnica:
+las cuatro claves están en el SRS y todas se usan (la lista negra además **se consulta** en cada
+petición autenticada, no solo se escribe, de modo que la revocación es efectiva y no decorativa).
+
+Ese coste explica el 0,33 % de cola que queda. De las 660 evaluaciones que excedieron el presupuesto,
+el 74 % tenía `AnomalyMs > 30 ms` y **629 (95 %) se concentran en dos minutos concretos**, con las
+dos fases dependientes de Redis disparándose a la vez. No es reentrenamiento del modelo —
+`AnomalyModelCache` es un diccionario concurrente **sin expiración** y el worker de reentrenamiento
+corre cada hora— sino un **atasco transitorio** en un único equipo que ejecuta simultáneamente
+PostgreSQL, Redis, Keycloak, Grafana, Loki, Tempo, el colector OTel, dos aplicaciones .NET **y el
+generador de carga**. Se declara como limitación del entorno de medición, no como deuda del sistema.
+
+#### 10.6.7 Integridad de la auditoría bajo carga
+
+```
+k6 envió       : 201.217 peticiones
+audit_logs tiene: 201.217 filas
+diferencia      : 0
+```
+
+**Ni un solo evento de auditoría descartado a 558,9 eventos/s**, pese a que el canal
+(`InMemoryAuditChannel`) usa `BoundedChannelFullMode.DropWrite` y podría haber perdido registros bajo
+presión. Para un sistema cuya premisa es que *cada* petición se evalúa y se audita, es un resultado
+que conviene enseñar: la trazabilidad no se degrada con la carga.
+
+#### 10.6.8 Limitaciones declaradas de esta calibración
+
+1. **La prueba de estrés no aporta una población legítima de alto volumen** (§10.6.3). La separación
+   entre poblaciones se sostiene sobre los datos de HU-034; la carga confirma que nada de alto
+   volumen cae por debajo del umbral.
+2. **La corrida requiere elevar el rate limit y usar un upstream local.** Ambos se documentan como
+   parte del método; sin ellos la medición no es del motor.
+3. **La prueba envenena el perfil de comportamiento**, aunque de forma autolimitada: solo los ALLOW
+   alimentan el perfil y solo hubo 18, así que el lazo se cierra en cuanto el modelo empieza a
+   desafiar. Aun así el perfil se resiembra antes de cualquier captura definitiva.
+4. **El baseline sintético depende de la fecha.** La semilla lo hace reproducible **para un día
+   dado**, no entre días: la ventana de 14 días se desplaza y el `access_count` varía (se midieron
+   380 y 420 en fechas consecutivas).
+5. **El 0,33 % de cola es del entorno de medición**, no del sistema (§10.6.6).
+6. **Las cachés introducen una ventana de hasta 5 s** para que un cambio administrativo de políticas,
+   umbrales o estado MFA surta efecto. Sigue satisfaciendo «las siguientes evaluaciones usan el nuevo
+   valor» de HU-023/HU-025, y es configurable a 0 para desactivarla.
 
 ---
 
