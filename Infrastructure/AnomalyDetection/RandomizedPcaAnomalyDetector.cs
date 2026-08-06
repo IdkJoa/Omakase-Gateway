@@ -75,7 +75,7 @@ public sealed class RandomizedPcaAnomalyDetector : IAnomalyDetector
                 activity.SetTag("dependency.name", "ML.NET");
             }
 
-            return NeutralScore;
+            throw;
         }
     }
 }
