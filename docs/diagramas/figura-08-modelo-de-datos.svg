@@ -1,505 +1,279 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2620 1790" width="2620" height="1790">
-<rect width="2620" height="1790" fill="#FFFFFF"/>
-<text x="1310.0" y="36" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="20" font-weight="600" fill="#1F3864" text-anchor="middle">Omakase-Gateway — Modelo de datos relacional (PostgreSQL, 10 entidades)</text>
-<path d="M 93.6 248 L 93.6 665 L 93.6 665 L 93.6 700" fill="none" stroke="#5B7A9E" stroke-width="1.4"/>
-<line x1="84.6" y1="258" x2="102.6" y2="258" stroke="#5B7A9E" stroke-width="1.4"/>
-<line x1="93.6" y1="700" x2="84.6" y2="687" stroke="#5B7A9E" stroke-width="1.4"/>
-<line x1="93.6" y1="700" x2="93.6"     y2="687" stroke="#5B7A9E" stroke-width="1.4"/>
-<line x1="93.6" y1="700" x2="102.6" y2="687" stroke="#5B7A9E" stroke-width="1.4"/>
-<rect x="66.0" y="655" width="55.2" height="17" fill="#FFFFFF" stroke="none"/>
-<text x="93.6" y="668" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#5A6472" text-anchor="middle" font-style="italic">grants</text>
-<path d="M 762.0 430 L 762.0 660 L 407.2 660 L 407.2 700" fill="none" stroke="#5B7A9E" stroke-width="1.4"/>
-<line x1="753.0" y1="440" x2="771.0" y2="440" stroke="#5B7A9E" stroke-width="1.4"/>
-<line x1="407.2" y1="700" x2="398.2" y2="687" stroke="#5B7A9E" stroke-width="1.4"/>
-<line x1="407.2" y1="700" x2="407.2"     y2="687" stroke="#5B7A9E" stroke-width="1.4"/>
-<line x1="407.2" y1="700" x2="416.2" y2="687" stroke="#5B7A9E" stroke-width="1.4"/>
-<rect x="549.8000000000001" y="650" width="69.6" height="17" fill="#FFFFFF" stroke="none"/>
-<text x="584.6" y="663" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#5A6472" text-anchor="middle" font-style="italic">assigned</text>
-<path d="M 910.8 430 L 910.8 640 L 910.0 640 L 910.0 700" fill="none" stroke="#5B7A9E" stroke-width="1.4"/>
-<line x1="901.8" y1="440" x2="919.8" y2="440" stroke="#5B7A9E" stroke-width="1.4"/>
-<line x1="901.0" y1="690" x2="919.0" y2="690" stroke="#5B7A9E" stroke-width="1.4"/>
-<circle cx="910.0" cy="680" r="4.5" fill="#FFFFFF" stroke="#5B7A9E" stroke-width="1.4"/>
-<rect x="893.6" y="630" width="33.6" height="17" fill="#FFFFFF" stroke="none"/>
-<text x="910.4" y="643" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#5A6472" text-anchor="middle" font-style="italic">has</text>
-<path d="M 1084.4 430 L 1084.4 540 L 1568.0 540 L 1568.0 700" fill="none" stroke="#5B7A9E" stroke-width="1.4"/>
-<line x1="1075.4" y1="440" x2="1093.4" y2="440" stroke="#5B7A9E" stroke-width="1.4"/>
-<line x1="1568.0" y1="700" x2="1559.0" y2="687" stroke="#5B7A9E" stroke-width="1.4"/>
-<line x1="1568.0" y1="700" x2="1568.0"     y2="687" stroke="#5B7A9E" stroke-width="1.4"/>
-<line x1="1568.0" y1="700" x2="1577.0" y2="687" stroke="#5B7A9E" stroke-width="1.4"/>
-<circle cx="1568.0" cy="678" r="4.5" fill="#FFFFFF" stroke="#5B7A9E" stroke-width="1.4"/>
-<rect x="1305.8" y="530" width="40.8" height="17" fill="#FFFFFF" stroke="none"/>
-<text x="1326.2" y="543" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#5A6472" text-anchor="middle" font-style="italic">owns</text>
-<path d="M 1245.6 430 L 1245.6 620 L 2224.0 620 L 2224.0 700" fill="none" stroke="#5B7A9E" stroke-width="1.4"/>
-<line x1="1236.6" y1="440" x2="1254.6" y2="440" stroke="#5B7A9E" stroke-width="1.4"/>
-<line x1="2224.0" y1="700" x2="2215.0" y2="687" stroke="#5B7A9E" stroke-width="1.4"/>
-<line x1="2224.0" y1="700" x2="2224.0"     y2="687" stroke="#5B7A9E" stroke-width="1.4"/>
-<line x1="2224.0" y1="700" x2="2233.0" y2="687" stroke="#5B7A9E" stroke-width="1.4"/>
-<circle cx="2224.0" cy="678" r="4.5" fill="#FFFFFF" stroke="#5B7A9E" stroke-width="1.4"/>
-<rect x="1696.3999999999999" y="610" width="76.8" height="17" fill="#FFFFFF" stroke="none"/>
-<text x="1734.8" y="623" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#5A6472" text-anchor="middle" font-style="italic">generates</text>
-<path d="M 1307.6 430 L 1307.6 470 L 1360 470 L 1360 1200 L 805.0 1200 L 805.0 1260" fill="none" stroke="#5B7A9E" stroke-width="1.4"/>
-<line x1="1298.6" y1="440" x2="1316.6" y2="440" stroke="#5B7A9E" stroke-width="1.4"/>
-<line x1="805.0" y1="1260" x2="796.0" y2="1247" stroke="#5B7A9E" stroke-width="1.4"/>
-<line x1="805.0" y1="1260" x2="805.0"     y2="1247" stroke="#5B7A9E" stroke-width="1.4"/>
-<line x1="805.0" y1="1260" x2="814.0" y2="1247" stroke="#5B7A9E" stroke-width="1.4"/>
-<circle cx="805.0" cy="1238" r="4.5" fill="#FFFFFF" stroke="#5B7A9E" stroke-width="1.4"/>
-<rect x="1018.8" y="1190" width="62.4" height="17" fill="#FFFFFF" stroke="none"/>
-<text x="1050" y="1203" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#5A6472" text-anchor="middle" font-style="italic">authors</text>
-<path d="M 1850.0 274 L 1850.0 580 L 2440.0 580 L 2440.0 700" fill="none" stroke="#5B7A9E" stroke-width="1.4"/>
-<line x1="1841.0" y1="284" x2="1859.0" y2="284" stroke="#5B7A9E" stroke-width="1.4"/>
-<line x1="2440.0" y1="700" x2="2431.0" y2="687" stroke="#5B7A9E" stroke-width="1.4"/>
-<line x1="2440.0" y1="700" x2="2440.0"     y2="687" stroke="#5B7A9E" stroke-width="1.4"/>
-<line x1="2440.0" y1="700" x2="2449.0" y2="687" stroke="#5B7A9E" stroke-width="1.4"/>
-<circle cx="2440.0" cy="678" r="4.5" fill="#FFFFFF" stroke="#5B7A9E" stroke-width="1.4"/>
-<rect x="2113.8" y="570" width="62.4" height="17" fill="#FFFFFF" stroke="none"/>
-<text x="2145.0" y="583" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#5A6472" text-anchor="middle" font-style="italic">targets</text>
-<path d="M 1982.0 274 L 1982.0 500 L 2040 500 L 2040 1540 L 1926.0 1540 L 1926.0 1600" fill="none" stroke="#5B7A9E" stroke-width="1.4"/>
-<line x1="1973.0" y1="284" x2="1991.0" y2="284" stroke="#5B7A9E" stroke-width="1.4"/>
-<line x1="1926.0" y1="1600" x2="1917.0" y2="1587" stroke="#5B7A9E" stroke-width="1.4"/>
-<line x1="1926.0" y1="1600" x2="1926.0"     y2="1587" stroke="#5B7A9E" stroke-width="1.4"/>
-<line x1="1926.0" y1="1600" x2="1935.0" y2="1587" stroke="#5B7A9E" stroke-width="1.4"/>
-<circle cx="1926.0" cy="1578" r="4.5" fill="#FFFFFF" stroke="#5B7A9E" stroke-width="1.4"/>
-<rect x="1961.6" y="1530" width="76.8" height="17" fill="#FFFFFF" stroke="none"/>
-<text x="2000" y="1543" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#5A6472" text-anchor="middle" font-style="italic">scoped by</text>
-<path d="M 1330.0 1526 L 1330.0 1560 L 1573.2 1560 L 1573.2 1600" fill="none" stroke="#5B7A9E" stroke-width="1.4"/>
-<line x1="1321.0" y1="1536" x2="1339.0" y2="1536" stroke="#5B7A9E" stroke-width="1.4"/>
-<line x1="1573.2" y1="1600" x2="1564.2" y2="1587" stroke="#5B7A9E" stroke-width="1.4"/>
-<line x1="1573.2" y1="1600" x2="1573.2"     y2="1587" stroke="#5B7A9E" stroke-width="1.4"/>
-<line x1="1573.2" y1="1600" x2="1582.2" y2="1587" stroke="#5B7A9E" stroke-width="1.4"/>
-<circle cx="1573.2" cy="1578" r="4.5" fill="#FFFFFF" stroke="#5B7A9E" stroke-width="1.4"/>
-<rect x="1406.0" y="1550" width="91.2" height="17" fill="#FFFFFF" stroke="none"/>
-<text x="1451.6" y="1563" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#5A6472" text-anchor="middle" font-style="italic">applied via</text>
-<rect x="700" y="60" width="620" height="370" fill="#FFFFFF" stroke="#4472A8" stroke-width="1.2" rx="2"/>
-<rect x="700" y="60" width="620" height="32" fill="#DCE6F1" stroke="#4472A8" stroke-width="1.2" rx="2"/>
-<text x="1010.0" y="81" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="15" font-weight="600" fill="#1F3864" text-anchor="middle">users</text>
-<line x1="700" y1="92" x2="1320" y2="92" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="708" y="109" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">UUID</text>
-<text x="856.8" y="109" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">id</text>
-<text x="1042.8" y="109" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">PK</text>
-<line x1="700" y1="118" x2="1320" y2="118" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="708" y="135" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">varchar(150)</text>
-<text x="856.8" y="135" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">username</text>
-<text x="1042.8" y="135" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">UK</text>
-<text x="1092.4" y="135" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">not null</text>
-<line x1="700" y1="144" x2="1320" y2="144" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="708" y="161" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">varchar(20)</text>
-<text x="856.8" y="161" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">user_type</text>
-<text x="1092.4" y="161" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">not null; SECURITY_OFFICER | CLIENT_USER</text>
-<line x1="700" y1="170" x2="1320" y2="170" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="708" y="187" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">varchar(255)</text>
-<text x="856.8" y="187" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">password_hash</text>
-<text x="1092.4" y="187" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">nullable; bcrypt (factor &gt;= 12)</text>
-<line x1="700" y1="196" x2="1320" y2="196" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="708" y="213" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">varchar(255)</text>
-<text x="856.8" y="213" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">keycloak_sub</text>
-<text x="1042.8" y="213" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">UK</text>
-<text x="1092.4" y="213" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">nullable; unique parcial (IS NOT NULL)</text>
-<line x1="700" y1="222" x2="1320" y2="222" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="708" y="239" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">boolean</text>
-<text x="856.8" y="239" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">is_active</text>
-<text x="1092.4" y="239" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">not null</text>
-<line x1="700" y1="248" x2="1320" y2="248" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="708" y="265" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">integer</text>
-<text x="856.8" y="265" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">failed_attempts</text>
-<text x="1092.4" y="265" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">not null; bloqueo a los 5 intentos</text>
-<line x1="700" y1="274" x2="1320" y2="274" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="708" y="291" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">timestamptz</text>
-<text x="856.8" y="291" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">locked_until</text>
-<text x="1092.4" y="291" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">nullable</text>
-<line x1="700" y1="300" x2="1320" y2="300" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="708" y="317" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">timestamptz</text>
-<text x="856.8" y="317" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">created_at</text>
-<text x="1092.4" y="317" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">not null</text>
-<line x1="700" y1="326" x2="1320" y2="326" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="708" y="343" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">timestamptz</text>
-<text x="856.8" y="343" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">updated_at</text>
-<text x="1092.4" y="343" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">nullable</text>
-<line x1="700" y1="352" x2="1320" y2="352" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="708" y="369" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">varchar(255)</text>
-<text x="856.8" y="369" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">totp_secret</text>
-<text x="1092.4" y="369" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">nullable; cifrado AES-GCM (Key Vault)</text>
-<line x1="700" y1="378" x2="1320" y2="378" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="708" y="395" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">boolean</text>
-<text x="856.8" y="395" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">mfa_enabled</text>
-<text x="1092.4" y="395" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">not null; default false</text>
-<line x1="700" y1="404" x2="1320" y2="404" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="708" y="421" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">boolean</text>
-<text x="856.8" y="421" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">is_interactive</text>
-<text x="1092.4" y="421" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">not null; default true</text>
-<line x1="848.8" y1="92" x2="848.8" y2="430" stroke="#C6D3E3" stroke-width="0.8"/>
-<line x1="1034.8" y1="92" x2="1034.8" y2="430" stroke="#C6D3E3" stroke-width="0.8"/>
-<line x1="1084.4" y1="92" x2="1084.4" y2="430" stroke="#C6D3E3" stroke-width="0.8"/>
-<rect x="60" y="60" width="560" height="188" fill="#FFFFFF" stroke="#4472A8" stroke-width="1.2" rx="2"/>
-<rect x="60" y="60" width="560" height="32" fill="#DCE6F1" stroke="#4472A8" stroke-width="1.2" rx="2"/>
-<text x="340.0" y="81" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="15" font-weight="600" fill="#1F3864" text-anchor="middle">roles</text>
-<line x1="60" y1="92" x2="620" y2="92" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="68" y="109" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">UUID</text>
-<text x="202.4" y="109" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">id</text>
-<text x="370.40000000000003" y="109" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">PK</text>
-<line x1="60" y1="118" x2="620" y2="118" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="68" y="135" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">varchar(50)</text>
-<text x="202.4" y="135" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">name</text>
-<text x="370.40000000000003" y="135" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">UK</text>
-<text x="415.2" y="135" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">not null; ADMIN | VIEWER | ...</text>
-<line x1="60" y1="144" x2="620" y2="144" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="68" y="161" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">varchar(255)</text>
-<text x="202.4" y="161" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">description</text>
-<text x="415.2" y="161" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">nullable</text>
-<line x1="60" y1="170" x2="620" y2="170" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="68" y="187" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">boolean</text>
-<text x="202.4" y="187" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">is_active</text>
-<text x="415.2" y="187" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">not null</text>
-<line x1="60" y1="196" x2="620" y2="196" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="68" y="213" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">timestamptz</text>
-<text x="202.4" y="213" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">created_at</text>
-<text x="415.2" y="213" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">not null</text>
-<line x1="60" y1="222" x2="620" y2="222" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="68" y="239" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">timestamptz</text>
-<text x="202.4" y="239" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">updated_at</text>
-<text x="415.2" y="239" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">nullable</text>
-<line x1="194.4" y1="92" x2="194.4" y2="248" stroke="#C6D3E3" stroke-width="0.8"/>
-<line x1="362.40000000000003" y1="92" x2="362.40000000000003" y2="248" stroke="#C6D3E3" stroke-width="0.8"/>
-<line x1="407.2" y1="92" x2="407.2" y2="248" stroke="#C6D3E3" stroke-width="0.8"/>
-<rect x="1400" y="60" width="600" height="214" fill="#FFFFFF" stroke="#4472A8" stroke-width="1.2" rx="2"/>
-<rect x="1400" y="60" width="600" height="32" fill="#DCE6F1" stroke="#4472A8" stroke-width="1.2" rx="2"/>
-<text x="1700.0" y="81" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="15" font-weight="600" fill="#1F3864" text-anchor="middle">protected_services</text>
-<line x1="1400" y1="92" x2="2000" y2="92" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="1408" y="109" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">UUID</text>
-<text x="1552.0" y="109" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">id</text>
-<text x="1732.0" y="109" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">PK</text>
-<line x1="1400" y1="118" x2="2000" y2="118" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="1408" y="135" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">varchar(150)</text>
-<text x="1552.0" y="135" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">name</text>
-<text x="1780.0" y="135" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">not null; clusterId de YARP</text>
-<line x1="1400" y1="144" x2="2000" y2="144" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="1408" y="161" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">varchar(500)</text>
-<text x="1552.0" y="161" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">upstream_url</text>
-<text x="1780.0" y="161" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">not null</text>
-<line x1="1400" y1="170" x2="2000" y2="170" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="1408" y="187" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">boolean</text>
-<text x="1552.0" y="187" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">requires_auth</text>
-<text x="1780.0" y="187" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">not null; exige JWT antes de evaluar</text>
-<line x1="1400" y1="196" x2="2000" y2="196" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="1408" y="213" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">boolean</text>
-<text x="1552.0" y="213" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">is_active</text>
-<text x="1780.0" y="213" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">not null</text>
-<line x1="1400" y1="222" x2="2000" y2="222" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="1408" y="239" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">timestamptz</text>
-<text x="1552.0" y="239" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">created_at</text>
-<text x="1780.0" y="239" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">not null</text>
-<line x1="1400" y1="248" x2="2000" y2="248" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="1408" y="265" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">timestamptz</text>
-<text x="1552.0" y="265" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">updated_at</text>
-<text x="1780.0" y="265" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">nullable</text>
-<line x1="1544.0" y1="92" x2="1544.0" y2="274" stroke="#C6D3E3" stroke-width="0.8"/>
-<line x1="1724.0" y1="92" x2="1724.0" y2="274" stroke="#C6D3E3" stroke-width="0.8"/>
-<line x1="1772.0" y1="92" x2="1772.0" y2="274" stroke="#C6D3E3" stroke-width="0.8"/>
-<rect x="2080" y="60" width="480" height="240" fill="#FFFFFF" stroke="#4472A8" stroke-width="1.2" rx="2"/>
-<rect x="2080" y="60" width="480" height="32" fill="#DCE6F1" stroke="#4472A8" stroke-width="1.2" rx="2"/>
-<text x="2320.0" y="81" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="15" font-weight="600" fill="#1F3864" text-anchor="middle">risk_score_config</text>
-<line x1="2080" y1="92" x2="2560" y2="92" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="2088" y="109" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">UUID</text>
-<text x="2203.2" y="109" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">id</text>
-<text x="2366.4" y="109" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">PK</text>
-<line x1="2080" y1="118" x2="2560" y2="118" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="2088" y="135" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">numeric(5,4)</text>
-<text x="2203.2" y="135" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">policy_weight</text>
-<text x="2400.0" y="135" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">not null; Wp = 0.5</text>
-<line x1="2080" y1="144" x2="2560" y2="144" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="2088" y="161" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">numeric(5,4)</text>
-<text x="2203.2" y="161" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">anomaly_weight</text>
-<text x="2400.0" y="161" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">not null; Wa = 0.5</text>
-<line x1="2080" y1="170" x2="2560" y2="170" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="2088" y="187" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">numeric(5,2)</text>
-<text x="2203.2" y="187" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">challenge_threshold</text>
-<text x="2400.0" y="187" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">not null; techo ALLOW = 33</text>
-<line x1="2080" y1="196" x2="2560" y2="196" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="2088" y="213" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">numeric(5,2)</text>
-<text x="2203.2" y="213" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">block_threshold</text>
-<text x="2400.0" y="213" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">not null; techo CHALLENGE = 70</text>
-<line x1="2080" y1="222" x2="2560" y2="222" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="2088" y="239" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">numeric(5,2)</text>
-<text x="2203.2" y="239" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">cold_start_penalty</text>
-<text x="2400.0" y="239" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">not null; 30</text>
-<line x1="2080" y1="248" x2="2560" y2="248" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="2088" y="265" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">integer</text>
-<text x="2203.2" y="265" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">cold_start_n</text>
-<text x="2400.0" y="265" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">not null; 10</text>
-<line x1="2080" y1="274" x2="2560" y2="274" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="2088" y="291" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">timestamptz</text>
-<text x="2203.2" y="291" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">updated_at</text>
-<text x="2400.0" y="291" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">not null</text>
-<line x1="2195.2" y1="92" x2="2195.2" y2="300" stroke="#C6D3E3" stroke-width="0.8"/>
-<line x1="2358.4" y1="92" x2="2358.4" y2="300" stroke="#C6D3E3" stroke-width="0.8"/>
-<line x1="2392.0" y1="92" x2="2392.0" y2="300" stroke="#C6D3E3" stroke-width="0.8"/>
-<rect x="60" y="700" width="560" height="136" fill="#FFFFFF" stroke="#4472A8" stroke-width="1.2" rx="2"/>
-<rect x="60" y="700" width="560" height="32" fill="#DCE6F1" stroke="#4472A8" stroke-width="1.2" rx="2"/>
-<text x="340.0" y="721" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="15" font-weight="600" fill="#1F3864" text-anchor="middle">user_roles</text>
-<line x1="60" y1="732" x2="620" y2="732" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="68" y="749" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">UUID</text>
-<text x="202.4" y="749" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">id</text>
-<text x="370.40000000000003" y="749" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">PK</text>
-<line x1="60" y1="758" x2="620" y2="758" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="68" y="775" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">UUID</text>
-<text x="202.4" y="775" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">user_id</text>
-<text x="370.40000000000003" y="775" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">FK</text>
-<text x="415.2" y="775" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">not null; -&gt; users.id; CASCADE</text>
-<line x1="60" y1="784" x2="620" y2="784" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="68" y="801" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">UUID</text>
-<text x="202.4" y="801" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">role_id</text>
-<text x="370.40000000000003" y="801" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">FK</text>
-<text x="415.2" y="801" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">not null; -&gt; roles.id; CASCADE</text>
-<line x1="60" y1="810" x2="620" y2="810" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="68" y="827" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">timestamptz</text>
-<text x="202.4" y="827" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">assigned_at</text>
-<text x="415.2" y="827" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">not null; UNIQUE (user_id, role_id)</text>
-<line x1="194.4" y1="732" x2="194.4" y2="836" stroke="#C6D3E3" stroke-width="0.8"/>
-<line x1="362.40000000000003" y1="732" x2="362.40000000000003" y2="836" stroke="#C6D3E3" stroke-width="0.8"/>
-<line x1="407.2" y1="732" x2="407.2" y2="836" stroke="#C6D3E3" stroke-width="0.8"/>
-<rect x="700" y="700" width="600" height="214" fill="#FFFFFF" stroke="#4472A8" stroke-width="1.2" rx="2"/>
-<rect x="700" y="700" width="600" height="32" fill="#DCE6F1" stroke="#4472A8" stroke-width="1.2" rx="2"/>
-<text x="1000.0" y="721" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="15" font-weight="600" fill="#1F3864" text-anchor="middle">user_behavior_profiles</text>
-<line x1="700" y1="732" x2="1300" y2="732" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="708" y="749" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">UUID</text>
-<text x="828.0" y="749" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">id</text>
-<text x="1008.0" y="749" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">PK</text>
-<line x1="700" y1="758" x2="1300" y2="758" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="708" y="775" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">UUID</text>
-<text x="828.0" y="775" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">user_id</text>
-<text x="1008.0" y="775" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">FK, UK</text>
-<text x="1074.0" y="775" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">not null; 1:1 -&gt; users.id; CASCADE</text>
-<line x1="700" y1="784" x2="1300" y2="784" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="708" y="801" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">jsonb</text>
-<text x="828.0" y="801" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">feature_vector</text>
-<text x="1074.0" y="801" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">nullable; hora sin/cos, frec., diversidad</text>
-<line x1="700" y1="810" x2="1300" y2="810" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="708" y="827" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">integer</text>
-<text x="828.0" y="827" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">access_count</text>
-<text x="1074.0" y="827" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">not null</text>
-<line x1="700" y1="836" x2="1300" y2="836" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="708" y="853" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">boolean</text>
-<text x="828.0" y="853" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">is_cold_start</text>
-<text x="1074.0" y="853" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">not null; true si access_count &lt; N</text>
-<line x1="700" y1="862" x2="1300" y2="862" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="708" y="879" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">numeric(5,2)</text>
-<text x="828.0" y="879" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">base_risk_penalty</text>
-<text x="1074.0" y="879" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">not null</text>
-<line x1="700" y1="888" x2="1300" y2="888" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="708" y="905" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">timestamptz</text>
-<text x="828.0" y="905" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">last_trained_at</text>
-<text x="1074.0" y="905" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">nullable</text>
-<line x1="820.0" y1="732" x2="820.0" y2="914" stroke="#C6D3E3" stroke-width="0.8"/>
-<line x1="1000.0" y1="732" x2="1000.0" y2="914" stroke="#C6D3E3" stroke-width="0.8"/>
-<line x1="1066.0" y1="732" x2="1066.0" y2="914" stroke="#C6D3E3" stroke-width="0.8"/>
-<rect x="1400" y="700" width="600" height="214" fill="#FFFFFF" stroke="#4472A8" stroke-width="1.2" rx="2"/>
-<rect x="1400" y="700" width="600" height="32" fill="#DCE6F1" stroke="#4472A8" stroke-width="1.2" rx="2"/>
-<text x="1700.0" y="721" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="15" font-weight="600" fill="#1F3864" text-anchor="middle">refresh_tokens</text>
-<line x1="1400" y1="732" x2="2000" y2="732" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="1408" y="749" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">UUID</text>
-<text x="1552.0" y="749" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">id</text>
-<text x="1732.0" y="749" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">PK</text>
-<line x1="1400" y1="758" x2="2000" y2="758" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="1408" y="775" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">UUID</text>
-<text x="1552.0" y="775" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">user_id</text>
-<text x="1732.0" y="775" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">FK</text>
-<text x="1780.0" y="775" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">not null; -&gt; users.id; CASCADE</text>
-<line x1="1400" y1="784" x2="2000" y2="784" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="1408" y="801" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">varchar(255)</text>
-<text x="1552.0" y="801" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">token_hash</text>
-<text x="1732.0" y="801" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">UK</text>
-<text x="1780.0" y="801" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">not null; nunca en claro</text>
-<line x1="1400" y1="810" x2="2000" y2="810" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="1408" y="827" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">varchar(255)</text>
-<text x="1552.0" y="827" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">device_info</text>
-<text x="1780.0" y="827" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">nullable</text>
-<line x1="1400" y1="836" x2="2000" y2="836" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="1408" y="853" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">timestamptz</text>
-<text x="1552.0" y="853" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">expires_at</text>
-<text x="1780.0" y="853" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">not null; emision + 7 dias</text>
-<line x1="1400" y1="862" x2="2000" y2="862" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="1408" y="879" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">boolean</text>
-<text x="1552.0" y="879" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">is_revoked</text>
-<text x="1780.0" y="879" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">not null; rotacion en cada renovacion</text>
-<line x1="1400" y1="888" x2="2000" y2="888" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="1408" y="905" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">timestamptz</text>
-<text x="1552.0" y="905" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">created_at</text>
-<text x="1780.0" y="905" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">not null</text>
-<line x1="1544.0" y1="732" x2="1544.0" y2="914" stroke="#C6D3E3" stroke-width="0.8"/>
-<line x1="1724.0" y1="732" x2="1724.0" y2="914" stroke="#C6D3E3" stroke-width="0.8"/>
-<line x1="1772.0" y1="732" x2="1772.0" y2="914" stroke="#C6D3E3" stroke-width="0.8"/>
-<rect x="2080" y="700" width="480" height="396" fill="#FFFFFF" stroke="#4472A8" stroke-width="1.2" rx="2"/>
-<rect x="2080" y="700" width="480" height="32" fill="#DCE6F1" stroke="#4472A8" stroke-width="1.2" rx="2"/>
-<text x="2320.0" y="721" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="15" font-weight="600" fill="#1F3864" text-anchor="middle">audit_logs</text>
-<line x1="2080" y1="732" x2="2560" y2="732" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="2088" y="749" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">UUID</text>
-<text x="2203.2" y="749" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">id</text>
-<text x="2361.6" y="749" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">PK</text>
-<line x1="2080" y1="758" x2="2560" y2="758" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="2088" y="775" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">UUID</text>
-<text x="2203.2" y="775" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">evaluation_id</text>
-<text x="2361.6" y="775" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">UK</text>
-<text x="2400.0" y="775" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">not null</text>
-<line x1="2080" y1="784" x2="2560" y2="784" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="2088" y="801" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">UUID</text>
-<text x="2203.2" y="801" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">user_id</text>
-<text x="2361.6" y="801" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">FK</text>
-<text x="2400.0" y="801" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">nullable; SET NULL</text>
-<line x1="2080" y1="810" x2="2560" y2="810" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="2088" y="827" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">UUID</text>
-<text x="2203.2" y="827" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">service_id</text>
-<text x="2361.6" y="827" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">FK</text>
-<text x="2400.0" y="827" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">nullable; SET NULL</text>
-<line x1="2080" y1="836" x2="2560" y2="836" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="2088" y="853" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">varchar(45)</text>
-<text x="2203.2" y="853" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">source_ip</text>
-<text x="2400.0" y="853" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">not null; IPv4/IPv6</text>
-<line x1="2080" y1="862" x2="2560" y2="862" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="2088" y="879" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">jsonb</text>
-<text x="2203.2" y="879" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">geo</text>
-<text x="2400.0" y="879" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">nullable; pais, ciudad</text>
-<line x1="2080" y1="888" x2="2560" y2="888" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="2088" y="905" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">text</text>
-<text x="2203.2" y="905" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">user_agent</text>
-<text x="2400.0" y="905" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">nullable; sanitizado</text>
-<line x1="2080" y1="914" x2="2560" y2="914" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="2088" y="931" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">varchar(64)</text>
-<text x="2203.2" y="931" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">fingerprint_hash</text>
-<text x="2400.0" y="931" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">nullable</text>
-<line x1="2080" y1="940" x2="2560" y2="940" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="2088" y="957" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">numeric(5,2)</text>
-<text x="2203.2" y="957" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">policy_score</text>
-<text x="2400.0" y="957" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">not null</text>
-<line x1="2080" y1="966" x2="2560" y2="966" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="2088" y="983" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">numeric(5,2)</text>
-<text x="2203.2" y="983" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">anomaly_score</text>
-<text x="2400.0" y="983" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">not null</text>
-<line x1="2080" y1="992" x2="2560" y2="992" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="2088" y="1009" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">numeric(5,2)</text>
-<text x="2203.2" y="1009" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">risk_score</text>
-<text x="2400.0" y="1009" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">not null; 0-100</text>
-<line x1="2080" y1="1018" x2="2560" y2="1018" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="2088" y="1035" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">varchar(10)</text>
-<text x="2203.2" y="1035" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">verdict</text>
-<text x="2400.0" y="1035" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">not null; ALLOW|CHALLENGE|BLOCK</text>
-<line x1="2080" y1="1044" x2="2560" y2="1044" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="2088" y="1061" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">jsonb</text>
-<text x="2203.2" y="1061" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">triggered_rules</text>
-<text x="2400.0" y="1061" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">nullable; denormalizado</text>
-<line x1="2080" y1="1070" x2="2560" y2="1070" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="2088" y="1087" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">timestamptz</text>
-<text x="2203.2" y="1087" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">evaluated_at</text>
-<text x="2400.0" y="1087" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">not null</text>
-<line x1="2195.2" y1="732" x2="2195.2" y2="1096" stroke="#C6D3E3" stroke-width="0.8"/>
-<line x1="2353.6" y1="732" x2="2353.6" y2="1096" stroke="#C6D3E3" stroke-width="0.8"/>
-<line x1="2392.0" y1="732" x2="2392.0" y2="1096" stroke="#C6D3E3" stroke-width="0.8"/>
-<rect x="700" y="1260" width="700" height="266" fill="#FFFFFF" stroke="#4472A8" stroke-width="1.2" rx="2"/>
-<rect x="700" y="1260" width="700" height="32" fill="#DCE6F1" stroke="#4472A8" stroke-width="1.2" rx="2"/>
-<text x="1050.0" y="1281" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="15" font-weight="600" fill="#1F3864" text-anchor="middle">access_policies</text>
-<line x1="700" y1="1292" x2="1400" y2="1292" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="708" y="1309" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">UUID</text>
-<text x="841.0" y="1309" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">id</text>
-<text x="1009.0" y="1309" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">PK</text>
-<line x1="700" y1="1318" x2="1400" y2="1318" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="708" y="1335" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">varchar(150)</text>
-<text x="841.0" y="1335" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">name</text>
-<text x="1051.0" y="1335" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">not null</text>
-<line x1="700" y1="1344" x2="1400" y2="1344" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="708" y="1361" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">varchar(30)</text>
-<text x="841.0" y="1361" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">type</text>
-<text x="1051.0" y="1361" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">GEOFENCE | TIME_WINDOW | FINGERPRINT | IMPOSSIBLE_TRAVEL</text>
-<line x1="700" y1="1370" x2="1400" y2="1370" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="708" y="1387" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">jsonb</text>
-<text x="841.0" y="1387" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">config</text>
-<text x="1051.0" y="1387" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">not null; parametros de la regla</text>
-<line x1="700" y1="1396" x2="1400" y2="1396" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="708" y="1413" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">numeric(4,3)</text>
-<text x="841.0" y="1413" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">weight</text>
-<text x="1051.0" y="1413" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">not null; peso en el Policy Score</text>
-<line x1="700" y1="1422" x2="1400" y2="1422" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="708" y="1439" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">boolean</text>
-<text x="841.0" y="1439" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">is_active</text>
-<text x="1051.0" y="1439" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">not null; soft-delete</text>
-<line x1="700" y1="1448" x2="1400" y2="1448" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="708" y="1465" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">UUID</text>
-<text x="841.0" y="1465" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">created_by</text>
-<text x="1009.0" y="1465" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">FK</text>
-<text x="1051.0" y="1465" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">not null; -&gt; users.id; RESTRICT</text>
-<line x1="700" y1="1474" x2="1400" y2="1474" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="708" y="1491" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">timestamptz</text>
-<text x="841.0" y="1491" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">created_at</text>
-<text x="1051.0" y="1491" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">not null</text>
-<line x1="700" y1="1500" x2="1400" y2="1500" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="708" y="1517" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">timestamptz</text>
-<text x="841.0" y="1517" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">updated_at</text>
-<text x="1051.0" y="1517" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">nullable</text>
-<line x1="833.0" y1="1292" x2="833.0" y2="1526" stroke="#C6D3E3" stroke-width="0.8"/>
-<line x1="1001.0" y1="1292" x2="1001.0" y2="1526" stroke="#C6D3E3" stroke-width="0.8"/>
-<line x1="1043.0" y1="1292" x2="1043.0" y2="1526" stroke="#C6D3E3" stroke-width="0.8"/>
-<rect x="1450" y="1600" width="560" height="136" fill="#FFFFFF" stroke="#4472A8" stroke-width="1.2" rx="2"/>
-<rect x="1450" y="1600" width="560" height="32" fill="#DCE6F1" stroke="#4472A8" stroke-width="1.2" rx="2"/>
-<text x="1730.0" y="1621" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="15" font-weight="600" fill="#1F3864" text-anchor="middle">service_policies</text>
-<line x1="1450" y1="1632" x2="2010" y2="1632" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="1458" y="1649" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">UUID</text>
-<text x="1592.4" y="1649" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">id</text>
-<text x="1760.4" y="1649" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">PK</text>
-<line x1="1450" y1="1658" x2="2010" y2="1658" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="1458" y="1675" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">UUID</text>
-<text x="1592.4" y="1675" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">service_id</text>
-<text x="1760.4" y="1675" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">FK</text>
-<text x="1805.2" y="1675" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">not null; -&gt; protected_services.id</text>
-<line x1="1450" y1="1684" x2="2010" y2="1684" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="1458" y="1701" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">UUID</text>
-<text x="1592.4" y="1701" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">policy_id</text>
-<text x="1760.4" y="1701" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">FK</text>
-<text x="1805.2" y="1701" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">not null; -&gt; access_policies.id</text>
-<line x1="1450" y1="1710" x2="2010" y2="1710" stroke="#C6D3E3" stroke-width="0.8"/>
-<text x="1458" y="1727" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" fill="#1A1A1A">boolean</text>
-<text x="1592.4" y="1727" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">is_enabled</text>
-<text x="1805.2" y="1727" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472">not null; UNIQUE (service_id, policy_id)</text>
-<line x1="1584.4" y1="1632" x2="1584.4" y2="1736" stroke="#C6D3E3" stroke-width="0.8"/>
-<line x1="1752.4" y1="1632" x2="1752.4" y2="1736" stroke="#C6D3E3" stroke-width="0.8"/>
-<line x1="1797.2" y1="1632" x2="1797.2" y2="1736" stroke="#C6D3E3" stroke-width="0.8"/>
-<rect x="60" y="940" width="560" height="233" fill="#FBFCFE" stroke="#4472A8" stroke-width="1.2" stroke-dasharray="7 4" rx="3"/>
-<text x="74" y="966" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="14" font-weight="600" fill="#1F3864">Estado efimero (Redis) — fuera del modelo relacional</text>
-<text x="74" y="988" font-family="'Consolas', 'Cascadia Mono', monospace" font-size="11" fill="#5A6472" xml:space="preserve">session:{userId}         15 min   validacion rapida del token activo</text>
-<text x="74" y="1009" font-family="'Consolas', 'Cascadia Mono', monospace" font-size="11" fill="#5A6472" xml:space="preserve">blacklist:{jti}          hasta    access tokens revocados</text>
-<text x="74" y="1030" font-family="'Consolas', 'Cascadia Mono', monospace" font-size="11" fill="#5A6472" xml:space="preserve">                         exp.</text>
-<text x="74" y="1051" font-family="'Consolas', 'Cascadia Mono', monospace" font-size="11" fill="#5A6472" xml:space="preserve">profile:{userId}         1 h      cache del perfil para ML.NET</text>
-<text x="74" y="1072" font-family="'Consolas', 'Cascadia Mono', monospace" font-size="11" fill="#5A6472" xml:space="preserve">fingerprint:{userId}     24 h     huellas de dispositivo conocidas</text>
-<text x="74" y="1093" font-family="'Consolas', 'Cascadia Mono', monospace" font-size="11" fill="#5A6472" xml:space="preserve">ratelimit:{ip}           60 s     contador de frecuencia por IP</text>
-<text x="74" y="1114" font-family="'Consolas', 'Cascadia Mono', monospace" font-size="11" fill="#5A6472" xml:space="preserve">challenge:{challengeId}  2-5 min  desafio MFA pendiente</text>
-<text x="74" y="1135" font-family="'Consolas', 'Cascadia Mono', monospace" font-size="11" fill="#5A6472" xml:space="preserve">stepup:{userId}          10 min   ventana de step-up satisfecho</text>
-<text x="74" y="1156" font-family="'Consolas', 'Cascadia Mono', monospace" font-size="11" fill="#5A6472" xml:space="preserve">mfaattempts:{userId}     ventana  anti fuerza bruta del TOTP</text>
-<rect x="60" y="1280" width="560" height="275" fill="#FBFCFE" stroke="#4472A8" stroke-width="1.2" stroke-dasharray="7 4" rx="3"/>
-<text x="74" y="1306" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="14" font-weight="600" fill="#1F3864">Indices</text>
-<text x="74" y="1328" font-family="'Consolas', 'Cascadia Mono', monospace" font-size="11" fill="#5A6472" xml:space="preserve">ix_users_username                UNIQUE (username)</text>
-<text x="74" y="1349" font-family="'Consolas', 'Cascadia Mono', monospace" font-size="11" fill="#5A6472" xml:space="preserve">ix_users_keycloak_sub            UNIQUE parcial (IS NOT NULL)</text>
-<text x="74" y="1370" font-family="'Consolas', 'Cascadia Mono', monospace" font-size="11" fill="#5A6472" xml:space="preserve">ix_roles_name                    UNIQUE (name)</text>
-<text x="74" y="1391" font-family="'Consolas', 'Cascadia Mono', monospace" font-size="11" fill="#5A6472" xml:space="preserve">ix_user_roles_user_role          UNIQUE (user_id, role_id)</text>
-<text x="74" y="1412" font-family="'Consolas', 'Cascadia Mono', monospace" font-size="11" fill="#5A6472" xml:space="preserve">ix_service_policies_svc_policy   UNIQUE (service_id, policy_id)</text>
-<text x="74" y="1433" font-family="'Consolas', 'Cascadia Mono', monospace" font-size="11" fill="#5A6472" xml:space="preserve">ix_user_behavior_profiles_user   UNIQUE (user_id) -&gt; fuerza el 1:1</text>
-<text x="74" y="1454" font-family="'Consolas', 'Cascadia Mono', monospace" font-size="11" fill="#5A6472" xml:space="preserve">ix_refresh_tokens_token_hash     UNIQUE (token_hash)</text>
-<text x="74" y="1475" font-family="'Consolas', 'Cascadia Mono', monospace" font-size="11" fill="#5A6472" xml:space="preserve">ix_refresh_tokens_user_active    parcial WHERE is_revoked = false</text>
-<text x="74" y="1496" font-family="'Consolas', 'Cascadia Mono', monospace" font-size="11" fill="#5A6472" xml:space="preserve">ix_audit_logs_evaluation_id      UNIQUE (evaluation_id)</text>
-<text x="74" y="1517" font-family="'Consolas', 'Cascadia Mono', monospace" font-size="11" fill="#5A6472" xml:space="preserve">ix_audit_logs_evaluated_at       B-tree (evaluated_at)</text>
-<text x="74" y="1538" font-family="'Consolas', 'Cascadia Mono', monospace" font-size="11" fill="#5A6472" xml:space="preserve">ix_audit_logs_triggered_rules    GIN (triggered_rules)</text>
-<rect x="150" y="300" width="470" height="254" fill="#FBFCFE" stroke="#4472A8" stroke-width="1.2" stroke-dasharray="7 4" rx="3"/>
-<text x="164" y="326" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="14" font-weight="600" fill="#1F3864">Leyenda</text>
-<text x="164" y="348" font-family="'Consolas', 'Cascadia Mono', monospace" font-size="11" fill="#5A6472" xml:space="preserve">PK  clave primaria    FK  clave foranea    UK  unica</text>
-<text x="164" y="369" font-family="'Consolas', 'Cascadia Mono', monospace" font-size="11" fill="#5A6472" xml:space="preserve"></text>
-<text x="164" y="390" font-family="'Consolas', 'Cascadia Mono', monospace" font-size="11" fill="#5A6472" xml:space="preserve">CASCADE   el hijo carece de sentido sin su padre</text>
-<text x="164" y="411" font-family="'Consolas', 'Cascadia Mono', monospace" font-size="11" fill="#5A6472" xml:space="preserve">SET NULL  la auditoria sobrevive al borrado del padre</text>
-<text x="164" y="432" font-family="'Consolas', 'Cascadia Mono', monospace" font-size="11" fill="#5A6472" xml:space="preserve">RESTRICT  no se borra un autor con politicas vigentes</text>
-<text x="164" y="453" font-family="'Consolas', 'Cascadia Mono', monospace" font-size="11" fill="#5A6472" xml:space="preserve"></text>
-<text x="164" y="474" font-family="'Consolas', 'Cascadia Mono', monospace" font-size="11" fill="#5A6472" xml:space="preserve">audit_logs es append-only: no se actualiza ni se borra.</text>
-<text x="164" y="495" font-family="'Consolas', 'Cascadia Mono', monospace" font-size="11" fill="#5A6472" xml:space="preserve">access_policies &lt;-&gt; audit_logs es N:M denormalizada en</text>
-<text x="164" y="516" font-family="'Consolas', 'Cascadia Mono', monospace" font-size="11" fill="#5A6472" xml:space="preserve">triggered_rules (jsonb), sin tabla de union, por rendimiento.</text>
-<text x="164" y="537" font-family="'Consolas', 'Cascadia Mono', monospace" font-size="11" fill="#5A6472" xml:space="preserve">risk_score_config es una fila unica global, sin claves foraneas.</text>
-<rect x="2080" y="1180" width="480" height="149" fill="#FBFCFE" stroke="#4472A8" stroke-width="1.2" stroke-dasharray="7 4" rx="3"/>
-<text x="2094" y="1206" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="14" font-weight="600" fill="#1F3864">Nota sobre los umbrales</text>
-<text x="2094" y="1228" font-family="'Consolas', 'Cascadia Mono', monospace" font-size="11" fill="#5A6472" xml:space="preserve">El SRS §7.6 nombra los umbrales por el veredicto</text>
-<text x="2094" y="1249" font-family="'Consolas', 'Cascadia Mono', monospace" font-size="11" fill="#5A6472" xml:space="preserve">que abren y la entidad por el que cierra. Mapeo 1:1:</text>
-<text x="2094" y="1270" font-family="'Consolas', 'Cascadia Mono', monospace" font-size="11" fill="#5A6472" xml:space="preserve"></text>
-<text x="2094" y="1291" font-family="'Consolas', 'Cascadia Mono', monospace" font-size="11" fill="#5A6472" xml:space="preserve">SRS allow_threshold     = challenge_threshold</text>
-<text x="2094" y="1312" font-family="'Consolas', 'Cascadia Mono', monospace" font-size="11" fill="#5A6472" xml:space="preserve">SRS challenge_threshold = block_threshold</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1480 1000" width="1480" height="1000">
+<rect width="1480" height="1000" fill="#FFFFFF"/>
+<text x="740.0" y="46" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="30" font-weight="600" fill="#1F3864" text-anchor="middle">Modelo de datos relacional (PostgreSQL, 10 entidades)</text>
+<path d="M 130.0 323 L 130.0 383" fill="none" stroke="#4A6D94" stroke-width="2.2" stroke-linejoin="round"/>
+<line x1="141.0" y1="339.0" x2="119.0" y2="339.0" stroke="#4A6D94" stroke-width="2.2"/>
+<line x1="130.0" y1="383" x2="119.0" y2="367.0" stroke="#4A6D94" stroke-width="2.2"/>
+<line x1="130.0" y1="383" x2="130.0" y2="367.0" stroke="#4A6D94" stroke-width="2.2"/>
+<line x1="130.0" y1="383" x2="141.0" y2="367.0" stroke="#4A6D94" stroke-width="2.2"/>
+<path d="M 360.0 587 L 360.0 527" fill="none" stroke="#4A6D94" stroke-width="2.2" stroke-linejoin="round"/>
+<line x1="349.0" y1="571.0" x2="371.0" y2="571.0" stroke="#4A6D94" stroke-width="2.2"/>
+<line x1="360.0" y1="527" x2="371.0" y2="543.0" stroke="#4A6D94" stroke-width="2.2"/>
+<line x1="360.0" y1="527" x2="360.0" y2="543.0" stroke="#4A6D94" stroke-width="2.2"/>
+<line x1="360.0" y1="527" x2="349.0" y2="543.0" stroke="#4A6D94" stroke-width="2.2"/>
+<path d="M 460 185 L 530 185" fill="none" stroke="#4A6D94" stroke-width="2.2" stroke-linejoin="round"/>
+<line x1="476.0" y1="174.0" x2="476.0" y2="196.0" stroke="#4A6D94" stroke-width="2.2"/>
+<line x1="514.0" y1="196.0" x2="514.0" y2="174.0" stroke="#4A6D94" stroke-width="2.2"/>
+<path d="M 460 255 L 492 255 L 492 420 L 530 420" fill="none" stroke="#4A6D94" stroke-width="2.2" stroke-linejoin="round"/>
+<line x1="476.0" y1="244.0" x2="476.0" y2="266.0" stroke="#4A6D94" stroke-width="2.2"/>
+<line x1="530" y1="420" x2="514.0" y2="431.0" stroke="#4A6D94" stroke-width="2.2"/>
+<line x1="530" y1="420" x2="514.0" y2="420.0" stroke="#4A6D94" stroke-width="2.2"/>
+<line x1="530" y1="420" x2="514.0" y2="409.0" stroke="#4A6D94" stroke-width="2.2"/>
+<path d="M 460 290 L 505 290 L 505 645 L 530 645" fill="none" stroke="#4A6D94" stroke-width="2.2" stroke-linejoin="round"/>
+<line x1="476.0" y1="279.0" x2="476.0" y2="301.0" stroke="#4A6D94" stroke-width="2.2"/>
+<line x1="530" y1="645" x2="514.0" y2="656.0" stroke="#4A6D94" stroke-width="2.2"/>
+<line x1="530" y1="645" x2="514.0" y2="645.0" stroke="#4A6D94" stroke-width="2.2"/>
+<line x1="530" y1="645" x2="514.0" y2="634.0" stroke="#4A6D94" stroke-width="2.2"/>
+<path d="M 340.0 125 L 340.0 92 L 1230.0 92 L 1230.0 340" fill="none" stroke="#4A6D94" stroke-width="2.2" stroke-linejoin="round"/>
+<line x1="329.0" y1="109.0" x2="351.0" y2="109.0" stroke="#4A6D94" stroke-width="2.2"/>
+<line x1="1230.0" y1="340" x2="1219.0" y2="324.0" stroke="#4A6D94" stroke-width="2.2"/>
+<line x1="1230.0" y1="340" x2="1230.0" y2="324.0" stroke="#4A6D94" stroke-width="2.2"/>
+<line x1="1230.0" y1="340" x2="1241.0" y2="324.0" stroke="#4A6D94" stroke-width="2.2"/>
+<path d="M 1020 185 L 990 185 L 990 685 L 950 685" fill="none" stroke="#4A6D94" stroke-width="2.2" stroke-linejoin="round"/>
+<line x1="1004.0" y1="196.0" x2="1004.0" y2="174.0" stroke="#4A6D94" stroke-width="2.2"/>
+<line x1="950" y1="685" x2="966.0" y2="674.0" stroke="#4A6D94" stroke-width="2.2"/>
+<line x1="950" y1="685" x2="966.0" y2="685.0" stroke="#4A6D94" stroke-width="2.2"/>
+<line x1="950" y1="685" x2="966.0" y2="696.0" stroke="#4A6D94" stroke-width="2.2"/>
+<path d="M 1440 235 L 1455 235 L 1455 644 L 1440 644" fill="none" stroke="#4A6D94" stroke-width="2.2" stroke-linejoin="round"/>
+<line x1="1456.0" y1="224.0" x2="1456.0" y2="246.0" stroke="#4A6D94" stroke-width="2.2"/>
+<line x1="1440" y1="644" x2="1456.0" y2="633.0" stroke="#4A6D94" stroke-width="2.2"/>
+<line x1="1440" y1="644" x2="1456.0" y2="644.0" stroke="#4A6D94" stroke-width="2.2"/>
+<line x1="1440" y1="644" x2="1456.0" y2="655.0" stroke="#4A6D94" stroke-width="2.2"/>
+<path d="M 1110.0 538 L 1110.0 584" fill="none" stroke="#4A6D94" stroke-width="2.2" stroke-linejoin="round"/>
+<line x1="1121.0" y1="554.0" x2="1099.0" y2="554.0" stroke="#4A6D94" stroke-width="2.2"/>
+<line x1="1110.0" y1="584" x2="1099.0" y2="568.0" stroke="#4A6D94" stroke-width="2.2"/>
+<line x1="1110.0" y1="584" x2="1110.0" y2="568.0" stroke="#4A6D94" stroke-width="2.2"/>
+<line x1="1110.0" y1="584" x2="1121.0" y2="568.0" stroke="#4A6D94" stroke-width="2.2"/>
+<rect x="40" y="125" width="420" height="198" fill="#FFFFFF" stroke="#4472A8" stroke-width="2" rx="3"/>
+<rect x="40" y="125" width="420" height="36" fill="#DCE6F1" stroke="#4472A8" stroke-width="2" rx="3"/>
+<text x="250.0" y="150" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="middle">users</text>
+<line x1="40" y1="161" x2="460" y2="161" stroke="#C6D3E3" stroke-width="1"/>
+<text x="52" y="180" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">UUID</text>
+<text x="188" y="180" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1A1A1A" text-anchor="start">id</text>
+<text x="446" y="180" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1F3864" text-anchor="end">PK</text>
+<line x1="40" y1="188" x2="460" y2="188" stroke="#C6D3E3" stroke-width="1"/>
+<text x="52" y="207" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">varchar(150)</text>
+<text x="188" y="207" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1A1A1A" text-anchor="start">username</text>
+<text x="446" y="207" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1F3864" text-anchor="end">UK</text>
+<line x1="40" y1="215" x2="460" y2="215" stroke="#C6D3E3" stroke-width="1"/>
+<text x="52" y="234" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">varchar(20)</text>
+<text x="188" y="234" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1A1A1A" text-anchor="start">user_type</text>
+<line x1="40" y1="242" x2="460" y2="242" stroke="#C6D3E3" stroke-width="1"/>
+<text x="52" y="261" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">varchar(255)</text>
+<text x="188" y="261" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1A1A1A" text-anchor="start">keycloak_sub</text>
+<text x="446" y="261" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1F3864" text-anchor="end">UK</text>
+<line x1="40" y1="269" x2="460" y2="269" stroke="#C6D3E3" stroke-width="1"/>
+<text x="52" y="288" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">boolean</text>
+<text x="188" y="288" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1A1A1A" text-anchor="start">is_active</text>
+<line x1="40" y1="296" x2="460" y2="296" stroke="#C6D3E3" stroke-width="1"/>
+<text x="52" y="315" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">boolean</text>
+<text x="188" y="315" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1A1A1A" text-anchor="start">mfa_enabled</text>
+<rect x="40" y="383" width="420" height="144" fill="#FFFFFF" stroke="#4472A8" stroke-width="2" rx="3"/>
+<rect x="40" y="383" width="420" height="36" fill="#DCE6F1" stroke="#4472A8" stroke-width="2" rx="3"/>
+<text x="250.0" y="408" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="middle">user_roles</text>
+<line x1="40" y1="419" x2="460" y2="419" stroke="#C6D3E3" stroke-width="1"/>
+<text x="52" y="438" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">UUID</text>
+<text x="188" y="438" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1A1A1A" text-anchor="start">id</text>
+<text x="446" y="438" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1F3864" text-anchor="end">PK</text>
+<line x1="40" y1="446" x2="460" y2="446" stroke="#C6D3E3" stroke-width="1"/>
+<text x="52" y="465" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">UUID</text>
+<text x="188" y="465" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1A1A1A" text-anchor="start">user_id</text>
+<text x="446" y="465" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1F3864" text-anchor="end">FK</text>
+<line x1="40" y1="473" x2="460" y2="473" stroke="#C6D3E3" stroke-width="1"/>
+<text x="52" y="492" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">UUID</text>
+<text x="188" y="492" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1A1A1A" text-anchor="start">role_id</text>
+<text x="446" y="492" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1F3864" text-anchor="end">FK</text>
+<line x1="40" y1="500" x2="460" y2="500" stroke="#C6D3E3" stroke-width="1"/>
+<text x="52" y="519" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">timestamptz</text>
+<text x="188" y="519" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1A1A1A" text-anchor="start">assigned_at</text>
+<rect x="40" y="587" width="420" height="117" fill="#FFFFFF" stroke="#4472A8" stroke-width="2" rx="3"/>
+<rect x="40" y="587" width="420" height="36" fill="#DCE6F1" stroke="#4472A8" stroke-width="2" rx="3"/>
+<text x="250.0" y="612" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="middle">roles</text>
+<line x1="40" y1="623" x2="460" y2="623" stroke="#C6D3E3" stroke-width="1"/>
+<text x="52" y="642" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">UUID</text>
+<text x="188" y="642" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1A1A1A" text-anchor="start">id</text>
+<text x="446" y="642" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1F3864" text-anchor="end">PK</text>
+<line x1="40" y1="650" x2="460" y2="650" stroke="#C6D3E3" stroke-width="1"/>
+<text x="52" y="669" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">varchar(50)</text>
+<text x="188" y="669" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1A1A1A" text-anchor="start">name</text>
+<text x="446" y="669" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1F3864" text-anchor="end">UK</text>
+<line x1="40" y1="677" x2="460" y2="677" stroke="#C6D3E3" stroke-width="1"/>
+<text x="52" y="696" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">boolean</text>
+<text x="188" y="696" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1A1A1A" text-anchor="start">is_active</text>
+<rect x="530" y="125" width="420" height="171" fill="#FFFFFF" stroke="#4472A8" stroke-width="2" rx="3"/>
+<rect x="530" y="125" width="420" height="36" fill="#DCE6F1" stroke="#4472A8" stroke-width="2" rx="3"/>
+<text x="740.0" y="150" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="middle">user_behavior_profiles</text>
+<line x1="530" y1="161" x2="950" y2="161" stroke="#C6D3E3" stroke-width="1"/>
+<text x="542" y="180" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">UUID</text>
+<text x="678" y="180" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1A1A1A" text-anchor="start">id</text>
+<text x="936" y="180" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1F3864" text-anchor="end">PK</text>
+<line x1="530" y1="188" x2="950" y2="188" stroke="#C6D3E3" stroke-width="1"/>
+<text x="542" y="207" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">UUID</text>
+<text x="678" y="207" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1A1A1A" text-anchor="start">user_id</text>
+<text x="936" y="207" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1F3864" text-anchor="end">FK, UK</text>
+<line x1="530" y1="215" x2="950" y2="215" stroke="#C6D3E3" stroke-width="1"/>
+<text x="542" y="234" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">jsonb</text>
+<text x="678" y="234" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1A1A1A" text-anchor="start">feature_vector</text>
+<line x1="530" y1="242" x2="950" y2="242" stroke="#C6D3E3" stroke-width="1"/>
+<text x="542" y="261" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">integer</text>
+<text x="678" y="261" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1A1A1A" text-anchor="start">access_count</text>
+<line x1="530" y1="269" x2="950" y2="269" stroke="#C6D3E3" stroke-width="1"/>
+<text x="542" y="288" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">boolean</text>
+<text x="678" y="288" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1A1A1A" text-anchor="start">is_cold_start</text>
+<rect x="530" y="340" width="420" height="171" fill="#FFFFFF" stroke="#4472A8" stroke-width="2" rx="3"/>
+<rect x="530" y="340" width="420" height="36" fill="#DCE6F1" stroke="#4472A8" stroke-width="2" rx="3"/>
+<text x="740.0" y="365" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="middle">refresh_tokens</text>
+<line x1="530" y1="376" x2="950" y2="376" stroke="#C6D3E3" stroke-width="1"/>
+<text x="542" y="395" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">UUID</text>
+<text x="678" y="395" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1A1A1A" text-anchor="start">id</text>
+<text x="936" y="395" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1F3864" text-anchor="end">PK</text>
+<line x1="530" y1="403" x2="950" y2="403" stroke="#C6D3E3" stroke-width="1"/>
+<text x="542" y="422" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">UUID</text>
+<text x="678" y="422" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1A1A1A" text-anchor="start">user_id</text>
+<text x="936" y="422" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1F3864" text-anchor="end">FK</text>
+<line x1="530" y1="430" x2="950" y2="430" stroke="#C6D3E3" stroke-width="1"/>
+<text x="542" y="449" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">varchar(255)</text>
+<text x="678" y="449" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1A1A1A" text-anchor="start">token_hash</text>
+<text x="936" y="449" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1F3864" text-anchor="end">UK</text>
+<line x1="530" y1="457" x2="950" y2="457" stroke="#C6D3E3" stroke-width="1"/>
+<text x="542" y="476" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">timestamptz</text>
+<text x="678" y="476" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1A1A1A" text-anchor="start">expires_at</text>
+<line x1="530" y1="484" x2="950" y2="484" stroke="#C6D3E3" stroke-width="1"/>
+<text x="542" y="503" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">boolean</text>
+<text x="678" y="503" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1A1A1A" text-anchor="start">is_revoked</text>
+<rect x="530" y="555" width="420" height="252" fill="#FFFFFF" stroke="#4472A8" stroke-width="2" rx="3"/>
+<rect x="530" y="555" width="420" height="36" fill="#DCE6F1" stroke="#4472A8" stroke-width="2" rx="3"/>
+<text x="740.0" y="580" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="middle">audit_logs</text>
+<line x1="530" y1="591" x2="950" y2="591" stroke="#C6D3E3" stroke-width="1"/>
+<text x="542" y="610" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">UUID</text>
+<text x="678" y="610" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1A1A1A" text-anchor="start">id</text>
+<text x="936" y="610" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1F3864" text-anchor="end">PK</text>
+<line x1="530" y1="618" x2="950" y2="618" stroke="#C6D3E3" stroke-width="1"/>
+<text x="542" y="637" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">UUID</text>
+<text x="678" y="637" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1A1A1A" text-anchor="start">evaluation_id</text>
+<text x="936" y="637" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1F3864" text-anchor="end">UK</text>
+<line x1="530" y1="645" x2="950" y2="645" stroke="#C6D3E3" stroke-width="1"/>
+<text x="542" y="664" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">UUID</text>
+<text x="678" y="664" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1A1A1A" text-anchor="start">user_id</text>
+<text x="936" y="664" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1F3864" text-anchor="end">FK</text>
+<line x1="530" y1="672" x2="950" y2="672" stroke="#C6D3E3" stroke-width="1"/>
+<text x="542" y="691" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">UUID</text>
+<text x="678" y="691" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1A1A1A" text-anchor="start">service_id</text>
+<text x="936" y="691" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1F3864" text-anchor="end">FK</text>
+<line x1="530" y1="699" x2="950" y2="699" stroke="#C6D3E3" stroke-width="1"/>
+<text x="542" y="718" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">numeric(5,2)</text>
+<text x="678" y="718" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1A1A1A" text-anchor="start">risk_score</text>
+<line x1="530" y1="726" x2="950" y2="726" stroke="#C6D3E3" stroke-width="1"/>
+<text x="542" y="745" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">varchar(10)</text>
+<text x="678" y="745" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1A1A1A" text-anchor="start">verdict</text>
+<line x1="530" y1="753" x2="950" y2="753" stroke="#C6D3E3" stroke-width="1"/>
+<text x="542" y="772" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">jsonb</text>
+<text x="678" y="772" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1A1A1A" text-anchor="start">triggered_rules</text>
+<line x1="530" y1="780" x2="950" y2="780" stroke="#C6D3E3" stroke-width="1"/>
+<text x="542" y="799" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">timestamptz</text>
+<text x="678" y="799" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1A1A1A" text-anchor="start">evaluated_at</text>
+<rect x="1020" y="125" width="420" height="171" fill="#FFFFFF" stroke="#4472A8" stroke-width="2" rx="3"/>
+<rect x="1020" y="125" width="420" height="36" fill="#DCE6F1" stroke="#4472A8" stroke-width="2" rx="3"/>
+<text x="1230.0" y="150" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="middle">protected_services</text>
+<line x1="1020" y1="161" x2="1440" y2="161" stroke="#C6D3E3" stroke-width="1"/>
+<text x="1032" y="180" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">UUID</text>
+<text x="1168" y="180" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1A1A1A" text-anchor="start">id</text>
+<text x="1426" y="180" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1F3864" text-anchor="end">PK</text>
+<line x1="1020" y1="188" x2="1440" y2="188" stroke="#C6D3E3" stroke-width="1"/>
+<text x="1032" y="207" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">varchar(150)</text>
+<text x="1168" y="207" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1A1A1A" text-anchor="start">name</text>
+<line x1="1020" y1="215" x2="1440" y2="215" stroke="#C6D3E3" stroke-width="1"/>
+<text x="1032" y="234" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">varchar(500)</text>
+<text x="1168" y="234" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1A1A1A" text-anchor="start">upstream_url</text>
+<line x1="1020" y1="242" x2="1440" y2="242" stroke="#C6D3E3" stroke-width="1"/>
+<text x="1032" y="261" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">boolean</text>
+<text x="1168" y="261" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1A1A1A" text-anchor="start">requires_auth</text>
+<line x1="1020" y1="269" x2="1440" y2="269" stroke="#C6D3E3" stroke-width="1"/>
+<text x="1032" y="288" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">boolean</text>
+<text x="1168" y="288" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1A1A1A" text-anchor="start">is_active</text>
+<rect x="1020" y="340" width="420" height="198" fill="#FFFFFF" stroke="#4472A8" stroke-width="2" rx="3"/>
+<rect x="1020" y="340" width="420" height="36" fill="#DCE6F1" stroke="#4472A8" stroke-width="2" rx="3"/>
+<text x="1230.0" y="365" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="middle">access_policies</text>
+<line x1="1020" y1="376" x2="1440" y2="376" stroke="#C6D3E3" stroke-width="1"/>
+<text x="1032" y="395" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">UUID</text>
+<text x="1168" y="395" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1A1A1A" text-anchor="start">id</text>
+<text x="1426" y="395" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1F3864" text-anchor="end">PK</text>
+<line x1="1020" y1="403" x2="1440" y2="403" stroke="#C6D3E3" stroke-width="1"/>
+<text x="1032" y="422" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">varchar(150)</text>
+<text x="1168" y="422" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1A1A1A" text-anchor="start">name</text>
+<line x1="1020" y1="430" x2="1440" y2="430" stroke="#C6D3E3" stroke-width="1"/>
+<text x="1032" y="449" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">varchar(30)</text>
+<text x="1168" y="449" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1A1A1A" text-anchor="start">type</text>
+<line x1="1020" y1="457" x2="1440" y2="457" stroke="#C6D3E3" stroke-width="1"/>
+<text x="1032" y="476" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">jsonb</text>
+<text x="1168" y="476" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1A1A1A" text-anchor="start">config</text>
+<line x1="1020" y1="484" x2="1440" y2="484" stroke="#C6D3E3" stroke-width="1"/>
+<text x="1032" y="503" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">numeric(4,3)</text>
+<text x="1168" y="503" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1A1A1A" text-anchor="start">weight</text>
+<line x1="1020" y1="511" x2="1440" y2="511" stroke="#C6D3E3" stroke-width="1"/>
+<text x="1032" y="530" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">UUID</text>
+<text x="1168" y="530" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1A1A1A" text-anchor="start">created_by</text>
+<text x="1426" y="530" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1F3864" text-anchor="end">FK</text>
+<rect x="1020" y="584" width="420" height="144" fill="#FFFFFF" stroke="#4472A8" stroke-width="2" rx="3"/>
+<rect x="1020" y="584" width="420" height="36" fill="#DCE6F1" stroke="#4472A8" stroke-width="2" rx="3"/>
+<text x="1230.0" y="609" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="middle">service_policies</text>
+<line x1="1020" y1="620" x2="1440" y2="620" stroke="#C6D3E3" stroke-width="1"/>
+<text x="1032" y="639" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">UUID</text>
+<text x="1168" y="639" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1A1A1A" text-anchor="start">id</text>
+<text x="1426" y="639" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1F3864" text-anchor="end">PK</text>
+<line x1="1020" y1="647" x2="1440" y2="647" stroke="#C6D3E3" stroke-width="1"/>
+<text x="1032" y="666" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">UUID</text>
+<text x="1168" y="666" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1A1A1A" text-anchor="start">service_id</text>
+<text x="1426" y="666" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1F3864" text-anchor="end">FK</text>
+<line x1="1020" y1="674" x2="1440" y2="674" stroke="#C6D3E3" stroke-width="1"/>
+<text x="1032" y="693" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">UUID</text>
+<text x="1168" y="693" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1A1A1A" text-anchor="start">policy_id</text>
+<text x="1426" y="693" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1F3864" text-anchor="end">FK</text>
+<line x1="1020" y1="701" x2="1440" y2="701" stroke="#C6D3E3" stroke-width="1"/>
+<text x="1032" y="720" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">boolean</text>
+<text x="1168" y="720" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1A1A1A" text-anchor="start">is_enabled</text>
+<rect x="1020" y="766" width="420" height="171" fill="#FFFFFF" stroke="#4472A8" stroke-width="2" rx="3"/>
+<rect x="1020" y="766" width="420" height="36" fill="#DCE6F1" stroke="#4472A8" stroke-width="2" rx="3"/>
+<text x="1230.0" y="791" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="middle">risk_score_config</text>
+<line x1="1020" y1="802" x2="1440" y2="802" stroke="#C6D3E3" stroke-width="1"/>
+<text x="1032" y="821" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">UUID</text>
+<text x="1168" y="821" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1A1A1A" text-anchor="start">id</text>
+<text x="1426" y="821" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1F3864" text-anchor="end">PK</text>
+<line x1="1020" y1="829" x2="1440" y2="829" stroke="#C6D3E3" stroke-width="1"/>
+<text x="1032" y="848" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">numeric(5,4)</text>
+<text x="1168" y="848" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1A1A1A" text-anchor="start">policy_weight</text>
+<line x1="1020" y1="856" x2="1440" y2="856" stroke="#C6D3E3" stroke-width="1"/>
+<text x="1032" y="875" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">numeric(5,4)</text>
+<text x="1168" y="875" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1A1A1A" text-anchor="start">anomaly_weight</text>
+<line x1="1020" y1="883" x2="1440" y2="883" stroke="#C6D3E3" stroke-width="1"/>
+<text x="1032" y="902" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">numeric(5,2)</text>
+<text x="1168" y="902" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1A1A1A" text-anchor="start">challenge_threshold</text>
+<line x1="1020" y1="910" x2="1440" y2="910" stroke="#C6D3E3" stroke-width="1"/>
+<text x="1032" y="929" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">numeric(5,2)</text>
+<text x="1168" y="929" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1A1A1A" text-anchor="start">block_threshold</text>
+<text x="130.0" y="358" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="16" font-weight="400" text-anchor="middle" stroke="#FFFFFF" stroke-width="5" paint-order="stroke" font-style="italic" fill="#1F3864">1:N  CASCADE</text>
+<text x="360.0" y="562" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="16" font-weight="400" text-anchor="middle" stroke="#FFFFFF" stroke-width="5" paint-order="stroke" font-style="italic" fill="#1F3864">1:N  CASCADE</text>
+<text x="495" y="171" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="16" font-weight="400" text-anchor="middle" stroke="#FFFFFF" stroke-width="5" paint-order="stroke" font-style="italic" fill="#1F3864">1:1</text>
+<text x="497" y="330" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="16" font-weight="400" text-anchor="middle" stroke="#FFFFFF" stroke-width="5" paint-order="stroke" font-style="italic" fill="#1F3864">1:N</text>
+<text x="492" y="540" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="16" font-weight="400" text-anchor="middle" stroke="#FFFFFF" stroke-width="5" paint-order="stroke" font-style="italic" fill="#1F3864">1:N  SET NULL</text>
+<text x="760" y="82" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="16" font-weight="400" text-anchor="middle" stroke="#FFFFFF" stroke-width="5" paint-order="stroke" font-style="italic" fill="#1F3864">1:N  RESTRICT</text>
+<text x="985" y="452" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="16" font-weight="400" text-anchor="middle" stroke="#FFFFFF" stroke-width="5" paint-order="stroke" font-style="italic" fill="#1F3864">1:N</text>
+<text x="1400" y="250" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="16" font-weight="400" text-anchor="middle" stroke="#FFFFFF" stroke-width="5" paint-order="stroke" font-style="italic" fill="#1F3864">1:N</text>
+<text x="1110.0" y="566" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="16" font-weight="400" text-anchor="middle" stroke="#FFFFFF" stroke-width="5" paint-order="stroke" font-style="italic" fill="#1F3864">1:N</text>
+<rect x="40" y="740" width="420" height="202" fill="#F2F6FB" stroke="#4472A8" stroke-width="1.6" stroke-dasharray="8 5" rx="4"/>
+<text x="56" y="770" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="start">Estado efimero en Redis</text>
+<text x="56" y="796" font-family="'Consolas', 'Cascadia Mono', monospace" font-size="15" fill="#4A5568" xml:space="preserve">session:{userId}          15 min</text>
+<text x="56" y="818" font-family="'Consolas', 'Cascadia Mono', monospace" font-size="15" fill="#4A5568" xml:space="preserve">blacklist:{jti}           hasta expirar</text>
+<text x="56" y="840" font-family="'Consolas', 'Cascadia Mono', monospace" font-size="15" fill="#4A5568" xml:space="preserve">profile:{userId}          1 h</text>
+<text x="56" y="862" font-family="'Consolas', 'Cascadia Mono', monospace" font-size="15" fill="#4A5568" xml:space="preserve">fingerprint:{userId}      24 h</text>
+<text x="56" y="884" font-family="'Consolas', 'Cascadia Mono', monospace" font-size="15" fill="#4A5568" xml:space="preserve">ratelimit:{ip}            60 s</text>
+<text x="56" y="906" font-family="'Consolas', 'Cascadia Mono', monospace" font-size="15" fill="#4A5568" xml:space="preserve">challenge:{challengeId}   2-5 min</text>
+<text x="56" y="928" font-family="'Consolas', 'Cascadia Mono', monospace" font-size="15" fill="#4A5568" xml:space="preserve">stepup:{userId}           10 min</text>
+<rect x="530" y="820" width="420" height="144" fill="#F2F6FB" stroke="#4472A8" stroke-width="1.6" stroke-dasharray="8 5" rx="4"/>
+<text x="546" y="850" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="start">Leyenda</text>
+<text x="546" y="876" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="15" fill="#4A5568" xml:space="preserve">PK  primaria    FK  foranea    UK  unica</text>
+<text x="546" y="900" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="15" fill="#4A5568" xml:space="preserve">CASCADE   el hijo no existe sin su padre</text>
+<text x="546" y="924" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="15" fill="#4A5568" xml:space="preserve">SET NULL  la auditoria sobrevive al borrado</text>
+<text x="546" y="948" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="15" fill="#4A5568" xml:space="preserve">RESTRICT  no se borra un autor con politicas</text>
+<text x="1230.0" y="750" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="16" font-weight="400" fill="#4A5568" text-anchor="middle" font-style="italic">fila unica global, sin claves foraneas</text>
 </svg>
