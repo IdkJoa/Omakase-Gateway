@@ -18,11 +18,16 @@ public static class AuthenticationExtensions
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {
-                options.Authority = configuration["Authentication:Keycloak:Authority"] 
+                options.Authority = configuration["Authentication:Keycloak:Authority"]
                     ?? "http://localhost:8080/realms/omakase-gateway";
-                
-                // Set to false for local development (Keycloak on HTTP)
-                options.RequireHttpsMetadata = false; 
+
+                // Seguro por defecto: la metadata OIDC (incluidas las claves de firma) SOLO se
+                // descarga por HTTPS salvo que se desactive explícitamente. Estaba fijo en false,
+                // así que en cualquier despliegue real un atacante en la red podía servir su propio
+                // documento de descubrimiento y con él sus propias claves: token forjado aceptado.
+                // Development lo pone en false porque el Keycloak del AppHost habla HTTP plano.
+                options.RequireHttpsMetadata =
+                    configuration.GetValue("Authentication:Keycloak:RequireHttpsMetadata", true);
                 
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
@@ -37,45 +42,61 @@ public static class AuthenticationExtensions
                 // Map Keycloak realm roles to standard ASP.NET Role claims
                 options.Events = new JwtBearerEvents
                 {
-                    OnAuthenticationFailed = async context =>
+                    // Un fallo de validación de token NO es un fallo de Keycloak. Este handler se
+                    // dispara con cualquier token inválido —expirado, malformado, firma ajena— que
+                    // es exactamente lo que un atacante envía a propósito.
+                    //
+                    // Antes, cada uno de esos fallos: (1) marcaba el span como "Dependency failure:
+                    // Keycloak", falseando la señal de degradación de HU-032; y (2) escribía una fila
+                    // SÍNCRONA en audit_logs con Verdict=Block y PolicyScore/AnomalyScore/RiskScore=100.
+                    //
+                    // Eso último era el problema serio, por tres motivos:
+                    //   · Fabricaba puntuaciones de riesgo que ningún motor calculó. Esas filas
+                    //     alimentan las métricas de HU-021, el explorador de HU-022 y la calibración
+                    //     de HU-035, contaminando las tres con datos inventados.
+                    //   · Un INSERT síncrono por token inválido, dentro del pipeline de autenticación,
+                    //     es un amplificador de carga trivial: basta con inundar de tokens basura.
+                    //   · La etiqueta "SEC-001" no traza a ningún requisito del SRS ni del backlog.
+                    //
+                    // El evento de seguridad se sigue registrando como log estructurado (va a Loki y
+                    // es consultable); audit_logs queda reservado a evaluaciones reales del motor.
+                    OnAuthenticationFailed = context =>
                     {
                         var logger = context.HttpContext.RequestServices.GetRequiredService<Microsoft.Extensions.Logging.ILogger<JwtBearerHandler>>();
                         var logSanitizer = context.HttpContext.RequestServices.GetService<Application.Common.Security.ILogSanitizer>()
                             ?? new Application.Common.Security.LogSanitizer();
-                        logger.LogWarning("AUDIT SEC-001: Fallo de autenticación JWT. Posible token inválido, expirado o manipulado detectado desde IP {Ip}. Detalles: {Exception}", 
-                            logSanitizer.Sanitize(context.HttpContext.Connection.RemoteIpAddress?.ToString()), 
-                            logSanitizer.Sanitize(context.Exception.Message));
-                            
-                        var activity = System.Diagnostics.Activity.Current;
-                        if (activity != null)
+
+                        var ip = logSanitizer.Sanitize(context.HttpContext.Connection.RemoteIpAddress?.ToString());
+                        var detail = logSanitizer.Sanitize(context.Exception.Message);
+
+                        // SecurityTokenException y sus derivadas (expirado, firma inválida, emisor
+                        // ajeno...) significan "token malo", no "Keycloak caído". Cualquier otra cosa
+                        // —fallo al descargar la metadata OIDC, timeout, error de transporte— sí es
+                        // una degradación real de la dependencia (HU-032).
+                        var esTokenInvalido = context.Exception is SecurityTokenException;
+
+                        if (esTokenInvalido)
                         {
-                            activity.SetStatus(System.Diagnostics.ActivityStatusCode.Error, "Dependency failure: Keycloak");
-                            activity.SetTag("error", true);
-                            activity.SetTag("dependency.name", "Keycloak");
+                            logger.LogWarning(
+                                "Fallo de autenticación JWT: token inválido, expirado o manipulado desde IP {Ip}. Detalles: {Exception}",
+                                ip, detail);
+                        }
+                        else
+                        {
+                            logger.LogError(
+                                "Degradación de Keycloak: no se pudo validar el token por un fallo de la dependencia (IP {Ip}). Detalles: {Exception}",
+                                ip, detail);
+
+                            var activity = System.Diagnostics.Activity.Current;
+                            if (activity != null)
+                            {
+                                activity.SetStatus(System.Diagnostics.ActivityStatusCode.Error, "Dependency failure: Keycloak");
+                                activity.SetTag("error", true);
+                                activity.SetTag("dependency.name", "Keycloak");
+                            }
                         }
 
-                        try
-                        {
-                            var dbContext = context.HttpContext.RequestServices.GetRequiredService<Infrastructure.OmakaseDbContext>();
-                            var auditLog = new Domain.Entities.AuditLog
-                            {
-                                Id = Domain.ValueObjects.AuditLogId.New(),
-                                EvaluationId = Guid.NewGuid(),
-                                SourceIp = context.HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown",
-                                UserAgent = context.HttpContext.Request.Headers.UserAgent.ToString(),
-                                Verdict = Domain.Entities.Verdict.Block,
-                                PolicyScore = 100,
-                                AnomalyScore = 100,
-                                RiskScore = 100,
-                                TriggeredRules = JsonDocument.Parse("[{\"rule\":\"SERVICE_DEGRADATION\",\"score\":0,\"detail\":\"keycloak_inoperativo\"},\"INVALID_TOKEN\"]")
-                            };
-                            dbContext.AuditLogs.Add(auditLog);
-                            await dbContext.SaveChangesAsync();
-                        }
-                        catch (System.Exception ex)
-                        {
-                            logger.LogError("Error guardando auditoría de seguridad en BD: {Msg}", ex.Message);
-                        }
+                        return Task.CompletedTask;
                     },
                     OnTokenValidated = async context =>
                     {

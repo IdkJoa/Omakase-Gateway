@@ -22,10 +22,11 @@ public sealed class GeofenceRuleEvaluator : IRuleEvaluator
     private const decimal SevereScore = 100m;
 
     /// <summary>
-    /// Fail-safe bump when the location cannot be resolved (RF-M9): the rule
-    /// cannot verify origin, so it contributes a small base risk instead of 0.
+    /// Fail-safe bump when the location cannot be resolved (RF-M9): EvaluateRiskHandler
+    /// applies +15 PolicyScore globally when geo is degraded. This evaluator returns 0m
+    /// to avoid double-counting.
     /// </summary>
-    private const decimal GeoUnavailableScore = 15m;
+    private const decimal GeoUnavailableScore = 0m;
 
     private const string RuleName = "GEOFENCE";
 

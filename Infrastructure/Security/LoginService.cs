@@ -193,7 +193,12 @@ public sealed class LoginService : ILoginService
             return LoginResult.Unauthorized();
         }
 
-        var user = storedToken.User;
+        // RefreshToken.User se declara User? pero la relación es REQUERIDA: la FK (RefreshToken.UserId)
+        // es un struct no anulable, así que EF la trata como obligatoria y el Include de arriba genera
+        // un INNER JOIN. Si storedToken no es null, User tampoco puede serlo — verificado insertando
+        // una fila huérfana con la FK desactivada: la consulta sin Include la encuentra y la consulta
+        // con Include la descarta. El ! documenta esa invariante en lugar de añadir una rama muerta.
+        var user = storedToken.User!;
 
         // Verificar si el token ya expiró o el usuario fue desactivado
         if (storedToken.ExpiresAt <= DateTimeOffset.UtcNow || !user.IsActive)

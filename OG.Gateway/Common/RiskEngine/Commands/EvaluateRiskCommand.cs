@@ -29,6 +29,10 @@ public sealed record EvaluateRiskCommand(RequestContext Context)
 /// petición llegó sin identidad. El middleware responde 401 (autenticar) en vez del veredicto de
 /// riesgo. Por defecto false.
 /// </param>
+/// <param name="Timings">
+/// Desglose del coste de cada fase de la evaluación, en milisegundos. Null cuando la evaluación
+/// se cortó antes de empezar (precondición de autenticación).
+/// </param>
 public sealed record RiskEvaluationResult(
     Verdict Verdict,
     decimal RiskScore,
@@ -37,4 +41,26 @@ public sealed record RiskEvaluationResult(
     JsonDocument? Geo,
     JsonDocument? TriggeredRules,
     Guid? ServiceId,
-    bool AuthenticationRequired = false);
+    bool AuthenticationRequired = false,
+    EvaluationTimings? Timings = null);
+
+/// <summary>
+/// Coste por fase de una evaluación, en milisegundos (T-072).
+/// </summary>
+/// <remarks>
+/// El requisito de rendimiento acota el overhead de evaluación a ≤50 ms en el p95, y T-072 exige
+/// identificar el cuello de botella cuando no se cumple. Un único total no dice dónde se va el
+/// tiempo: bajo carga sostenida hay al menos dos consultas a PostgreSQL sin caché por evaluación
+/// (políticas del servicio y configuración de riesgo), más el perfil en Redis y la inferencia de
+/// ML.NET. Este desglose permite atribuir el coste en vez de suponerlo.
+/// <para>Se mide con <see cref="System.Diagnostics.Stopwatch.GetTimestamp"/>, sin asignar objetos.</para>
+/// </remarks>
+public sealed record EvaluationTimings(
+    double ConfigMs,
+    double PoliciesMs,
+    double RulesMs,
+    double GeoCheckMs,
+    double AnomalyMs,
+    double AccessCountMs,
+    double StepUpMs,
+    double AuditBuildMs);

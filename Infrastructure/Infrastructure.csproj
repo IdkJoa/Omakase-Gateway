@@ -18,6 +18,10 @@
       <PackageReference Include="BCrypt.Net-Next" Version="4.2.0" />
       <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.9" />
       <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.8" />
+      <!-- Npgsql.EntityFrameworkCore.PostgreSQL 10.0.2 ancla Relational en 10.0.4, que no casa con
+           EntityFrameworkCore 10.0.8 y provoca MSB3277 al enlazar. Se alinea explicitamente en 10.0.8
+           (mismo tren 10.0.x, satisface el minimo que pide Npgsql). -->
+      <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.8" />
       <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.8">
         <PrivateAssets>all</PrivateAssets>
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

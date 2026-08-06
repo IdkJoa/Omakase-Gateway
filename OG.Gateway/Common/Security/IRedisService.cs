@@ -5,33 +5,18 @@ using System.Threading.Tasks;
 namespace Application.Common.Security;
 
 /// <summary>
-/// DTO que representa la información de sesión activa almacenada en Redis.
-/// </summary>
-public record SessionData(string Jti, string UserType, DateTimeOffset LastActivity);
-
-/// <summary>
 /// Servicio unificado de Redis para gestionar el estado efímero del Gateway
 /// sin acceso a disco en la ruta crítica de evaluación.
 /// </summary>
+/// <remarks>
+/// El seguimiento de sesión por <c>session:{userId}</c> que contemplaba el SRS §7.11.2 NO existe:
+/// el rediseño del cierre de sesión (HU-046) resuelve la revocación con la lista negra de <c>jti</c>
+/// más la revocación de refresh tokens por <c>user_id</c> en PostgreSQL, que es autoritativa y
+/// sobrevive a un reinicio de Redis. Los métodos de sesión se eliminaron por no tener ningún
+/// consumidor: mantenerlos sugería una capacidad de rastreo de sesiones que el sistema no ofrece.
+/// </remarks>
 public interface IRedisService
 {
-    #region Sesiones Activas (session:{userId} -> Hash, TTL: 15 min)
-    /// <summary>
-    /// Almacena los datos de la sesión de un usuario en un Hash de Redis con un TTL de 15 minutos.
-    /// </summary>
-    Task SetSessionAsync(string userId, string jti, string userType, TimeSpan ttl);
-
-    /// <summary>
-    /// Obtiene los datos de sesión activa del usuario. Retorna null si la sesión no existe o expiró.
-    /// </summary>
-    Task<SessionData?> GetSessionAsync(string userId);
-
-    /// <summary>
-    /// Elimina de forma inmediata la sesión de un usuario.
-    /// </summary>
-    Task InvalidateSessionAsync(string userId);
-    #endregion
-
     #region Lista Negra de Tokens (blacklist:{jti} -> String, TTL: Dinámico)
     /// <summary>
     /// Agrega un JTI a la lista negra con un TTL igual a la expiración restante del token.
@@ -74,11 +59,6 @@ public interface IRedisService
     /// Incrementa atómicamente el contador de peticiones de una IP y establece un TTL de 60 segundos si es nueva.
     /// </summary>
     Task<long> IncrementRateLimitAsync(string ip, TimeSpan window);
-
-    /// <summary>
-    /// Obtiene el contador actual de peticiones para una IP sin incrementarlo.
-    /// </summary>
-    Task<long> GetRateLimitAsync(string ip);
     #endregion
 
     #region Pub/Sub

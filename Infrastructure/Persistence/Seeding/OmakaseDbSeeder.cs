@@ -1,6 +1,9 @@
+using Application.Common.RiskEngine.AnomalyDetection;
+using Application.Common.Security;
 using Application.Common.Security.Mfa;
 using Domain.Entities;
 using Domain.ValueObjects;
+using Infrastructure.AnomalyDetection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 
@@ -11,15 +14,24 @@ public sealed class OmakaseDbSeeder : IDbSeeder
     private readonly OmakaseDbContext _db;
     private readonly IConfiguration _configuration;
     private readonly ITotpSecretProtector _totpProtector;
+    private readonly BehaviorBaselineBootstrapper _baselineBootstrapper;
+    private readonly IRedisService _redis;
+    private readonly AnomalyDetectionOptions _anomalyOptions;
 
     public OmakaseDbSeeder(
         OmakaseDbContext db,
         IConfiguration configuration,
-        ITotpSecretProtector totpProtector)
+        ITotpSecretProtector totpProtector,
+        BehaviorBaselineBootstrapper baselineBootstrapper,
+        IRedisService redis,
+        AnomalyDetectionOptions anomalyOptions)
     {
         _db = db;
         _configuration = configuration;
         _totpProtector = totpProtector;
+        _baselineBootstrapper = baselineBootstrapper;
+        _redis = redis;
+        _anomalyOptions = anomalyOptions;
     }
 
     public async Task SeedAsync(CancellationToken cancellationToken = default)
@@ -32,7 +44,12 @@ public sealed class OmakaseDbSeeder : IDbSeeder
         await _db.SaveChangesAsync(cancellationToken);
 
         await SeedInitialUserAsync(cancellationToken);
+        await SeedViewerUserAsync(cancellationToken);
         await SeedDemoClientUserAsync(cancellationToken);
+        await _db.SaveChangesAsync(cancellationToken);
+
+        // El baseline necesita que el usuario demo ya tenga fila (FK).
+        await SeedDemoBehaviorBaselineAsync(cancellationToken);
         await _db.SaveChangesAsync(cancellationToken);
     }
 
@@ -141,6 +158,43 @@ public sealed class OmakaseDbSeeder : IDbSeeder
     }
 
     /// <summary>
+    /// Siembra un usuario VIEWER (solo lectura) para probar la separación de roles del RBAC (HU-028):
+    /// ReadAccess (ADMIN|VIEWER) le permite ver, AdminOnly (ADMIN) le deniega con 403. El usuario
+    /// Keycloak correspondiente vive en <c>realm-export.json</c> (username 'viewer'). Guardado por
+    /// username para ser idempotente y sembrarse aunque el admin ya exista, a diferencia de
+    /// <see cref="SeedInitialUserAsync"/> (que se salta todo si ya hay un SecurityOfficer).
+    /// </summary>
+    private async Task SeedViewerUserAsync(CancellationToken ct)
+    {
+        if (await _db.Users.AnyAsync(u => u.Username == "viewer", ct)) return;
+
+        var viewerRole = await _db.Roles
+            .AsNoTracking()
+            .FirstOrDefaultAsync(r => r.Name == "VIEWER", ct);
+
+        if (viewerRole is null) return;
+
+        var viewerUser = new User
+        {
+            Id           = UserId.New(),
+            Username     = "viewer",
+            Type         = UserType.SecurityOfficer,
+            PasswordHash = null!,
+            KeycloakSub  = null!,
+            IsActive     = true,
+        };
+
+        _db.Users.Add(viewerUser);
+        _db.UserRoles.Add(new UserRole
+        {
+            Id         = UserRoleId.New(),
+            UserId     = viewerUser.Id,
+            RoleId     = viewerRole.Id,
+            AssignedAt = DateTimeOffset.UtcNow,
+        });
+    }
+
+    /// <summary>
     /// HU-046 / T-102: client user de demo con secreto TOTP sembrado desde configuración
     /// (<c>Mfa:DemoUser:Username</c> + <c>Mfa:DemoUser:Password</c> + <c>Mfa:DemoUser:TotpSecret</c>
     /// en Base32). Permite demostrar login (HU-019) + Challenge→verify→Allow sin enrolamiento
@@ -171,5 +225,97 @@ public sealed class OmakaseDbSeeder : IDbSeeder
             MfaEnabled    = true,
             TotpSecret    = _totpProtector.Protect(totpSecret.Trim()),
         });
+    }
+
+    /// <summary>
+    /// HU-016 / T-089: siembra un baseline de comportamiento SINTÉTICO para el usuario de demo, de modo
+    /// que el modelo de anomalías tenga historial suficiente que aprender desde el primer arranque.
+    /// <para>
+    /// Sin esto, el detector devuelve 50 neutro hasta acumular <c>MinTrainingSamples</c> accesos reales;
+    /// y conseguirlos a base de una ráfaga produce un baseline degenerado que le enseña al modelo que el
+    /// tráfico en ráfaga es normal — lo contrario de lo que HU-034 necesita medir.
+    /// </para>
+    /// <para>
+    /// Solo se activa con <c>AnomalyDetection:DemoBaseline:Enabled=true</c> (declarado únicamente en
+    /// <c>appsettings.Development.json</c>) y es idempotente: si el usuario ya tiene perfil, no lo pisa.
+    /// El baseline es reproducible por semilla; debe declararse como sintético en la tesis.
+    /// </para>
+    /// </summary>
+    private async Task SeedDemoBehaviorBaselineAsync(CancellationToken ct)
+    {
+        if (!_configuration.GetValue("AnomalyDetection:DemoBaseline:Enabled", false))
+            return;
+
+        var username = _configuration["Mfa:DemoUser:Username"];
+        if (string.IsNullOrWhiteSpace(username))
+            return;
+
+        var user = await _db.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Username == username, ct);
+
+        if (user is null)
+            return;
+
+        // Idempotente: nunca sobrescribir un perfil existente (sintético previo o construido en vivo).
+        if (await _db.UserBehaviorProfiles.AnyAsync(p => p.UserId == user.Id, ct))
+            return;
+
+        var days = _configuration.GetValue("AnomalyDetection:DemoBaseline:Days", 14);
+        var seed = _configuration.GetValue("AnomalyDetection:DemoBaseline:Seed", 20260731);
+
+        // La jornada modelada es configurable porque DEFINE qué considera normal el modelo: la hora del
+        // acceso es una de las cuatro features. Un perfil 9–18 marca como anómalo cualquier acceso
+        // nocturno — que es justo lo que HU-034 quiere detectar en el Escenario 2, pero también lo que
+        // dispara falsos positivos si los casos legítimos del banco se ejecutan fuera de esa ventana.
+        // OJO: las horas se interpretan en UTC, porque el motor evalúa con DateTimeOffset.UtcNow
+        // (RiskEvaluationMiddleware). Para modelar una jornada de 9–18 en Santo Domingo (UTC-4) hay
+        // que configurar 13–22. El default 9–18 UTC equivale a 5:00–14:00 hora local.
+        var officeStart = _configuration.GetValue("AnomalyDetection:DemoBaseline:OfficeStartHour", 9);
+        var officeEnd = _configuration.GetValue("AnomalyDetection:DemoBaseline:OfficeEndHour", 18);
+        var meanPerDay = _configuration.GetValue("AnomalyDetection:DemoBaseline:MeanRequestsPerWorkday", 40);
+
+        var profile = SyntheticTrafficProfile.OfficeWorker with
+        {
+            OfficeStart = TimeSpan.FromHours(Math.Clamp(officeStart, 0, 23)),
+            OfficeEnd = TimeSpan.FromHours(Math.Clamp(officeEnd, 1, 24)),
+            MeanRequestsPerWorkday = Math.Max(1, meanPerDay),
+        };
+
+        if (profile.OfficeEnd <= profile.OfficeStart)
+            profile = profile with { OfficeStart = TimeSpan.FromHours(9), OfficeEnd = TimeSpan.FromHours(18) };
+
+        var baseline = _baselineBootstrapper.Build(DateTimeOffset.UtcNow, days, seed, profile);
+
+        var coldStartN = (await _db.RiskScoreConfigs.AsNoTracking().FirstOrDefaultAsync(ct))?.ColdStartN ?? 10;
+
+        var isColdStart = baseline.AccessCount < coldStartN;
+
+        _db.UserBehaviorProfiles.Add(new UserBehaviorProfile
+        {
+            Id              = UserBehaviorProfileId.New(),
+            UserId          = user.Id,
+            FeatureVector   = UserProfileSerializer.Serialize(baseline.TrainingWindow, baseline.RecentAccesses),
+            AccessCount     = baseline.AccessCount,
+            IsColdStart     = isColdStart,
+            BaseRiskPenalty = 0m,
+            LastTrainedAt   = DateTimeOffset.UtcNow,
+        });
+
+        await _db.SaveChangesAsync(ct);
+
+        // La caché de Redis (profile:{userId}, TTL 1 h) tiene PRIORIDAD sobre PostgreSQL en
+        // UserProfileStore. Sembrar solo en la base deja al motor puntuando contra el perfil viejo
+        // hasta que la clave expire — verificado en vivo: tras resembrar, el detector seguía viendo
+        // los accesos de una ráfaga anterior y no aplicaba la degradación por falta de datos.
+        // Se reescribe la caché con el baseline recién creado para que ambos niveles queden coherentes
+        // desde el primer request.
+        var perfilParaCache = new UserAnomalyProfile(
+            baseline.TrainingWindow, baseline.RecentAccesses, baseline.AccessCount, isColdStart);
+
+        await _redis.CacheProfileAsync(
+            user.Id.Value.ToString(),
+            UserProfileSerializer.SerializeForCache(perfilParaCache),
+            TimeSpan.FromMinutes(_anomalyOptions.ProfileCacheTtlMinutes));
     }
 }

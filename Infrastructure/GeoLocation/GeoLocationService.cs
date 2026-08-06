@@ -18,6 +18,7 @@ public sealed class GeoLocationService : IGeoLocationService
     private readonly IMemoryCache _cache;
     private readonly ILogger<GeoLocationService> _logger;
     private readonly TimeSpan _cacheTtl;
+    private readonly TimeSpan _failureCacheTtl;
 
     public GeoLocationService(
         HttpClient http,
@@ -29,6 +30,7 @@ public sealed class GeoLocationService : IGeoLocationService
         _cache = cache;
         _logger = logger;
         _cacheTtl = TimeSpan.FromHours(options.Value.CacheTtlHours);
+        _failureCacheTtl = TimeSpan.FromSeconds(options.Value.FailureCacheSeconds);
     }
 
     public async Task<Result<GeoResult>> ResolveAsync(string ipAddress, CancellationToken cancellationToken = default)
@@ -38,6 +40,19 @@ public sealed class GeoLocationService : IGeoLocationService
 
         if (_cache.TryGetValue(CacheKey(ipAddress), out GeoResult? cached) && cached is not null)
             return cached;
+
+        // Caché NEGATIVA: solo se cacheaban los aciertos, así que una IP irresoluble volvía a
+        // salir a la red en CADA lookup. Y una sola evaluación resuelve la misma IP hasta cuatro
+        // veces (comprobación de degradación y desglose de auditoría en EvaluateRiskHandler, más
+        // Geofence y Viaje Imposible), de modo que con ip-api.com limitando por tasa cada petición
+        // pagaba cuatro timeouts encadenados.
+        //
+        // Medido en vivo (2026-08-05) durante una corrida de carga que agotó la cuota gratuita de
+        // ip-api: el p95 de evaluación pasó de ~10 ms a 3.081 ms — 60x el presupuesto de 50 ms del
+        // requisito de rendimiento. Con el fallo cacheado, la degradación cuesta un lookup por IP
+        // cada FailureCacheSeconds en vez de uno por regla y por petición.
+        if (_cache.TryGetValue<bool>(FailureCacheKey(ipAddress), out _))
+            return GeoErrors.Unavailable;
 
         try
         {
@@ -50,6 +65,7 @@ public sealed class GeoLocationService : IGeoLocationService
                             || string.IsNullOrWhiteSpace(dto.CountryCode))
             {
                 _logger.LogWarning("Geolocation lookup failed for {Ip}: {Message}", ipAddress, dto?.Message ?? "no data");
+                CacheFailure(ipAddress);
                 return GeoErrors.Unavailable;
             }
 
@@ -57,15 +73,25 @@ public sealed class GeoLocationService : IGeoLocationService
             _cache.Set(CacheKey(ipAddress), result, _cacheTtl);
             return result;
         }
-        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or OperationCanceledException)
+        catch (Exception ex)
         {
-            // Timeout o error de transporte → fail-safe: decide el caller (RF-M9).
+            // Fail-safe (RF-M9): CUALQUIER problema al resolver degrada a "no disponible" y el
+            // caller decide. Antes solo se capturaban errores de transporte, así que una respuesta
+            // malformada de ip-api (JsonException) se propagaba hasta GeofenceRuleEvaluator —que no
+            // tiene try/catch, ni lo tiene el bucle de reglas— y tumbaba la evaluación entera con 500.
             _logger.LogWarning(ex, "Geolocation lookup error for {Ip}", ipAddress);
+            CacheFailure(ipAddress);
             return GeoErrors.Unavailable;
         }
     }
 
+    /// <summary>Marca la IP como irresoluble por una ventana corta (ver <c>FailureCacheSeconds</c>).</summary>
+    private void CacheFailure(string ipAddress) =>
+        _cache.Set(FailureCacheKey(ipAddress), true, _failureCacheTtl);
+
     private static string CacheKey(string ip) => $"geo:{ip}";
+
+    private static string FailureCacheKey(string ip) => $"geo:fail:{ip}";
 
     /// <summary>Minimal projection of the ip-api.com JSON response.</summary>
     private sealed record IpApiResponse(
