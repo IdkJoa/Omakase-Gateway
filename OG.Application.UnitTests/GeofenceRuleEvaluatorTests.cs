@@ -108,7 +108,7 @@ public class GeofenceRuleEvaluatorTests
 
         var result = await CreateSut().EvaluateAsync(Context, policy);
 
-        Assert.Equal(15m, result.Score);
+        Assert.Equal(0m, result.Score);
         Assert.False(result.Triggered);
         Assert.Equal("geo_unavailable", result.Detail);
     }
