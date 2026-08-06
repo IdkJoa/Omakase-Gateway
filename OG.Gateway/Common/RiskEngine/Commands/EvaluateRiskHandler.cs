@@ -71,7 +71,14 @@ public sealed class EvaluateRiskHandler
         CancellationToken cancellationToken = default)
     {
         var context = request.Context;
+
+        // Desglose de coste por fase (T-072): sin él, un p95 fuera de presupuesto no dice DÓNDE.
+        var mark = System.Diagnostics.Stopwatch.GetTimestamp();
+        double configMs = 0, policiesMs = 0, rulesMs = 0, geoCheckMs = 0,
+               anomalyMs = 0, accessCountMs = 0, stepUpMs = 0, auditBuildMs = 0;
+
         var config = await _configProvider.GetAsync(cancellationToken);
+        configMs = Lap(ref mark);
 
         // 1. Resolver servicio destino (por nombre del path, HU-009) y correr sus reglas.
         Guid? serviceId = null;
@@ -80,6 +87,8 @@ public sealed class EvaluateRiskHandler
         if (!string.IsNullOrWhiteSpace(context.ServiceName))
         {
             var set = await _policyProvider.GetByServiceNameAsync(context.ServiceName, cancellationToken);
+            policiesMs = Lap(ref mark);
+
             if (set is not null)
             {
                 serviceId = set.ServiceId.Value;
@@ -98,8 +107,12 @@ public sealed class EvaluateRiskHandler
 
                     ruleResults.Add(await evaluator.EvaluateAsync(context, policy, cancellationToken));
                 }
+
+                rulesMs = Lap(ref mark);
             }
         }
+
+        mark = System.Diagnostics.Stopwatch.GetTimestamp();
 
         // 1b. Verificar degradación de Geolocalización (HU-032 / T-069 / T-070)
         bool geoDegraded = false;
@@ -130,6 +143,8 @@ public sealed class EvaluateRiskHandler
             }
         }
 
+        geoCheckMs = Lap(ref mark);
+
         // 2. Policy Score ponderado (T-028) + degradación por GeoLocation (+15).
         var policyScore = _policyCalculator.Calculate(ruleResults);
         if (geoDegraded)
@@ -158,14 +173,18 @@ public sealed class EvaluateRiskHandler
             }
         }
 
+        anomalyMs = Lap(ref mark);
+
         // 4. Risk Score + veredicto (T-029) con el access_count real del perfil (T-034 / HU-017).
         var accessCount = await ResolveAccessCountAsync(context, config, cancellationToken);
         var consolidated = _consolidator.Consolidate(policyScore, anomalyScore, accessCount, config);
+        accessCountMs = Lap(ref mark);
 
         // 4b. Step-up MFA (HU-046): degradación Challenge→Allow con step-up vigente (T-105)
         //     y escalada Challenge→Block para clientes no interactivos (T-106).
         var (adjusted, mfaRules) = await ApplyStepUpPolicyAsync(context, consolidated, cancellationToken);
         consolidated = adjusted;
+        stepUpMs = Lap(ref mark);
 
         // 5. Alimentar el perfil de forma asíncrona (T-033 + base_risk_penalty T-034): fuera de la ruta crítica.
         EnqueueProfileUpdate(context, consolidated, config);
@@ -173,6 +192,7 @@ public sealed class EvaluateRiskHandler
         // 6. Desglose de auditoría (T-030): geo + reglas disparadas (incluyendo degradaciones HU-032).
         var geoJson = await BuildGeoAsync(context.SourceIp, cancellationToken);
         var triggeredJson = BuildTriggeredRules(ruleResults, mfaRules, geoDegraded, mlDegraded);
+        auditBuildMs = Lap(ref mark);
 
         return new RiskEvaluationResult(
             consolidated.Verdict,
@@ -181,7 +201,23 @@ public sealed class EvaluateRiskHandler
             anomalyScore,
             geoJson,
             triggeredJson,
-            serviceId);
+            serviceId,
+            AuthenticationRequired: false,
+            Timings: new EvaluationTimings(
+                configMs, policiesMs, rulesMs, geoCheckMs,
+                anomalyMs, accessCountMs, stepUpMs, auditBuildMs));
+    }
+
+    /// <summary>
+    /// Milisegundos transcurridos desde <paramref name="mark"/> y reinicio de la marca.
+    /// Usa timestamps crudos para no asignar un <c>Stopwatch</c> por fase en la ruta caliente.
+    /// </summary>
+    private static double Lap(ref long mark)
+    {
+        var now = System.Diagnostics.Stopwatch.GetTimestamp();
+        var ms = System.Diagnostics.Stopwatch.GetElapsedTime(mark, now).TotalMilliseconds;
+        mark = now;
+        return ms;
     }
 
     /// <summary>

@@ -63,8 +63,26 @@ public static class DependencyInjection
         services.AddScoped<IRuleEvaluator, ImpossibleTravelRuleEvaluator>();
         services.AddSingleton<IPolicyScoreCalculator, PolicyScoreCalculator>();
         services.AddSingleton<IRiskScoreConsolidator, RiskScoreConsolidator>();
-        services.AddScoped<IServicePolicyProvider, ServicePolicyProvider>();
-        services.AddScoped<IRiskConfigProvider, RiskConfigProvider>();
+        // Ruta caliente del motor (T-072). Se registran las implementaciones reales por su tipo
+        // concreto y los decoradores de caché por delante de la interfaz: ninguna clase existente
+        // cambia (Open/Closed) y con TTL 0 el decorador delega siempre, restaurando el
+        // comportamiento previo sin recompilar. Ver RiskEngineCacheOptions para las mediciones.
+        services.AddOptions<Infrastructure.Persistence.Caching.RiskEngineCacheOptions>()
+            .BindConfiguration(Infrastructure.Persistence.Caching.RiskEngineCacheOptions.SectionName);
+
+        services.AddScoped<ServicePolicyProvider>();
+        services.AddScoped<IServicePolicyProvider>(sp =>
+            new Infrastructure.Persistence.Caching.CachedServicePolicyProvider(
+                sp.GetRequiredService<ServicePolicyProvider>(),
+                sp.GetRequiredService<Microsoft.Extensions.Caching.Memory.IMemoryCache>(),
+                sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<Infrastructure.Persistence.Caching.RiskEngineCacheOptions>>()));
+
+        services.AddScoped<RiskConfigProvider>();
+        services.AddScoped<IRiskConfigProvider>(sp =>
+            new Infrastructure.Persistence.Caching.CachedRiskConfigProvider(
+                sp.GetRequiredService<RiskConfigProvider>(),
+                sp.GetRequiredService<Microsoft.Extensions.Caching.Memory.IMemoryCache>(),
+                sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<Infrastructure.Persistence.Caching.RiskEngineCacheOptions>>()));
         // La seccion "AnomalyDetection" NO estaba enlazada: pese a documentarse como options pattern,
         // los valores quedaban clavados a los defaults de la clase y no habia forma de calibrar el motor
         // desde appsettings (necesario para HU-035). Se enlaza y se valida al arrancar.
@@ -102,7 +120,13 @@ public static class DependencyInjection
         services.AddSingleton<IProfileUpdateChannel, InMemoryProfileUpdateChannel>();
         services.AddHostedService<ProfileUpdateWorker>();
         services.AddHostedService<AnomalyRetrainWorker>();
-        services.AddScoped<IUserProfileStore, UserProfileStore>();
+        // Memo por petición: el perfil se pedía dos veces en la misma evaluación (detector de
+        // anomalías + penalización de cold-start). Sin TTL ni ventana de obsolescencia — el memo
+        // muere con el ámbito de la petición.
+        services.AddScoped<UserProfileStore>();
+        services.AddScoped<IUserProfileStore>(sp =>
+            new Infrastructure.Persistence.Caching.RequestScopedUserProfileStore(
+                sp.GetRequiredService<UserProfileStore>()));
         services.AddScoped<IAnomalyDetector, RandomizedPcaAnomalyDetector>();
 
         // HU-017: services.AddSingleton<ISecretProvider, KeyVaultSecretProvider>();
@@ -119,7 +143,14 @@ public static class DependencyInjection
         services.AddSingleton<Application.Common.Security.Mfa.IChallengeStore, ChallengeStore>();
         services.AddSingleton<Application.Common.Security.Mfa.IStepUpStore, StepUpStore>();
         services.AddSingleton<Application.Common.Security.Mfa.IMfaAttemptStore, MfaAttemptStore>();
-        services.AddScoped<Application.Common.Security.Mfa.IUserMfaInfoProvider, UserMfaInfoProvider>();
+        // Solo se consulta cuando el veredicto es CHALLENGE, así que un ataque por volumen —que por
+        // definición produce desafíos— amplificaba la carga contra PostgreSQL. Cacheado (T-072).
+        services.AddScoped<UserMfaInfoProvider>();
+        services.AddScoped<Application.Common.Security.Mfa.IUserMfaInfoProvider>(sp =>
+            new Infrastructure.Persistence.Caching.CachedUserMfaInfoProvider(
+                sp.GetRequiredService<UserMfaInfoProvider>(),
+                sp.GetRequiredService<Microsoft.Extensions.Caching.Memory.IMemoryCache>(),
+                sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<Infrastructure.Persistence.Caching.RiskEngineCacheOptions>>()));
 
         return services;
     }

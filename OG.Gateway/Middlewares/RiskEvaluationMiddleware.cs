@@ -38,6 +38,12 @@ public sealed class RiskEvaluationMiddleware
     /// </summary>
     private static readonly string[] BypassPrefixes = ["/auth", "/health", "/alive", "/openapi"];
 
+    /// <summary>
+    /// Presupuesto de rendimiento del requisito no funcional: el overhead de evaluación
+    /// (intercepción → veredicto) debe quedar en ≤50 ms en el percentil 95.
+    /// </summary>
+    private const double EvaluationBudgetMs = 50d;
+
     private readonly RequestDelegate _next;
     private readonly ILogger<RiskEvaluationMiddleware> _logger;
 
@@ -121,15 +127,43 @@ public sealed class RiskEvaluationMiddleware
         span?.SetTag(Tags.Verdict,   result.Verdict.ToString());
         span?.SetTag(Tags.RiskScore,  result.RiskScore.ToString("F2"));
 
-        _logger.LogInformation("Evaluación completada {@Context}", new 
-        { 
-            UserId = userId ?? "anonymous", 
+        // DurationMs es la métrica del requisito de rendimiento (overhead de evaluación ≤50 ms p95):
+        // el panel de Grafana la consume desde Loki. Va en decimales porque ElapsedMilliseconds
+        // trunca a entero, y con evaluaciones reales de 9–11 ms ese truncamiento se come hasta un
+        // 10% del valor justo en el rango que decide si se cumple el SLA.
+        _logger.LogInformation("Evaluación completada {@Context}", new
+        {
+            UserId = userId ?? "anonymous",
             ServiceId = result.ServiceId?.ToString() ?? "unknown",
-            Verdict = result.Verdict.ToString(), 
-            RiskScore = result.RiskScore, 
+            Verdict = result.Verdict.ToString(),
+            RiskScore = result.RiskScore,
             TraceId = context.TraceIdentifier,
-            DurationMs = sw.ElapsedMilliseconds
+            DurationMs = Math.Round(sw.Elapsed.TotalMilliseconds, 2)
         });
+
+        // T-072: cuando una evaluación se sale del presupuesto de rendimiento, emitir el desglose
+        // por fase. Se registra SOLO en ese caso —coste cero en la ruta normal— y es justo la cola
+        // lenta la que interesa para localizar el cuello de botella: bajo carga sostenida hay al
+        // menos dos consultas a PostgreSQL sin caché por evaluación (políticas y config de riesgo),
+        // más el perfil en Redis y la inferencia de ML.NET. Sin este desglose, un p95 fuera de
+        // presupuesto solo dice que falla, no dónde.
+        if (result.Timings is not null && sw.Elapsed.TotalMilliseconds > EvaluationBudgetMs)
+        {
+            _logger.LogWarning("Presupuesto de evaluación excedido {@Budget}", new
+            {
+                TotalMs = Math.Round(sw.Elapsed.TotalMilliseconds, 2),
+                BudgetMs = EvaluationBudgetMs,
+                ConfigMs = Math.Round(result.Timings.ConfigMs, 2),
+                PoliciesMs = Math.Round(result.Timings.PoliciesMs, 2),
+                RulesMs = Math.Round(result.Timings.RulesMs, 2),
+                GeoCheckMs = Math.Round(result.Timings.GeoCheckMs, 2),
+                AnomalyMs = Math.Round(result.Timings.AnomalyMs, 2),
+                AccessCountMs = Math.Round(result.Timings.AccessCountMs, 2),
+                StepUpMs = Math.Round(result.Timings.StepUpMs, 2),
+                AuditBuildMs = Math.Round(result.Timings.AuditBuildMs, 2),
+                TraceId = context.TraceIdentifier
+            });
+        }
 
         // Encolar AuditEvent (fire-and-forget — no bloquea el pipeline)
         var auditEvent = new AuditEvent(
