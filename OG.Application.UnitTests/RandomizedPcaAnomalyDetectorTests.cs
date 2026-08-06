@@ -120,4 +120,76 @@ public class RandomizedPcaAnomalyDetectorTests
         Assert.True(burst > 60m, $"una ráfaga debería puntuar alto, fue {burst:F1}");
         Assert.True(burst > normal, $"burst={burst:F1} debería superar normal={normal:F1}");
     }
+
+    // ── Inicio de sesión: sin actividad en la ventana no hay volumen que medir ──
+
+    /// <summary>
+    /// Regresión de un falso positivo verificado en vivo (2026-08-01): el usuario que empieza una
+    /// sesión no tiene accesos en la ventana de frecuencia, así que frecuencia y diversidad quedan
+    /// INDEFINIDAS y el extractor las emite como (0,0). Ese vector cae en un extremo donde el baseline
+    /// casi no tiene puntos, y el modelo lo marcaba como anomalía extrema (se midieron 89.5 y hasta
+    /// 99.5) — dejando al acceso legítimo pegado a la ráfaga de ataque (98.0) e impidiendo calibrar.
+    /// Ahora se devuelve incertidumbre, igual que en cold-start.
+    /// </summary>
+    [Fact]
+    public async Task ReturnsNeutral_CuandoNoHayActividadEnLaVentanaDeFrecuencia()
+    {
+        var ctx = Request(13);
+
+        // Accesos reales pero TODOS anteriores a la ventana de 60 min (ayer).
+        var antiguos = RecentAccesses(ctx.Timestamp.AddDays(-1), count: 40, distinctEndpoints: 5);
+        GivenProfile(OfficeBaseline(), antiguos);
+
+        var score = await _sut.GetAnomalyScoreAsync(ctx);
+
+        Assert.Equal(50m, score);
+    }
+
+    [Fact]
+    public async Task ReturnsNeutral_CuandoNoHayNingunAccesoReciente()
+    {
+        var ctx = Request(13);
+        GivenProfile(OfficeBaseline(), Array.Empty<UserAccessSample>());
+
+        var score = await _sut.GetAnomalyScoreAsync(ctx);
+
+        Assert.Equal(50m, score);
+    }
+
+    /// <summary>
+    /// Regresión del segundo falso positivo medido en vivo (2026-08-01): con UN solo acceso previo en
+    /// la ventana, la diversidad vale forzosamente 1.0 y el usuario legítimo puntuaba 92.5 — su segunda
+    /// petición de la hora habría sido desafiada. Por debajo del mínimo de muestras se degrada.
+    /// </summary>
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(4)]
+    public async Task ReturnsNeutral_CuandoLaVentanaNoAlcanzaElMinimoDeMuestras(int accesos)
+    {
+        var ctx = Request(13);
+        var recientes = Enumerable.Range(1, accesos)
+            .Select(i => new UserAccessSample(ctx.Timestamp.AddMinutes(-i), "/reports"))
+            .ToList();
+        GivenProfile(OfficeBaseline(), recientes);
+
+        var score = await _sut.GetAnomalyScoreAsync(ctx);
+
+        Assert.Equal(50m, score);
+    }
+
+    /// <summary>
+    /// El guard no puede tapar la detección: alcanzado el mínimo, se vuelve a puntuar con el modelo.
+    /// Un ataque por volumen (50 peticiones) lo supera con holgura.
+    /// </summary>
+    [Fact]
+    public async Task AlAlcanzarElMinimoDeMuestras_VuelveAPuntuarConElModelo()
+    {
+        var ctx = Request(13);
+        GivenProfile(OfficeBaseline(), RecentAccesses(ctx.Timestamp, count: _options.MinWindowSamples, distinctEndpoints: 2));
+
+        var score = await _sut.GetAnomalyScoreAsync(ctx);
+
+        Assert.NotEqual(50m, score);
+    }
 }

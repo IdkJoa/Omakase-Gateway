@@ -33,6 +33,12 @@ docker run --rm -i -e GATEWAY_URL="http://host.docker.internal:5219/httpbin/get"
 
 ### Opción 2: Ejecutar de forma Nativa con k6 CLI
 
+#### 1. Instalar k6 vía Windows Package Manager (`winget`):
+```powershell
+winget install k6 --source winget
+```
+
+#### 2. Ejecutar la Prueba:
 ```cmd
 k6 run -e GATEWAY_URL="http://localhost:5219/httpbin/get" -e JWT_TOKEN="<TU_TOKEN_JWT>" load-tests/k6_stress_test.js
 ```

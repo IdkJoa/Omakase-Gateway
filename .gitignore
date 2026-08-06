@@ -26,8 +26,13 @@ artifacts/
 ## Logs
 *.log
 
-docs/
+## docs/ es local (notas y contexto de trabajo), EXCEPTO los entregables de una historia:
+## T-073 exige que los escenarios de ataque queden documentados y versionados.
+## Nota: hay que excluir con docs/* (no docs/) para que la negacion siguiente surta efecto.
+docs/*
+!docs/HU-*.md
 PLANIFICACION_HU.md
+evidencia-*.txt
 
 ## Claude Code (local, no versionar)
 .claude/

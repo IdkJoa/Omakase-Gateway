@@ -29,10 +29,4 @@ public static class RedisKeyHelper
     /// Clave: fingerprint:{userId}
     /// </summary>
     public static string GetFingerprintKey(string userId) => $"fingerprint:{userId}";
-
-    /// <summary>
-    /// Genera la clave de sesión activa de un usuario.
-    /// Clave: session:{userId}
-    /// </summary>
-    public static string GetSessionKey(string userId) => $"session:{userId}";
 }

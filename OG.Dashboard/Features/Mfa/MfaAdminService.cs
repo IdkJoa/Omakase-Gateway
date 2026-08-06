@@ -34,7 +34,12 @@ public sealed class MfaAdminService
     /// Inicia el enrolamiento: genera un secreto TOTP nuevo, lo cifra en reposo sobre la entidad
     /// (<c>MfaEnabled = false</c> hasta confirmar) y devuelve el provisioning URI que la app
     /// autenticadora consume vía QR (T-109). El secreto en claro no se persiste ni se expone
-    /// fuera del URI. Reemplaza cualquier secreto pendiente anterior (re-enrolar es idempotente).
+    /// fuera del URI.
+    /// <para>
+    /// <b>NO es idempotente:</b> cada llamada genera un secreto DISTINTO y descarta el pendiente
+    /// anterior. Llamar dos veces invalida el QR de la primera, y el OTP derivado de aquel devolverá
+    /// 422 al confirmar. Enrolar una sola vez y confirmar con el URI de esa misma llamada.
+    /// </para>
     /// </summary>
     public string BeginEnrollment(User user)
     {
