@@ -38,7 +38,12 @@ public sealed class ProtectedServiceConfiguration : IEntityTypeConfiguration<Pro
             .HasColumnName("created_at")
             .HasColumnType("timestamptz")
             .IsRequired();
-        
+
+        builder.Property(s => s.UpdatedAt)
+            .HasColumnName("updated_at")
+            .HasColumnType("timestamptz")
+            .IsRequired(false);
+
         #endregion
         
         #region Relationships

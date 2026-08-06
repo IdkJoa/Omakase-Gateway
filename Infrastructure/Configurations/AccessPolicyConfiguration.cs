@@ -71,5 +71,10 @@ public sealed class AccessPolicyConfiguration : IEntityTypeConfiguration<AccessP
                .HasColumnName("created_at")
                .HasColumnType("timestamptz")
                .IsRequired();
+
+        builder.Property(p => p.UpdatedAt)
+               .HasColumnName("updated_at")
+               .HasColumnType("timestamptz")
+               .IsRequired(false);
     }
 }

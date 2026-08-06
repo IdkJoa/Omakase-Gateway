@@ -1,3 +1,4 @@
+using Domain.Common;
 using Domain.Entities;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -27,5 +28,37 @@ public class OmakaseDbContext(DbContextOptions<OmakaseDbContext> options) : DbCo
     {
         base.OnModelCreating(modelBuilder);
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(OmakaseDbContext).Assembly);
+    }
+
+    /// <summary>
+    /// Sella <c>updated_at</c> en toda entidad <see cref="IAuditableEntity"/> modificada.
+    /// <para>
+    /// Centralizarlo aquí evita que cada manejador tenga que acordarse de asignarlo —la causa
+    /// habitual de que la columna quede desfasada— y hace que incorporar una entidad auditable
+    /// nueva no requiera tocar ningún caso de uso existente.
+    /// </para>
+    /// </summary>
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        StampAuditableEntities();
+        return base.SaveChangesAsync(cancellationToken);
+    }
+
+    /// <inheritdoc cref="SaveChangesAsync(CancellationToken)"/>
+    public override int SaveChanges()
+    {
+        StampAuditableEntities();
+        return base.SaveChanges();
+    }
+
+    private void StampAuditableEntities()
+    {
+        var now = DateTimeOffset.UtcNow;
+
+        foreach (var entry in ChangeTracker.Entries<IAuditableEntity>())
+        {
+            if (entry.State == EntityState.Modified)
+                entry.Entity.UpdatedAt = now;
+        }
     }
 }

@@ -1,8 +1,9 @@
+using Domain.Common;
 using Domain.ValueObjects;
 
 namespace Domain.Entities;
 
-public class User
+public class User : IAuditableEntity
 {
     public UserId Id { get; init; }
     public string Username { get; init; }

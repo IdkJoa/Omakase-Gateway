@@ -31,8 +31,12 @@ artifacts/
 ## Nota: hay que excluir con docs/* (no docs/) para que la negacion siguiente surta efecto.
 docs/*
 !docs/HU-*.md
+## T-076 exige el diagrama ER visual: los generadores y sus SVG son entregables.
+!docs/diagramas/
 PLANIFICACION_HU.md
 evidencia-*.txt
 
 ## Claude Code (local, no versionar)
 .claude/
+## Python (generadores de diagramas)
+__pycache__/
