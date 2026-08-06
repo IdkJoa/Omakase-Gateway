@@ -1,25 +1,23 @@
 import http from 'k6/http';
 import { check, sleep } from 'k6';
-import { Trend } from 'k6/metrics';
 
-// ── HU-033 / T-071: Métricas personalizadas y configuración de umbrales ──────────
-const evaluationOverhead = new Trend('evaluation_overhead_ms', true);
+// ── HU-033 / T-071: Pruebas de Estrés con k6 (100 VUs sostenidos durante 5 min) ──────
 
 export const options = {
   stages: [
-    { duration: '30s', target: 20 },  // Calentamiento inicial
-    { duration: '1m',  target: 50 },  // Carga media sostenida
-    { duration: '3m',  target: 100 }, // Carga objetivo: 100 VUs sostenidos (T-071)
+    { duration: '30s', target: 100 }, // Ramp-up inicial a 100 VUs
+    { duration: '5m',  target: 100 }, // Carga objetivo: 100 VUs sostenidos durante 5 minutos (T-071)
     { duration: '30s', target: 0 },   // Ramp-down de cierre
   ],
   thresholds: {
-    // T-071 / T-072: Requisito no funcional de rendimiento — Overhead <= 50ms (p95)
-    evaluation_overhead_ms: ['p(95)<=50'],
+    // Tasa de errores HTTP fallidos (4xx indebidos o 5xx) menor al 5%
     http_req_failed: ['rate<0.05'],
+    // Requisito no funcional de rendimiento — Latencia e2e p95
+    http_req_duration: ['p(95)<=50'],
   },
 };
 
-// Colección distribuida de IPs sintéticas para simular tráfico realista de usuarios
+// Colección distribuida de 12 IPs sintéticas para simular tráfico realista de usuarios
 const SAMPLE_IPS = [
   '190.166.12.45', '190.166.12.46', '190.166.12.47', '190.166.12.48',
   '200.88.8.1',    '200.88.8.2',    '200.88.8.3',    '200.88.8.4',
@@ -34,11 +32,15 @@ const USER_AGENTS = [
   'OmakaseMobileClient/1.2.0 (Android 14; Mobile)'
 ];
 
-// URL objetivo configurable por variable de entorno GATEWAY_URL (Default: http://localhost:5219/httpbin/get)
+// URL objetivo configurable por variable de entorno GATEWAY_URL
 const TARGET_URL = __ENV.GATEWAY_URL || 'http://localhost:5219/httpbin/get';
 
-// Token JWT suministrable opcionalmente por variable de entorno JWT_TOKEN
+// Token JWT obligatorio: debe proveerse vía la variable de entorno JWT_TOKEN
 const JWT_TOKEN = __ENV.JWT_TOKEN || '';
+
+if (!JWT_TOKEN) {
+  throw new Error('Error de configuración: JWT_TOKEN es obligatorio para ejecutar las pruebas de carga (T-071). Pase -e JWT_TOKEN="<token>"');
+}
 
 export default function () {
   const randomIp = SAMPLE_IPS[Math.floor(Math.random() * SAMPLE_IPS.length)];
@@ -48,25 +50,19 @@ export default function () {
     'User-Agent': randomUserAgent,
     'X-Forwarded-For': randomIp,
     'Accept': 'application/json',
+    'Authorization': `Bearer ${JWT_TOKEN}`,
   };
 
-  if (JWT_TOKEN) {
-    headers['Authorization'] = `Bearer ${JWT_TOKEN}`;
-  }
-
-  // Registrar respuestas 200, 401, 403 y 429 como respuestas válidas emitidas por el Gateway
+  // Marcar respuestas 200, 401 y 403 como estados esperados de evaluación de seguridad
   const res = http.get(TARGET_URL, {
     headers,
-    responseCallback: http.expectedStatuses(200, 401, 403, 429),
+    responseCallback: http.expectedStatuses(200, 401, 403),
   });
 
-  // Extraer el tiempo de evaluación e intercepción
-  evaluationOverhead.add(res.timings.duration);
-
-  // Validar respuestas coherentes emitidas por el motor de seguridad
+  // Validar que el Gateway responda con códigos HTTP válidos de evaluación (200, 401 o 403)
   check(res, {
-    'Gateway respondió con código válido (200, 401, 403 o 429)': (r) =>
-      r.status === 200 || r.status === 401 || r.status === 403 || r.status === 429,
+    'Gateway respondió con código válido (200, 401 o 403)': (r) =>
+      r.status === 200 || r.status === 401 || r.status === 403,
   });
 
   // Pacing simulado entre peticiones (0.1s - 0.2s)
