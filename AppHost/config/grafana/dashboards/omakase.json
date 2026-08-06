@@ -16,7 +16,7 @@
       "targets": [
         {
           "datasource": { "type": "loki", "uid": "loki" },
-          "expr": "sum(rate({service_name=~\"(.*Api|unknown_service)\"} | json | Context_Verdict != \"\" [1m]))",
+          "expr": "sum(rate({service_name=~\"(.*Api|unknown_service)\"} |= \"Evaluaci\" | json | Context_Verdict != \"\" [1m]))",
           "legendFormat": "Peticiones/seg",
           "refId": "A"
         }
@@ -43,7 +43,7 @@
       "targets": [
         {
           "datasource": { "type": "loki", "uid": "loki" },
-          "expr": "sum by (Context_Verdict) (count_over_time({service_name=~\"(.*Api|unknown_service)\"} | json | Context_Verdict != \"\" [$__range]))",
+          "expr": "sum by (Context_Verdict) (count_over_time({service_name=~\"(.*Api|unknown_service)\"} |= \"Evaluaci\" | json | Context_Verdict != \"\" [$__range]))",
           "legendFormat": "{{Context_Verdict}}",
           "refId": "A"
         }
@@ -72,25 +72,25 @@
       "targets": [
         {
           "datasource": { "type": "loki", "uid": "loki" },
-          "expr": "sum(count_over_time({service_name=~\"(.*Api|unknown_service)\"} | json | Context_RiskScore >= 0 | Context_RiskScore < 26 [$__range]))",
+          "expr": "sum(count_over_time({service_name=~\"(.*Api|unknown_service)\"} |= \"Evaluaci\" | json | Context_RiskScore >= 0 | Context_RiskScore < 26 [$__range]))",
           "legendFormat": "Bajo (0–25)",
           "refId": "A"
         },
         {
           "datasource": { "type": "loki", "uid": "loki" },
-          "expr": "sum(count_over_time({service_name=~\"(.*Api|unknown_service)\"} | json | Context_RiskScore >= 26 | Context_RiskScore < 51 [$__range]))",
+          "expr": "sum(count_over_time({service_name=~\"(.*Api|unknown_service)\"} |= \"Evaluaci\" | json | Context_RiskScore >= 26 | Context_RiskScore < 51 [$__range]))",
           "legendFormat": "Moderado (26–50)",
           "refId": "B"
         },
         {
           "datasource": { "type": "loki", "uid": "loki" },
-          "expr": "sum(count_over_time({service_name=~\"(.*Api|unknown_service)\"} | json | Context_RiskScore >= 51 | Context_RiskScore < 76 [$__range]))",
+          "expr": "sum(count_over_time({service_name=~\"(.*Api|unknown_service)\"} |= \"Evaluaci\" | json | Context_RiskScore >= 51 | Context_RiskScore < 76 [$__range]))",
           "legendFormat": "Alto (51–75)",
           "refId": "C"
         },
         {
           "datasource": { "type": "loki", "uid": "loki" },
-          "expr": "sum(count_over_time({service_name=~\"(.*Api|unknown_service)\"} | json | Context_RiskScore >= 76 [$__range]))",
+          "expr": "sum(count_over_time({service_name=~\"(.*Api|unknown_service)\"} |= \"Evaluaci\" | json | Context_RiskScore >= 76 [$__range]))",
           "legendFormat": "Bloqueado (76–100)",
           "refId": "D"
         }
@@ -126,13 +126,13 @@
       "targets": [
         {
           "datasource": { "type": "loki", "uid": "loki" },
-          "expr": "sum(rate({service_name=~\"(.*Api|unknown_service)\"} | json | Context_Verdict = \"Block\" [1m]))",
+          "expr": "sum(rate({service_name=~\"(.*Api|unknown_service)\"} |= \"Evaluaci\" | json | Context_Verdict = \"Block\" [1m]))",
           "legendFormat": "Blocks/seg",
           "refId": "A"
         },
         {
           "datasource": { "type": "loki", "uid": "loki" },
-          "expr": "sum(rate({service_name=~\"(.*Api|unknown_service)\"} | json | Context_Verdict = \"Challenge\" [1m]))",
+          "expr": "sum(rate({service_name=~\"(.*Api|unknown_service)\"} |= \"Evaluaci\" | json | Context_Verdict = \"Challenge\" [1m]))",
           "legendFormat": "Challenges/seg",
           "refId": "B"
         }
@@ -161,19 +161,19 @@
       "targets": [
         {
           "datasource": { "type": "loki", "uid": "loki" },
-          "expr": "quantile_over_time(0.99, {service_name=~\"(.*Api|unknown_service)\"} | json | Context_DurationMs != \"\" | unwrap Context_DurationMs [1m]) by ()",
+          "expr": "quantile_over_time(0.99, {service_name=~\"(.*Api|unknown_service)\"} |= \"Evaluaci\" | json | Context_DurationMs != \"\" | unwrap Context_DurationMs [1m]) by ()",
           "legendFormat": "p99",
           "refId": "A"
         },
         {
           "datasource": { "type": "loki", "uid": "loki" },
-          "expr": "quantile_over_time(0.95, {service_name=~\"(.*Api|unknown_service)\"} | json | Context_DurationMs != \"\" | unwrap Context_DurationMs [1m]) by ()",
+          "expr": "quantile_over_time(0.95, {service_name=~\"(.*Api|unknown_service)\"} |= \"Evaluaci\" | json | Context_DurationMs != \"\" | unwrap Context_DurationMs [1m]) by ()",
           "legendFormat": "p95",
           "refId": "B"
         },
         {
           "datasource": { "type": "loki", "uid": "loki" },
-          "expr": "quantile_over_time(0.50, {service_name=~\"(.*Api|unknown_service)\"} | json | Context_DurationMs != \"\" | unwrap Context_DurationMs [1m]) by ()",
+          "expr": "quantile_over_time(0.50, {service_name=~\"(.*Api|unknown_service)\"} |= \"Evaluaci\" | json | Context_DurationMs != \"\" | unwrap Context_DurationMs [1m]) by ()",
           "legendFormat": "p50",
           "refId": "C"
         }
