@@ -16,7 +16,7 @@
       "targets": [
         {
           "datasource": { "type": "loki", "uid": "loki" },
-          "expr": "sum(rate({service_name=~\"(.*Api|unknown_service)\"}[1m]))",
+          "expr": "sum(rate({service_name=~\"(.*Api|unknown_service)\"} | json | Context_Verdict != \"\" [1m]))",
           "legendFormat": "Peticiones/seg",
           "refId": "A"
         }
