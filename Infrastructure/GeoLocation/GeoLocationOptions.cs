@@ -16,4 +16,11 @@ public sealed class GeoLocationOptions
 
     /// <summary>Vigencia de la caché de resultados por IP, en horas. Default: 1.</summary>
     public int CacheTtlHours { get; set; } = 1;
+
+    /// <summary>
+    /// Vigencia de la caché <b>negativa</b> (IPs que no se pudieron resolver), en segundos.
+    /// Default: 30. Corta a la vez el coste y la duración de una degradación de geolocalización
+    /// sin dejar la IP marcada como irresoluble más de lo necesario.
+    /// </summary>
+    public int FailureCacheSeconds { get; set; } = 30;
 }

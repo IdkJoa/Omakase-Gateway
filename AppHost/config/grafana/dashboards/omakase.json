@@ -161,19 +161,19 @@
       "targets": [
         {
           "datasource": { "type": "loki", "uid": "loki" },
-          "expr": "quantile_over_time(0.99, {service_name=~\"(.*Api|unknown_service)\"} | json | Context_DurationMs != \"\" | unwrap Context_DurationMs [1m])",
+          "expr": "quantile_over_time(0.99, {service_name=~\"(.*Api|unknown_service)\"} | json | Context_DurationMs != \"\" | unwrap Context_DurationMs [1m]) by ()",
           "legendFormat": "p99",
           "refId": "A"
         },
         {
           "datasource": { "type": "loki", "uid": "loki" },
-          "expr": "quantile_over_time(0.95, {service_name=~\"(.*Api|unknown_service)\"} | json | Context_DurationMs != \"\" | unwrap Context_DurationMs [1m])",
+          "expr": "quantile_over_time(0.95, {service_name=~\"(.*Api|unknown_service)\"} | json | Context_DurationMs != \"\" | unwrap Context_DurationMs [1m]) by ()",
           "legendFormat": "p95",
           "refId": "B"
         },
         {
           "datasource": { "type": "loki", "uid": "loki" },
-          "expr": "quantile_over_time(0.50, {service_name=~\"(.*Api|unknown_service)\"} | json | Context_DurationMs != \"\" | unwrap Context_DurationMs [1m])",
+          "expr": "quantile_over_time(0.50, {service_name=~\"(.*Api|unknown_service)\"} | json | Context_DurationMs != \"\" | unwrap Context_DurationMs [1m]) by ()",
           "legendFormat": "p50",
           "refId": "C"
         }

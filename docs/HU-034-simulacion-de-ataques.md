@@ -149,7 +149,7 @@ Sin perfil, un usuario **legítimo** puntúa `0.5·0 + 0.5·50 + 30 = 55` → **
 falsos positivos así, la tasa saldría **100%** y la tabla del Cap. IV no significaría nada.
 
 Y hay un bloqueo circular: el perfil solo se alimenta con veredictos **ALLOW**
-([EvaluateRiskHandler.cs:197](../OG.Gateway/Common/RiskEngine/Commands/EvaluateRiskHandler.cs:197)),
+([EvaluateRiskHandler.cs:236](../OG.Gateway/Common/RiskEngine/Commands/EvaluateRiskHandler.cs:236)),
 pero en cold-start el veredicto es CHALLENGE → nunca acumula.
 
 Aunque se rompa ese círculo con step-up MFA y se lancen 20 peticiones seguidas, el resultado es
@@ -582,6 +582,20 @@ ataque:                                37.75 ────────── 49.0
 ```
 
 ### 10.4 Valores calibrados y justificación
+
+> **Nomenclatura — leer antes de cruzar esta tabla con el SRS.** El SRS §7.6 nombra los umbrales
+> por el veredicto que **abren**; la entidad `RiskScoreConfig` los nombra por el veredicto que
+> **cierran**. Son los mismos dos campos, con mapeo 1:1 y sin desajuste funcional:
+>
+> | SRS §7.6 | Entidad / columna en BD | Semántica |
+> |---|---|---|
+> | `allow_threshold` | `ChallengeThreshold` / `challenge_threshold` | techo de ALLOW: `risk ≤ umbral ⇒ ALLOW` |
+> | `challenge_threshold` | `BlockThreshold` / `block_threshold` | techo de CHALLENGE: `risk ≤ umbral ⇒ CHALLENGE`, si no BLOCK |
+>
+> La tabla de abajo usa los nombres de **la entidad**, que son los que aparecen en el código
+> ([RiskScoreConsolidator.cs](../OG.Gateway/Common/RiskEngine/Scoring/RiskScoreConsolidator.cs))
+> y en la BD. El criterio de aceptación de HU-035 usa la grafía del SRS, así que el
+> `challenge_threshold` que aquí baja de 40 a 33 es el `allow_threshold` del criterio.
 
 | Parámetro | Antes | Después | Justificación |
 |---|---|---|---|

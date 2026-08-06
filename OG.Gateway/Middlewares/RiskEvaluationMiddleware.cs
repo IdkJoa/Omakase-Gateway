@@ -121,14 +121,18 @@ public sealed class RiskEvaluationMiddleware
         span?.SetTag(Tags.Verdict,   result.Verdict.ToString());
         span?.SetTag(Tags.RiskScore,  result.RiskScore.ToString("F2"));
 
-        _logger.LogInformation("Evaluación completada {@Context}", new 
-        { 
-            UserId = userId ?? "anonymous", 
+        // DurationMs es la métrica del requisito de rendimiento (overhead de evaluación ≤50 ms p95):
+        // el panel de Grafana la consume desde Loki. Va en decimales porque ElapsedMilliseconds
+        // trunca a entero, y con evaluaciones reales de 9–11 ms ese truncamiento se come hasta un
+        // 10% del valor justo en el rango que decide si se cumple el SLA.
+        _logger.LogInformation("Evaluación completada {@Context}", new
+        {
+            UserId = userId ?? "anonymous",
             ServiceId = result.ServiceId?.ToString() ?? "unknown",
-            Verdict = result.Verdict.ToString(), 
-            RiskScore = result.RiskScore, 
+            Verdict = result.Verdict.ToString(),
+            RiskScore = result.RiskScore,
             TraceId = context.TraceIdentifier,
-            DurationMs = sw.ElapsedMilliseconds
+            DurationMs = Math.Round(sw.Elapsed.TotalMilliseconds, 2)
         });
 
         // Encolar AuditEvent (fire-and-forget — no bloquea el pipeline)
