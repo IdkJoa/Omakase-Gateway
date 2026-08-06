@@ -1,11 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1900 1620" width="1900" height="1620">
 <rect width="1900" height="1620" fill="#FFFFFF"/>
-<defs>
-<marker id="arrow-5B7A9E" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#5B7A9E"/></marker>
-<marker id="arrow-2E7D4F" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#2E7D4F"/></marker>
-<marker id="arrow-B47600" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#B47600"/></marker>
-<marker id="arrow-B3261E" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#B3261E"/></marker>
-</defs>
 <text x="950.0" y="36" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="20" font-weight="600" fill="#1F3864" text-anchor="middle">Omakase-Gateway — Flujo de evaluacion de una peticion</text>
 <rect x="310.0" y="90" width="620" height="66" fill="#F2F6FB" stroke="#4472A8" stroke-width="1.4" rx="4"/>
 <text x="620.0" y="114" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="14" font-weight="600" fill="#1F3864" text-anchor="middle">Peticion HTTP/HTTPS entrante</text>
@@ -95,28 +89,48 @@
 <rect x="70" y="1360" width="1140" height="76" fill="#F2F6FB" stroke="#4472A8" stroke-width="1.4" rx="4"/>
 <text x="640.0" y="1384" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="14" font-weight="600" fill="#1F3864" text-anchor="middle">7 · Resultado devuelto al cliente</text>
 <text x="640.0" y="1403" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472" text-anchor="middle">Todo veredicto —incluidos los denegados— queda registrado con su contexto, los puntajes parciales y las reglas disparadas.</text>
-<path d="M 620 156 L 620 200" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow-5B7A9E)"/>
-<path d="M 620 288 L 620 340" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow-5B7A9E)"/>
-<path d="M 620 428 L 620 480" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow-5B7A9E)"/>
-<path d="M 620 542 L 620 580 L 380 580 L 380 620" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow-5B7A9E)"/>
-<path d="M 620 542 L 620 580 L 860 580 L 860 620" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow-5B7A9E)"/>
-<path d="M 380 788 L 380 826 L 620 826 L 620 840" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow-5B7A9E)"/>
-<path d="M 860 788 L 860 826 L 620 826 L 620 840" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow-5B7A9E)"/>
-<path d="M 620 944 L 620 990" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow-5B7A9E)"/>
-<path d="M 620 1066 L 620 1110 L 240 1110 L 240 1160" fill="none" stroke="#2E7D4F" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow-2E7D4F)"/>
-<path d="M 620 1066 L 620 1160" fill="none" stroke="#B47600" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow-B47600)"/>
-<path d="M 620 1066 L 620 1110 L 1040 1110 L 1040 1160" fill="none" stroke="#B3261E" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow-B3261E)"/>
-<path d="M 240 1290 L 240 1360" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow-5B7A9E)"/>
-<path d="M 640 1290 L 640 1360" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow-5B7A9E)"/>
-<path d="M 1040 1290 L 1040 1360" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow-5B7A9E)"/>
-<path d="M 830 1200 L 1120 1200 L 1120 418 L 1330 418" fill="none" stroke="#B47600" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow-B47600)"/>
+<path d="M 620 156 L 620 200" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M 620 200 L 616.22 191.0 L 623.78 191.0 z" fill="#5B7A9E" stroke="none"/>
+<path d="M 620 288 L 620 340" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M 620 340 L 616.22 331.0 L 623.78 331.0 z" fill="#5B7A9E" stroke="none"/>
+<path d="M 620 428 L 620 480" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M 620 480 L 616.22 471.0 L 623.78 471.0 z" fill="#5B7A9E" stroke="none"/>
+<path d="M 620 542 L 620 580 L 380 580 L 380 620" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M 380 620 L 376.22 611.0 L 383.78 611.0 z" fill="#5B7A9E" stroke="none"/>
+<path d="M 620 542 L 620 580 L 860 580 L 860 620" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M 860 620 L 856.22 611.0 L 863.78 611.0 z" fill="#5B7A9E" stroke="none"/>
+<path d="M 380 788 L 380 826 L 620 826 L 620 840" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M 620 840 L 616.22 831.0 L 623.78 831.0 z" fill="#5B7A9E" stroke="none"/>
+<path d="M 860 788 L 860 826 L 620 826 L 620 840" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M 620 840 L 616.22 831.0 L 623.78 831.0 z" fill="#5B7A9E" stroke="none"/>
+<path d="M 620 944 L 620 990" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M 620 990 L 616.22 981.0 L 623.78 981.0 z" fill="#5B7A9E" stroke="none"/>
+<path d="M 620 1066 L 620 1110 L 240 1110 L 240 1160" fill="none" stroke="#2E7D4F" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M 240 1160 L 236.22 1151.0 L 243.78 1151.0 z" fill="#2E7D4F" stroke="none"/>
+<path d="M 620 1066 L 620 1160" fill="none" stroke="#B47600" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M 620 1160 L 616.22 1151.0 L 623.78 1151.0 z" fill="#B47600" stroke="none"/>
+<path d="M 620 1066 L 620 1110 L 1040 1110 L 1040 1160" fill="none" stroke="#B3261E" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M 1040 1160 L 1036.22 1151.0 L 1043.78 1151.0 z" fill="#B3261E" stroke="none"/>
+<path d="M 240 1290 L 240 1360" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M 240 1360 L 236.22 1351.0 L 243.78 1351.0 z" fill="#5B7A9E" stroke="none"/>
+<path d="M 640 1290 L 640 1360" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M 640 1360 L 636.22 1351.0 L 643.78 1351.0 z" fill="#5B7A9E" stroke="none"/>
+<path d="M 1040 1290 L 1040 1360" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M 1040 1360 L 1036.22 1351.0 L 1043.78 1351.0 z" fill="#5B7A9E" stroke="none"/>
+<path d="M 830 1200 L 1120 1200 L 1120 418 L 1330 418" fill="none" stroke="#B47600" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M 1330 418 L 1321.0 421.78 L 1321.0 414.22 z" fill="#B47600" stroke="none"/>
 <text x="1150" y="800" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" font-weight="400" text-anchor="start" stroke="#FFFFFF" stroke-width="4" paint-order="stroke" fill="#B47600">emision del desafio</text>
-<path d="M 1560 456 L 1560 480" fill="none" stroke="#B47600" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow-B47600)"/>
-<path d="M 1560 570 L 1560 594" fill="none" stroke="#B47600" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow-B47600)"/>
-<path d="M 1330 644 L 1250 644 L 1250 1015 L 830 1015 L 830 1190" fill="none" stroke="#2E7D4F" stroke-width="1.6" stroke-dasharray="6 4" stroke-linejoin="round" marker-end="url(#arrow-2E7D4F)"/>
+<path d="M 1560 456 L 1560 480" fill="none" stroke="#B47600" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M 1560 480 L 1556.22 471.0 L 1563.78 471.0 z" fill="#B47600" stroke="none"/>
+<path d="M 1560 570 L 1560 594" fill="none" stroke="#B47600" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M 1560 594 L 1556.22 585.0 L 1563.78 585.0 z" fill="#B47600" stroke="none"/>
+<path d="M 1330 644 L 1250 644 L 1250 1015 L 830 1015 L 830 1190" fill="none" stroke="#2E7D4F" stroke-width="1.6" stroke-dasharray="6 4" stroke-linejoin="round"/>
+<path d="M 830 1190 L 826.22 1181.0 L 833.78 1181.0 z" fill="#2E7D4F" stroke="none"/>
 <text x="1244" y="700" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" font-weight="400" text-anchor="end" stroke="#FFFFFF" stroke-width="4" paint-order="stroke" fill="#2E7D4F">reintento -&gt; ALLOW</text>
-<path d="M 1560 694 L 1560 760" fill="none" stroke="#B3261E" stroke-width="1.6" stroke-dasharray="6 4" stroke-linejoin="round" marker-end="url(#arrow-B3261E)"/>
-<path d="M 960 892 L 1080 892 L 1080 1025 L 1290 1025" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-dasharray="6 4" stroke-linejoin="round" marker-end="url(#arrow-5B7A9E)"/>
+<path d="M 1560 694 L 1560 760" fill="none" stroke="#B3261E" stroke-width="1.6" stroke-dasharray="6 4" stroke-linejoin="round"/>
+<path d="M 1560 760 L 1556.22 751.0 L 1563.78 751.0 z" fill="#B3261E" stroke="none"/>
+<path d="M 960 892 L 1080 892 L 1080 1025 L 1290 1025" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-dasharray="6 4" stroke-linejoin="round"/>
+<path d="M 1290 1025 L 1281.0 1028.78 L 1281.0 1021.22 z" fill="#5B7A9E" stroke="none"/>
 <text x="1085" y="1016" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" font-weight="400" text-anchor="start" stroke="#FFFFFF" stroke-width="4" paint-order="stroke" fill="#5A6472">asincrono</text>
 <rect x="70" y="1480" width="1760" height="92" fill="#F2F6FB" stroke="#4472A8" stroke-width="1.4" rx="4" stroke-dasharray="7 4"/>
 <text x="950.0" y="1504" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="14" font-weight="600" fill="#1F3864" text-anchor="middle"></text>

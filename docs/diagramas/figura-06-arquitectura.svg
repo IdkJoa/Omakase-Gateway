@@ -1,11 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2100 1300" width="2100" height="1300">
 <rect width="2100" height="1300" fill="#FFFFFF"/>
-<defs>
-<marker id="arrow-5B7A9E" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#5B7A9E"/></marker>
-<marker id="arrow-2E7D4F" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#2E7D4F"/></marker>
-<marker id="arrow-B47600" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#B47600"/></marker>
-<marker id="arrow-B3261E" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#B3261E"/></marker>
-</defs>
 <text x="1050.0" y="36" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="20" font-weight="600" fill="#1F3864" text-anchor="middle">Omakase-Gateway — Arquitectura general de la solucion</text>
 <rect x="60" y="190" width="320" height="120" fill="#F2F6FB" stroke="#4472A8" stroke-width="1.4" rx="4"/>
 <text x="220.0" y="214" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="14" font-weight="600" fill="#1F3864" text-anchor="middle">Client User</text>
@@ -89,23 +83,33 @@
 <text x="1850.0" y="984" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="14" font-weight="600" fill="#1F3864" text-anchor="middle">Observabilidad</text>
 <text x="1850.0" y="1003" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472" text-anchor="middle">OpenTelemetry -&gt; Grafana,</text>
 <text x="1850.0" y="1019" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472" text-anchor="middle">Loki (logs) y Tempo (trazas)</text>
-<path d="M 380 250 L 600 250" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow-5B7A9E)"/>
+<path d="M 380 250 L 600 250" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M 600 250 L 591.0 253.78 L 591.0 246.22 z" fill="#5B7A9E" stroke="none"/>
 <text x="490" y="241" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" font-weight="400" text-anchor="middle" stroke="#FFFFFF" stroke-width="4" paint-order="stroke" fill="#5A6472">peticion HTTPS</text>
-<path d="M 1280 253 L 1500 253" fill="none" stroke="#2E7D4F" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrow-2E7D4F)"/>
+<path d="M 1280 253 L 1500 253" fill="none" stroke="#2E7D4F" stroke-width="2" stroke-linejoin="round"/>
+<path d="M 1500 253 L 1491.0 256.78 L 1491.0 249.22 z" fill="#2E7D4F" stroke="none"/>
 <text x="1390" y="244" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" font-weight="400" text-anchor="middle" stroke="#FFFFFF" stroke-width="4" paint-order="stroke" fill="#2E7D4F">solo tras ALLOW</text>
-<path d="M 1280 399 L 1400 399 L 1400 505 L 1500 505" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-dasharray="6 4" stroke-linejoin="round" marker-end="url(#arrow-5B7A9E)"/>
+<path d="M 1280 399 L 1400 399 L 1400 505 L 1500 505" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-dasharray="6 4" stroke-linejoin="round"/>
+<path d="M 1500 505 L 1491.0 508.78 L 1491.0 501.22 z" fill="#5B7A9E" stroke="none"/>
 <text x="1400" y="470" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" font-weight="400" text-anchor="middle" stroke="#FFFFFF" stroke-width="4" paint-order="stroke" fill="#5A6472">consulta geo</text>
-<path d="M 220 490 L 220 550" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-dasharray="6 4" stroke-linejoin="round" marker-end="url(#arrow-5B7A9E)"/>
-<path d="M 220 660 L 220 720" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow-5B7A9E)"/>
+<path d="M 220 490 L 220 550" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-dasharray="6 4" stroke-linejoin="round"/>
+<path d="M 220 550 L 216.22 541.0 L 223.78 541.0 z" fill="#5B7A9E" stroke="none"/>
+<path d="M 220 660 L 220 720" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M 220 720 L 216.22 711.0 L 223.78 711.0 z" fill="#5B7A9E" stroke="none"/>
 <text x="232" y="695" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" font-weight="400" text-anchor="start" stroke="#FFFFFF" stroke-width="4" paint-order="stroke" fill="#5A6472">REST + Bearer</text>
 <path d="M 940 750 L 940 880" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-linejoin="round"/>
 <path d="M 220 830 L 220 880" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-linejoin="round"/>
 <path d="M 250 880 L 1850 880" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-linejoin="round"/>
-<path d="M 250 880 L 250 960" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow-5B7A9E)"/>
-<path d="M 650 880 L 650 960" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow-5B7A9E)"/>
-<path d="M 1050 880 L 1050 960" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow-5B7A9E)"/>
-<path d="M 1450 880 L 1450 960" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow-5B7A9E)"/>
-<path d="M 1850 880 L 1850 960" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow-5B7A9E)"/>
+<path d="M 250 880 L 250 960" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M 250 960 L 246.22 951.0 L 253.78 951.0 z" fill="#5B7A9E" stroke="none"/>
+<path d="M 650 880 L 650 960" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M 650 960 L 646.22 951.0 L 653.78 951.0 z" fill="#5B7A9E" stroke="none"/>
+<path d="M 1050 880 L 1050 960" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M 1050 960 L 1046.22 951.0 L 1053.78 951.0 z" fill="#5B7A9E" stroke="none"/>
+<path d="M 1450 880 L 1450 960" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M 1450 960 L 1446.22 951.0 L 1453.78 951.0 z" fill="#5B7A9E" stroke="none"/>
+<path d="M 1850 880 L 1850 960" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M 1850 960 L 1846.22 951.0 L 1853.78 951.0 z" fill="#5B7A9E" stroke="none"/>
 <text x="940" y="868" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11.5" font-weight="400" text-anchor="middle" stroke="#FFFFFF" stroke-width="4" paint-order="stroke" font-style="italic" fill="#5A6472">dependencias de soporte  ·  resueltas por nombre logico (.NET Aspire)</text>
 <rect x="60" y="1150" width="1980" height="100" fill="#F2F6FB" stroke="#4472A8" stroke-width="1.4" rx="4" stroke-dasharray="7 4"/>
 <text x="1050.0" y="1174" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="14" font-weight="600" fill="#1F3864" text-anchor="middle"></text>
