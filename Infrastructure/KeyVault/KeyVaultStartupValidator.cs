@@ -43,8 +43,8 @@ public sealed class KeyVaultStartupValidator
         bool isKeyVaultConfigured = !string.IsNullOrWhiteSpace(vaultUri);
         bool isProduction = _environment.IsProduction();
 
-        // En Producción O si se configuró explícitamente AZURE_KEYVAULT_URL, la validación de Key Vault es OBLIGATORIA
-        if (isProduction || isKeyVaultConfigured)
+        // Si se configuró explícitamente AZURE_KEYVAULT_URL o VaultUri, la validación de Key Vault es OBLIGATORIA
+        if (isKeyVaultConfigured)
         {
             _logger.LogInformation("[KeyVault] Iniciando validación estricta de Azure Key Vault en startup (HU-031 / T-068)...");
 
