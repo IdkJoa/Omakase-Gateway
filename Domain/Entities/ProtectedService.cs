@@ -1,3 +1,4 @@
+using Domain.Common;
 using Domain.ValueObjects;
 
 namespace Domain.Entities;
@@ -7,7 +8,7 @@ namespace Domain.Entities;
 /// Acts as the source of truth for YARP dynamic-route configuration.
 /// <see cref="Name"/> is used as the <c>clusterId</c> in YARP.
 /// </summary>
-public class ProtectedService
+public class ProtectedService : IAuditableEntity
 {
     public static readonly HashSet<string> ReservedNames = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -31,6 +32,12 @@ public class ProtectedService
     public bool IsActive { get; set; } = true;
 
     public DateTimeOffset CreatedAt { get; init; } = DateTimeOffset.UtcNow;
+
+    /// <summary>
+    /// Última modificación de la configuración del servicio —URL, autenticación o estado—
+    /// (SRS §7.5). Null mientras no se edite.
+    /// </summary>
+    public DateTimeOffset? UpdatedAt { get; set; }
 
     // ── Navigation Properties ─────────────────────────────────────────────────
 

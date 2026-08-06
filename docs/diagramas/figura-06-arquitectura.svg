@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2100 1300" width="2100" height="1300">
+<rect width="2100" height="1300" fill="#FFFFFF"/>
+<defs>
+<marker id="arrow-5B7A9E" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#5B7A9E"/></marker>
+<marker id="arrow-2E7D4F" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#2E7D4F"/></marker>
+<marker id="arrow-B47600" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#B47600"/></marker>
+<marker id="arrow-B3261E" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#B3261E"/></marker>
+</defs>
+<text x="1050.0" y="36" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="20" font-weight="600" fill="#1F3864" text-anchor="middle">Omakase-Gateway — Arquitectura general de la solucion</text>
+<rect x="60" y="190" width="320" height="120" fill="#F2F6FB" stroke="#4472A8" stroke-width="1.4" rx="4"/>
+<text x="220.0" y="214" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="14" font-weight="600" fill="#1F3864" text-anchor="middle">Client User</text>
+<text x="220.0" y="233" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472" text-anchor="middle">Aplicacion del usuario interceptado.</text>
+<text x="220.0" y="249" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472" text-anchor="middle">JWT propio en Authorization: Bearer</text>
+<rect x="60" y="370" width="320" height="120" fill="#F2F6FB" stroke="#4472A8" stroke-width="1.4" rx="4"/>
+<text x="220.0" y="394" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="14" font-weight="600" fill="#1F3864" text-anchor="middle">Security Officer</text>
+<text x="220.0" y="413" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472" text-anchor="middle">Navegador. Sesion OIDC</text>
+<text x="220.0" y="429" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472" text-anchor="middle">(Authorization Code + PKCE)</text>
+<rect x="60" y="550" width="320" height="110" fill="#F2F6FB" stroke="#4472A8" stroke-width="1.4" rx="4"/>
+<text x="220.0" y="574" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="14" font-weight="600" fill="#1F3864" text-anchor="middle">Dashboard (Angular SPA)</text>
+<text x="220.0" y="593" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472" text-anchor="middle">Politicas, servicios, roles, logs,</text>
+<text x="220.0" y="609" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472" text-anchor="middle">metricas y editor de umbrales</text>
+<rect x="60" y="720" width="320" height="110" fill="#FFFFFF" stroke="#4472A8" stroke-width="1.4" rx="4"/>
+<text x="220.0" y="744" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="14" font-weight="600" fill="#1F3864" text-anchor="middle">Dashboard API</text>
+<text x="220.0" y="763" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="10.5" fill="#5A6472" text-anchor="middle">/api/v1 protegido por token de</text>
+<text x="220.0" y="779" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="10.5" fill="#5A6472" text-anchor="middle">Keycloak y RBAC normalizado (RF-M8)</text>
+<rect x="560" y="130" width="760" height="620" fill="#FAFCFF" stroke="#1F3864" stroke-width="1.4" rx="4" stroke-dasharray="7 4"/>
+<text x="940.0" y="154" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="14" font-weight="600" fill="#1F3864" text-anchor="middle"></text>
+<text x="940" y="170" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="16" font-weight="600" fill="#1F3864" text-anchor="middle">Omakase-Gateway  ·  proceso unico (.NET 10)</text>
+<text x="940" y="192" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11.5" font-weight="400" fill="#5A6472" text-anchor="middle" font-style="italic">el motor de reglas y el modelo corren en memoria: sin salto de red entre capas</text>
+<rect x="600" y="215" width="680" height="76" fill="#DCE6F1" stroke="#4472A8" stroke-width="1.4" rx="4"/>
+<text x="940.0" y="239" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="14" font-weight="600" fill="#1F3864" text-anchor="middle">YARP — proxy inverso e intercepcion (RF-M1)</text>
+<text x="940.0" y="258" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="10.5" fill="#5A6472" text-anchor="middle">cabeceras de seguridad -&gt; rate limit -&gt; autenticacion -&gt; evaluacion de riesgo</text>
+<rect x="600" y="325" width="325" height="148" fill="#FFFFFF" stroke="#4472A8" stroke-width="1.4" rx="4"/>
+<text x="762.5" y="349" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="14" font-weight="600" fill="#1F3864" text-anchor="middle">Motor de reglas deterministas</text>
+<text x="762.5" y="368" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472" text-anchor="middle">RF-M2</text>
+<text x="762.5" y="384" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472" text-anchor="middle"></text>
+<text x="762.5" y="400" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472" text-anchor="middle">Geofencing · Time-Window</text>
+<text x="762.5" y="416" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472" text-anchor="middle">Fingerprint · Viaje Imposible</text>
+<text x="762.5" y="432" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472" text-anchor="middle">-&gt; Policy Score</text>
+<rect x="955" y="325" width="325" height="148" fill="#FFFFFF" stroke="#4472A8" stroke-width="1.4" rx="4"/>
+<text x="1117.5" y="349" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="14" font-weight="600" fill="#1F3864" text-anchor="middle">Deteccion de anomalias</text>
+<text x="1117.5" y="368" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472" text-anchor="middle">RF-M3 · ML.NET RandomizedPCA</text>
+<text x="1117.5" y="384" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472" text-anchor="middle"></text>
+<text x="1117.5" y="400" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472" text-anchor="middle">hora sin/cos, frecuencia,</text>
+<text x="1117.5" y="416" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472" text-anchor="middle">diversidad de endpoints</text>
+<text x="1117.5" y="432" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472" text-anchor="middle">-&gt; Anomaly Score</text>
+<text x="940" y="497" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11.5" font-weight="400" fill="#5A6472" text-anchor="middle" font-style="italic">ambas capas se evaluan en paralelo: el coste es el maximo, no la suma</text>
+<rect x="600" y="515" width="680" height="100" fill="#DCE6F1" stroke="#4472A8" stroke-width="1.4" rx="4"/>
+<text x="940.0" y="539" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="14" font-weight="600" fill="#1F3864" text-anchor="middle">Consolidador de veredicto (§9.1)</text>
+<text x="940.0" y="558" font-family="'Consolas', 'Cascadia Mono', monospace" font-size="10.5" fill="#5A6472" text-anchor="middle">risk = Wp*policy + Wa*anomaly + penalizacion de arranque en frio   -&gt;   0-100</text>
+<text x="940.0" y="574" font-family="'Consolas', 'Cascadia Mono', monospace" font-size="10.5" fill="#5A6472" text-anchor="middle"></text>
+<text x="940.0" y="590" font-family="'Consolas', 'Cascadia Mono', monospace" font-size="10.5" fill="#5A6472" text-anchor="middle">ALLOW        CHALLENGE (step-up TOTP)        BLOCK</text>
+<rect x="600" y="645" width="680" height="76" fill="#F2F6FB" stroke="#4472A8" stroke-width="1.4" rx="4"/>
+<text x="940.0" y="669" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="14" font-weight="600" fill="#1F3864" text-anchor="middle">Canal de auditoria asincrono</text>
+<text x="940.0" y="688" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="10.5" fill="#5A6472" text-anchor="middle">System.Threading.Channels · fire-and-forget:</text>
+<text x="940.0" y="704" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="10.5" fill="#5A6472" text-anchor="middle">la respuesta no espera la escritura, para preservar el presupuesto de latencia</text>
+<rect x="1500" y="215" width="540" height="180" fill="#E6F3EB" stroke="#2E7D4F" stroke-width="1.4" rx="4"/>
+<text x="1770.0" y="239" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="14" font-weight="600" fill="#2E7D4F" text-anchor="middle">Servicios protegidos (upstreams)</text>
+<text x="1770.0" y="258" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="10.5" fill="#5A6472" text-anchor="middle"></text>
+<text x="1770.0" y="274" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="10.5" fill="#5A6472" text-anchor="middle">Ningun servicio interno es alcanzable</text>
+<text x="1770.0" y="290" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="10.5" fill="#5A6472" text-anchor="middle">sin atravesar la pasarela.</text>
+<text x="1770.0" y="306" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="10.5" fill="#5A6472" text-anchor="middle"></text>
+<text x="1770.0" y="322" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="10.5" fill="#5A6472" text-anchor="middle">Rutas hidratadas dinamicamente desde protected_services</text>
+<rect x="1500" y="450" width="540" height="110" fill="#F2F6FB" stroke="#4472A8" stroke-width="1.4" rx="4"/>
+<text x="1770.0" y="474" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="14" font-weight="600" fill="#1F3864" text-anchor="middle">Servicio de geolocalizacion IP</text>
+<text x="1770.0" y="493" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="10.5" fill="#5A6472" text-anchor="middle">Externo. Ante fallo se omite la regla de Viaje</text>
+<text x="1770.0" y="509" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="10.5" fill="#5A6472" text-anchor="middle">Imposible y sube el Policy Score base (RF-M9).</text>
+<rect x="60" y="960" width="380" height="130" fill="#FFFFFF" stroke="#4472A8" stroke-width="1.4" rx="4"/>
+<text x="250.0" y="984" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="14" font-weight="600" fill="#1F3864" text-anchor="middle">PostgreSQL</text>
+<text x="250.0" y="1003" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472" text-anchor="middle">10 entidades: identidad,</text>
+<text x="250.0" y="1019" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472" text-anchor="middle">RBAC, politicas, perfiles</text>
+<text x="250.0" y="1035" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472" text-anchor="middle">y auditoria inmutable</text>
+<rect x="460" y="960" width="380" height="130" fill="#FFFFFF" stroke="#4472A8" stroke-width="1.4" rx="4"/>
+<text x="650.0" y="984" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="14" font-weight="600" fill="#1F3864" text-anchor="middle">Redis</text>
+<text x="650.0" y="1003" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472" text-anchor="middle">Sesiones, lista negra,</text>
+<text x="650.0" y="1019" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472" text-anchor="middle">cache de perfil, huellas,</text>
+<text x="650.0" y="1035" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472" text-anchor="middle">rate limit y step-up</text>
+<rect x="860" y="960" width="380" height="130" fill="#FFFFFF" stroke="#4472A8" stroke-width="1.4" rx="4"/>
+<text x="1050.0" y="984" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="14" font-weight="600" fill="#1F3864" text-anchor="middle">Keycloak</text>
+<text x="1050.0" y="1003" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472" text-anchor="middle">IdP de administradores</text>
+<text x="1050.0" y="1019" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472" text-anchor="middle">(OIDC + PKCE). Realm</text>
+<text x="1050.0" y="1035" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472" text-anchor="middle">versionado e importado</text>
+<rect x="1260" y="960" width="380" height="130" fill="#FFFFFF" stroke="#4472A8" stroke-width="1.4" rx="4"/>
+<text x="1450.0" y="984" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="14" font-weight="600" fill="#1F3864" text-anchor="middle">Azure Key Vault</text>
+<text x="1450.0" y="1003" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472" text-anchor="middle">Cadenas de conexion,</text>
+<text x="1450.0" y="1019" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472" text-anchor="middle">clave de firma del JWT</text>
+<text x="1450.0" y="1035" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472" text-anchor="middle">y del secreto TOTP</text>
+<rect x="1660" y="960" width="380" height="130" fill="#FFFFFF" stroke="#4472A8" stroke-width="1.4" rx="4"/>
+<text x="1850.0" y="984" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="14" font-weight="600" fill="#1F3864" text-anchor="middle">Observabilidad</text>
+<text x="1850.0" y="1003" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472" text-anchor="middle">OpenTelemetry -&gt; Grafana,</text>
+<text x="1850.0" y="1019" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" fill="#5A6472" text-anchor="middle">Loki (logs) y Tempo (trazas)</text>
+<path d="M 380 250 L 600 250" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow-5B7A9E)"/>
+<text x="490" y="241" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" font-weight="400" text-anchor="middle" stroke="#FFFFFF" stroke-width="4" paint-order="stroke" fill="#5A6472">peticion HTTPS</text>
+<path d="M 1280 253 L 1500 253" fill="none" stroke="#2E7D4F" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrow-2E7D4F)"/>
+<text x="1390" y="244" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" font-weight="400" text-anchor="middle" stroke="#FFFFFF" stroke-width="4" paint-order="stroke" fill="#2E7D4F">solo tras ALLOW</text>
+<path d="M 1280 399 L 1400 399 L 1400 505 L 1500 505" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-dasharray="6 4" stroke-linejoin="round" marker-end="url(#arrow-5B7A9E)"/>
+<text x="1400" y="470" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" font-weight="400" text-anchor="middle" stroke="#FFFFFF" stroke-width="4" paint-order="stroke" fill="#5A6472">consulta geo</text>
+<path d="M 220 490 L 220 550" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-dasharray="6 4" stroke-linejoin="round" marker-end="url(#arrow-5B7A9E)"/>
+<path d="M 220 660 L 220 720" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow-5B7A9E)"/>
+<text x="232" y="695" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11" font-weight="400" text-anchor="start" stroke="#FFFFFF" stroke-width="4" paint-order="stroke" fill="#5A6472">REST + Bearer</text>
+<path d="M 940 750 L 940 880" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M 220 830 L 220 880" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M 250 880 L 1850 880" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M 250 880 L 250 960" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow-5B7A9E)"/>
+<path d="M 650 880 L 650 960" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow-5B7A9E)"/>
+<path d="M 1050 880 L 1050 960" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow-5B7A9E)"/>
+<path d="M 1450 880 L 1450 960" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow-5B7A9E)"/>
+<path d="M 1850 880 L 1850 960" fill="none" stroke="#5B7A9E" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow-5B7A9E)"/>
+<text x="940" y="868" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="11.5" font-weight="400" text-anchor="middle" stroke="#FFFFFF" stroke-width="4" paint-order="stroke" font-style="italic" fill="#5A6472">dependencias de soporte  ·  resueltas por nombre logico (.NET Aspire)</text>
+<rect x="60" y="1150" width="1980" height="100" fill="#F2F6FB" stroke="#4472A8" stroke-width="1.4" rx="4" stroke-dasharray="7 4"/>
+<text x="1050.0" y="1174" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="14" font-weight="600" fill="#1F3864" text-anchor="middle"></text>
+<text x="90" y="1180" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="400" fill="#5A6472" text-anchor="start">Nota. Linea continua: ruta de la peticion y llamadas activas. Linea discontinua: dependencia de soporte o redireccion de identidad. El entorno completo se orquesta con .NET Aspire,</text>
+<text x="90" y="1202" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="400" fill="#5A6472" text-anchor="start">que resuelve las dependencias por nombre logico y publica health checks; el artefacto de despliegue se genera desde sus manifiestos con aspire publish (Figura 9). Las instancias del</text>
+<text x="90" y="1224" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="12" font-weight="400" fill="#5A6472" text-anchor="start">Gateway son stateless —todo el estado compartido reside en Redis y PostgreSQL—, condicion que permite replicarlas horizontalmente sin coordinacion entre replicas.</text>
+</svg>

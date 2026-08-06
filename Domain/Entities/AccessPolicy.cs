@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Domain.Common;
 using Domain.ValueObjects;
 
 namespace Domain.Entities;
@@ -8,7 +9,7 @@ namespace Domain.Entities;
 /// The <see cref="Config"/> JSONB field stores rule-specific parameters
 /// (e.g., allowed countries for GEOFENCE, time windows for TIME_WINDOW).
 /// </summary>
-public class AccessPolicy
+public class AccessPolicy : IAuditableEntity
 {
     public AccessPolicyId Id { get; init; }
 
@@ -37,7 +38,10 @@ public class AccessPolicy
 
     public DateTimeOffset CreatedAt { get; init; } = DateTimeOffset.UtcNow;
 
-    // Navigation Properties 
+    /// <summary>Última modificación de la política (SRS §7.2). Null mientras no se edite.</summary>
+    public DateTimeOffset? UpdatedAt { get; set; }
+
+    // Navigation Properties
 
     public User? CreatedBy { get; set; }
     public ICollection<ServicePolicy> ServicePolicies { get; set; } = new List<ServicePolicy>();

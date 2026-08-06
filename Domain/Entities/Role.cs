@@ -1,3 +1,4 @@
+using Domain.Common;
 using Domain.ValueObjects;
 
 namespace Domain.Entities;
@@ -8,7 +9,7 @@ namespace Domain.Entities;
 /// manageable entities with their own metadata.
 /// New roles can be added, renamed, or described without altering the <c>users</c> table.
 /// </summary>
-public class Role
+public class Role : IAuditableEntity
 {
     public RoleId Id { get; init; }
 
@@ -25,6 +26,9 @@ public class Role
     public bool IsActive { get; set; } = true;
 
     public DateTimeOffset CreatedAt { get; init; } = DateTimeOffset.UtcNow;
+
+    /// <summary>Última modificación del rol (SRS §7.9). Null mientras no se edite.</summary>
+    public DateTimeOffset? UpdatedAt { get; set; }
 
     // ── Navigation Properties ─────────────────────────────────────────────────
 
