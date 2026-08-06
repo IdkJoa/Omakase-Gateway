@@ -20,27 +20,27 @@
 <text x="52" y="385.0" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" fill="#4A5568" text-anchor="middle" transform="rotate(-90 52 385.0)">Milisegundos</text>
 <line x1="150" y1="228.33333333333331" x2="1200" y2="228.33333333333331" stroke="#A02015" stroke-width="3" stroke-dasharray="12 7"/>
 <text x="1200" y="212.33333333333331" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#A02015" text-anchor="end">presupuesto: 50 ms</text>
-<rect x="220" y="513.545" width="140" height="106.45500000000004" fill="#DCE6F1" stroke="#4472A8" stroke-width="2.4" rx="3"/>
-<text x="290.0" y="499.54499999999996" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="middle">13,59</text>
+<rect x="220" y="530.23" width="140" height="89.76999999999998" fill="#F2F6FB" stroke="#4A6D94" stroke-width="2.4" rx="3"/>
+<text x="290.0" y="516.23" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="middle">11,46</text>
 <text x="290.0" y="652" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="middle">media</text>
-<text x="290.0" y="676" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="middle">e2e</text>
-<rect x="428" y="469.0516666666667" width="140" height="150.94833333333332" fill="#DCE6F1" stroke="#4472A8" stroke-width="2.4" rx="3"/>
-<text x="498.0" y="455.0516666666667" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="middle">19,27</text>
-<text x="498.0" y="652" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="middle">p90</text>
-<text x="498.0" y="676" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="middle">e2e</text>
-<rect x="636" y="402.86" width="140" height="217.14" fill="#E3F1E9" stroke="#1F6B45" stroke-width="2.4" rx="3"/>
-<text x="706.0" y="388.86" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="middle">27,72</text>
-<text x="706.0" y="652" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="middle">p95</text>
-<text x="706.0" y="676" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="middle">e2e</text>
-<rect x="844" y="581.6166666666667" width="140" height="38.383333333333326" fill="#F2F6FB" stroke="#4A6D94" stroke-width="2.4" rx="3"/>
-<text x="914.0" y="567.6166666666667" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="middle">4,90</text>
-<text x="914.0" y="652" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="middle">p50</text>
-<text x="914.0" y="676" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="middle">motor</text>
-<rect x="1052" y="467.485" width="140" height="152.515" fill="#F2F6FB" stroke="#4A6D94" stroke-width="2.4" rx="3"/>
-<text x="1122.0" y="453.485" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="middle">19,47</text>
-<text x="1122.0" y="652" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="middle">p95</text>
-<text x="1122.0" y="676" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="middle">motor</text>
+<text x="290.0" y="676" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="middle"></text>
+<rect x="428" y="545.1133333333333" width="140" height="74.88666666666666" fill="#DCE6F1" stroke="#4472A8" stroke-width="2.4" rx="3"/>
+<text x="498.0" y="531.1133333333333" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="middle">9,56</text>
+<text x="498.0" y="652" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="middle">p50</text>
+<text x="498.0" y="676" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="middle">mediana</text>
+<rect x="636" y="505.94666666666666" width="140" height="114.05333333333334" fill="#DCE6F1" stroke="#4472A8" stroke-width="2.4" rx="3"/>
+<text x="706.0" y="491.94666666666666" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="middle">14,56</text>
+<text x="706.0" y="652" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="middle">p90</text>
+<text x="706.0" y="676" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="middle"></text>
+<rect x="844" y="456.90999999999997" width="140" height="163.09000000000003" fill="#E3F1E9" stroke="#1F6B45" stroke-width="2.4" rx="3"/>
+<text x="914.0" y="442.90999999999997" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="middle">20,82</text>
+<text x="914.0" y="652" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="middle">p95</text>
+<text x="914.0" y="676" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="middle">requisito</text>
+<rect x="1052" y="268.44" width="140" height="351.56" fill="#E3F1E9" stroke="#1F6B45" stroke-width="2.4" rx="3"/>
+<text x="1122.0" y="254.44" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="middle">44,88</text>
+<text x="1122.0" y="652" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="middle">p99</text>
+<text x="1122.0" y="676" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="middle"></text>
 <rect x="150" y="690" width="1050" height="84" fill="#F2F6FB" stroke="#4472A8" stroke-width="2" rx="5" stroke-dasharray="8 5"/>
-<text x="180" y="722" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">201.217 evaluaciones · 100 usuarios concurrentes · 558,9 peticiones/s</text>
-<text x="180" y="750" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">«e2e» mide el recorrido completo con k6; «motor», el tiempo propio de la evaluacion</text>
+<text x="180" y="722" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">203.964 evaluaciones · 100 usuarios concurrentes · 566,5 peticiones/s · 0 % de fallos</text>
+<text x="180" y="750" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">Recorrido completo de la peticion: incluso el percentil 99 queda por debajo del presupuesto</text>
 </svg>

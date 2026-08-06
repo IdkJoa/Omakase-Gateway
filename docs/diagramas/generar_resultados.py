@@ -54,11 +54,11 @@ p.append(label(X0 + PW, yb - 16, "presupuesto: 50 ms", size=T_CAJA, color=RED,
                 anchor="end", weight="600"))
 
 barras = [
-    ("media", "e2e", 13.59, FILL_CORE, BORDER),
-    ("p90", "e2e", 19.27, FILL_CORE, BORDER),
-    ("p95", "e2e", 27.72, FILL_GREEN, GREEN),
-    ("p50", "motor", 4.90, FILL_SOFT, LINE),
-    ("p95", "motor", 19.47, FILL_SOFT, LINE),
+    ("media", "", 11.46, FILL_SOFT, LINE),
+    ("p50", "mediana", 9.56, FILL_CORE, BORDER),
+    ("p90", "", 14.56, FILL_CORE, BORDER),
+    ("p95", "requisito", 20.82, FILL_GREEN, GREEN),
+    ("p99", "", 44.88, FILL_GREEN, GREEN),
 ]
 bw, gap = 140, 68
 x = X0 + 70
@@ -73,9 +73,9 @@ for t1, t2, val, fill, stroke in barras:
     x += bw + gap
 
 p.append(box(150, 690, 1050, 84, "", fill=FILL_SOFT, dashed=True))
-p.append(label(180, 722, "201.217 evaluaciones · 100 usuarios concurrentes · 558,9 peticiones/s",
+p.append(label(180, 722, "203.964 evaluaciones · 100 usuarios concurrentes · 566,5 peticiones/s · 0 % de fallos",
                 size=T_CUERPO, anchor="start"))
-p.append(label(180, 750, "«e2e» mide el recorrido completo con k6; «motor», el tiempo propio de la evaluacion",
+p.append(label(180, 750, "Recorrido completo de la peticion: incluso el percentil 99 queda por debajo del presupuesto",
                 size=T_CUERPO, anchor="start"))
 
 svg = canvas(W, H, "Latencia observada frente al presupuesto", "\n".join(p))
