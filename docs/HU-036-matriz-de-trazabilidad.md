@@ -135,15 +135,18 @@ cambio y su medición están en la sección 11 de `HU-034-simulacion-de-ataques.
 |---|---|---|---|
 | Degradación controlada ante fallo de geolocalización | Cumplido | `EvaluateRiskHandler`, incremento de 15 puntos | `DegradationHandlingTests`; 52 evaluaciones observadas en ejecución, todas con puntaje de política de 15,00 y ninguna denegación |
 | Degradación controlada ante fallo del modelo | Cumplido | `EvaluateRiskHandler`, puntaje neutro de 50 | `DegradationHandlingTests` |
-| Escalada a bloqueo si el almacén de step-up no responde | Cumplido | `EvaluateRiskHandler` | `EvaluateRiskHandlerStepUpTests` |
-| **Fail-closed ante caída de Redis o PostgreSQL** | **No implementado** | Rama `feat/HU-031_safe-downgrade`, sin integrar | HU-031 no se completó |
-| **Fallo explícito al arrancar sin Key Vault** | **No implementado** | Misma rama | HU-031 no se completó |
+| Escalada a bloqueo si el almacén de step-up no responde | Cumplido | `EvaluateRiskHandler`, `Infrastructure/Redis/StepUpStore.cs` | `EvaluateRiskHandlerStepUpTests`, `MfaStepUpFailClosedTests` |
+| Fail-closed ante caída de Redis o PostgreSQL | Cumplido | `Infrastructure/Resilience/DependencyCircuitBreaker.cs` y su middleware | `DependencyCircuitBreakerTests`, `DependencyCircuitBreakerMiddlewareTests`, `ResilientRedisServiceTests` |
+| Fallo explícito al arrancar sin Key Vault | Cumplido | `Infrastructure/KeyVault/KeyVaultStartupValidator.cs` | `KeyVaultStartupValidatorTests` |
 
-**Sobre HU-031.** Es el hueco conocido y conviene no disimularlo. El interruptor de circuito
-que devuelve 503 ante la caída de Redis o PostgreSQL, y el validador que impide arrancar sin
-los secretos, están escritos en `feat/HU-031_safe-downgrade` junto con sus pruebas, pero esa
-rama nunca se integró. Mientras no se integre, la política de degradación segura del SRS §9.4
-está cubierta para las dependencias no críticas y no para las críticas.
+**Sobre la degradación segura ante dependencias críticas.** Se cerró con la integración de
+HU-031. El interruptor de circuito abre tras tres fallos consecutivos de Redis o de
+PostgreSQL y el middleware traduce esa apertura en un 503, de modo que la pasarela deniega en
+vez de conceder sin verificar. El acceso a Redis pasa por un decorador que enruta cada
+operación a través del interruptor, sin modificar el servicio original. En el arranque, el
+validador de Key Vault comprueba que la clave de firma exista y sea utilizable, y aborta el
+inicio si falta, si es un marcador de posición o si el proveedor no responde; en desarrollo,
+sin URI configurada, la validación se omite deliberadamente.
 
 ---
 
@@ -238,7 +241,6 @@ Se declara aquí para que la matriz no dé una impresión de cobertura total.
 | Elemento | Historia | Situación |
 |---|---|---|
 | El panel de Angular no lo levanta `aspire run` | HU-036 | Vive en otro repositorio; el README documenta cómo arrancarlo al lado |
-| Fail-closed ante dependencias críticas | HU-031 | Implementado en rama, sin integrar |
 | Suite de pruebas de integración extremo a extremo | HU-039 | No se creó el proyecto de pruebas de integración |
 | Pruebas de aceptación de usuario | HU-040 | No se ejecutaron sesiones |
 | Manuales de instalación y de usuario | HU-041 | El README cubre la instalación; el manual del panel no se redactó |
