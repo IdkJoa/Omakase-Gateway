@@ -33,10 +33,15 @@ public sealed class RiskEvaluationMiddleware
 {
     /// <summary>
     /// Rutas propias del Gateway que NO se evalúan ni se proxean: endpoints de
-    /// autenticación/MFA (HU-046) y diagnóstico de Aspire. Todo lo demás pasa
-    /// por el motor de riesgo.
+    /// autenticación/MFA (HU-046), diagnóstico de Aspire y el cliente de demostración
+    /// (HU-048). Todo lo demás pasa por el motor de riesgo.
+    /// <para>
+    /// La lista se deriva de <see cref="ProtectedService.ReservedNames"/> para que no pueda
+    /// divergir de los nombres que el CRUD administrativo rechaza: son la misma regla vista
+    /// desde los dos lados.
+    /// </para>
     /// </summary>
-    private static readonly string[] BypassPrefixes = ["/auth", "/health", "/alive", "/openapi"];
+    private static readonly string[] BypassPrefixes = ProtectedService.ReservedPathPrefixes;
 
     /// <summary>
     /// Presupuesto de rendimiento del requisito no funcional: el overhead de evaluación

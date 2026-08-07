@@ -149,92 +149,112 @@ public static class MfaEndpoints
         if (request.ChallengeId == Guid.Empty || string.IsNullOrWhiteSpace(request.Otp))
             return ValidationProblem(http, "challengeId y otp son requeridos.");
 
-        // Desafío vigente (uso único, TTL corto). Expirado → re-emitir (SRS §3.6).
-        var challenge = await challenges.GetAsync(request.ChallengeId);
-        if (challenge is null)
-            return Results.Json(
-                new { errorCode = GatewayErrorCodes.MfaExpired, traceId = http.TraceIdentifier },
-                statusCode: StatusCodes.Status401Unauthorized);
-
-        if (!Guid.TryParse(challenge.UserId, out var userGuid))
-            return Results.Json(
-                new { errorCode = GatewayErrorCodes.MfaInvalid, traceId = http.TraceIdentifier },
-                statusCode: StatusCodes.Status401Unauthorized);
-
-        var userId = Domain.ValueObjects.UserId.From(userGuid);
-        var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId, ct);
-
-        if (user is null || !user.IsActive)
-            return Results.Json(
-                new { errorCode = GatewayErrorCodes.MfaInvalid, traceId = http.TraceIdentifier },
-                statusCode: StatusCodes.Status401Unauthorized);
-
-        var now = DateTimeOffset.UtcNow;
-
-        // Cuenta ya bloqueada → 423 con contexto (SRS §3.6).
-        if (user.LockedUntil is { } locked && locked > now)
-            return AccountLocked(http, locked, now);
-
-        // Rate-limit anti fuerza bruta: el intento se cuenta ANTES de validar.
-        var attemptCount = await attempts.IncrementAsync(challenge.UserId, TimeSpan.FromMinutes(cfg.AttemptWindowMinutes));
-        if (attemptCount > cfg.MaxAttempts)
+        try
         {
-            user.LockedUntil = now.AddMinutes(cfg.LockoutMinutes);
-            user.UpdatedAt = now;
-            await db.SaveChangesAsync(ct);
+            // Desafío vigente (uso único, TTL corto). Expirado → re-emitir (SRS §3.6).
+            var challenge = await challenges.GetAsync(request.ChallengeId);
+            if (challenge is null)
+                return Results.Json(
+                    new { errorCode = GatewayErrorCodes.MfaExpired, traceId = http.TraceIdentifier },
+                    statusCode: StatusCodes.Status401Unauthorized);
 
-            EnqueueMfaAudit(audit, challenge, http, sanitizer, MfaRuleNames.Failed, Verdict.Block,
-                detail: "cuenta bloqueada por exceso de intentos MFA");
+            if (!Guid.TryParse(challenge.UserId, out var userGuid))
+                return Results.Json(
+                    new { errorCode = GatewayErrorCodes.MfaInvalid, traceId = http.TraceIdentifier },
+                    statusCode: StatusCodes.Status401Unauthorized);
 
-            return AccountLocked(http, user.LockedUntil.Value, now);
-        }
+            var userId = Domain.ValueObjects.UserId.From(userGuid);
+            var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId, ct);
 
-        if (!user.MfaEnabled || user.TotpSecret is null)
-        {
-            EnqueueMfaAudit(audit, challenge, http, sanitizer, MfaRuleNames.Failed, Verdict.Block,
-                detail: "cuenta sin TOTP enrolado");
-            return Results.Json(
-                new { errorCode = GatewayErrorCodes.MfaInvalid, traceId = http.TraceIdentifier },
-                statusCode: StatusCodes.Status401Unauthorized);
-        }
+            if (user is null || !user.IsActive)
+                return Results.Json(
+                    new { errorCode = GatewayErrorCodes.MfaInvalid, traceId = http.TraceIdentifier },
+                    statusCode: StatusCodes.Status401Unauthorized);
 
-        var secret = TryUnprotect(protector, user.TotpSecret, logger);
-        if (secret is null || !totp.ValidateCode(secret, request.Otp, now))
-        {
-            // AC HU-046: al quinto intento fallido la cuenta se bloquea (HTTP 423)
-            // y cada intento se registra como MFA_FAILED.
-            if (attemptCount >= cfg.MaxAttempts)
+            var now = DateTimeOffset.UtcNow;
+
+            // Cuenta ya bloqueada → 423 con contexto (SRS §3.6).
+            if (user.LockedUntil is { } locked && locked > now)
+                return AccountLocked(http, locked, now);
+
+            // Rate-limit anti fuerza bruta: el intento se cuenta ANTES de validar.
+            var attemptCount = await attempts.IncrementAsync(challenge.UserId, TimeSpan.FromMinutes(cfg.AttemptWindowMinutes));
+            if (attemptCount > cfg.MaxAttempts)
             {
                 user.LockedUntil = now.AddMinutes(cfg.LockoutMinutes);
                 user.UpdatedAt = now;
                 await db.SaveChangesAsync(ct);
 
                 EnqueueMfaAudit(audit, challenge, http, sanitizer, MfaRuleNames.Failed, Verdict.Block,
-                    detail: $"cuenta bloqueada al intento MFA fallido nº {attemptCount}");
+                    detail: "cuenta bloqueada por exceso de intentos MFA");
 
                 return AccountLocked(http, user.LockedUntil.Value, now);
             }
 
-            EnqueueMfaAudit(audit, challenge, http, sanitizer, MfaRuleNames.Failed, Verdict.Block,
-                detail: "OTP inválido");
-            return Results.Json(
-                new { errorCode = GatewayErrorCodes.MfaInvalid, traceId = http.TraceIdentifier },
-                statusCode: StatusCodes.Status401Unauthorized);
+            if (!user.MfaEnabled || user.TotpSecret is null)
+            {
+                EnqueueMfaAudit(audit, challenge, http, sanitizer, MfaRuleNames.Failed, Verdict.Block,
+                    detail: "cuenta sin TOTP enrolado");
+                return Results.Json(
+                    new { errorCode = GatewayErrorCodes.MfaInvalid, traceId = http.TraceIdentifier },
+                    statusCode: StatusCodes.Status401Unauthorized);
+            }
+
+            var secret = TryUnprotect(protector, user.TotpSecret, logger);
+            if (secret is null || !totp.ValidateCode(secret, request.Otp, now))
+            {
+                // AC HU-046: al quinto intento fallido la cuenta se bloquea (HTTP 423)
+                // y cada intento se registra como MFA_FAILED.
+                if (attemptCount >= cfg.MaxAttempts)
+                {
+                    user.LockedUntil = now.AddMinutes(cfg.LockoutMinutes);
+                    user.UpdatedAt = now;
+                    await db.SaveChangesAsync(ct);
+
+                    EnqueueMfaAudit(audit, challenge, http, sanitizer, MfaRuleNames.Failed, Verdict.Block,
+                        detail: $"cuenta bloqueada al intento MFA fallido nº {attemptCount}");
+
+                    return AccountLocked(http, user.LockedUntil.Value, now);
+                }
+
+                EnqueueMfaAudit(audit, challenge, http, sanitizer, MfaRuleNames.Failed, Verdict.Block,
+                    detail: "OTP inválido");
+                return Results.Json(
+                    new { errorCode = GatewayErrorCodes.MfaInvalid, traceId = http.TraceIdentifier },
+                    statusCode: StatusCodes.Status401Unauthorized);
+            }
+
+            // Éxito: uso único del desafío, reset del contador y apertura de la ventana de step-up
+            // ligada a la huella del dispositivo que originó el desafío (SRS §3.6).
+            await challenges.RemoveAsync(request.ChallengeId);
+            await attempts.ResetAsync(challenge.UserId);
+            await stepUps.SetAsync(
+                challenge.UserId,
+                new StepUpData(challenge.FingerprintHash, now),
+                TimeSpan.FromMinutes(cfg.StepUpTtlMinutes));
+
+            EnqueueMfaAudit(audit, challenge, http, sanitizer, MfaRuleNames.Verified, Verdict.Allow,
+                detail: "step-up TOTP verificado");
+
+            return Results.Ok(new { status = "verified" });
         }
+        catch (Exception ex) when (ex is Polly.CircuitBreaker.BrokenCircuitException or StackExchange.Redis.RedisException or TimeoutException or System.Net.Sockets.SocketException)
+        {
+            logger.LogCritical(ex,
+                "[FailClosed] Error crítico en Redis al verificar el desafío Step-Up MFA (T-107). ChallengeId={ChallengeId}",
+                request.ChallengeId);
 
-        // Éxito: uso único del desafío, reset del contador y apertura de la ventana de step-up
-        // ligada a la huella del dispositivo que originó el desafío (SRS §3.6).
-        await challenges.RemoveAsync(request.ChallengeId);
-        await attempts.ResetAsync(challenge.UserId);
-        await stepUps.SetAsync(
-            challenge.UserId,
-            new StepUpData(challenge.FingerprintHash, now),
-            TimeSpan.FromMinutes(cfg.StepUpTtlMinutes));
+            System.Diagnostics.Activity.Current?.AddEvent(new System.Diagnostics.ActivityEvent("MfaStepUp_FailClosed_503"));
 
-        EnqueueMfaAudit(audit, challenge, http, sanitizer, MfaRuleNames.Verified, Verdict.Allow,
-            detail: "step-up TOTP verificado");
-
-        return Results.Ok(new { status = "verified" });
+            return Results.Json(
+                new
+                {
+                    errorCode = GatewayErrorCodes.ServiceUnavailable,
+                    message = "El servicio de autenticación MFA no está disponible debido a fallas en dependencias críticas (Fail-Closed).",
+                    traceId = http.TraceIdentifier
+                },
+                statusCode: StatusCodes.Status503ServiceUnavailable);
+        }
     }
 
     /// <summary>

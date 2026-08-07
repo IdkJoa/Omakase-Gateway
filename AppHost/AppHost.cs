@@ -37,10 +37,21 @@ var otelCollector = builder.AddContainer("otel-collector", "otel/opentelemetry-c
 var loki = builder.AddContainer("loki", "grafana/loki")
     .WithHttpEndpoint(port: 3100, targetPort: 3100, name: "http");
 
+// Credenciales explícitas y acceso anónimo de solo lectura (HU-036).
+// Sin esto Grafana arranca con admin/admin y exige cambiar la contraseña en el primer
+// inicio de sesión: quien siga el README para revisar el panel de latencia se queda en la
+// pantalla de cambio de credenciales, y el dato que venía a ver no aparece por ninguna parte.
+// El rol anónimo se fija en Viewer, de modo que se puede consultar sin entrar pero no editar.
+// Es orquestación del entorno de desarrollo; el despliegue real no usa este AppHost.
 builder.AddContainer("grafana", "grafana/grafana")
     .WithHttpEndpoint(port: 3000, targetPort: 3000)
     .WithBindMount("./config/grafana/provisioning", "/etc/grafana/provisioning")
     .WithBindMount("./config/grafana/dashboards", "/etc/grafana/dashboards")
+    .WithEnvironment("GF_SECURITY_ADMIN_USER", "admin")
+    .WithEnvironment("GF_SECURITY_ADMIN_PASSWORD", "omakase")
+    .WithEnvironment("GF_AUTH_ANONYMOUS_ENABLED", "true")
+    .WithEnvironment("GF_AUTH_ANONYMOUS_ORG_ROLE", "Viewer")
+    .WithEnvironment("GF_USERS_ALLOW_SIGN_UP", "false")
     .WaitFor(tempo)
     .WaitFor(loki);
 

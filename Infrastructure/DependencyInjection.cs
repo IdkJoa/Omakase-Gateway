@@ -6,9 +6,11 @@ using Application.Common.Security;
 using Application.Features.Auth;
 using Infrastructure.AnomalyDetection;
 using Infrastructure.GeoLocation;
+using Infrastructure.KeyVault;
 using Infrastructure.Persistence;
 using Infrastructure.Persistence.Seeding;
 using Infrastructure.Redis;
+using Infrastructure.Resilience;
 using Infrastructure.Security;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -38,11 +40,22 @@ public static class DependencyInjection
     public static IServiceCollection AddInfrastructure(
         this IServiceCollection services)
     {
-        // HU-006
+        // HU-006 y HU-036 / T-077.
+        // El orden de registro es el orden de ejecución: OmakaseDbSeeder deja la configuración
+        // del motor, los roles y el administrador, de los que depende el material de
+        // demostración (access_policies.created_by, entre otros). DemoDataSeeder además se
+        // autoprotege y no hace nada si esa base no está.
         services.AddScoped<IDbSeeder, OmakaseDbSeeder>();
+        services.AddScoped<IDbSeeder, DemoDataSeeder>();
 
-        // HU-005 & T-012: Registro del servicio unificado de Redis
-        services.AddSingleton<IRedisService, RedisService>();
+        // HU-031 & T-067: Circuit Breaker para dependencias críticas (Redis & PostgreSQL)
+        services.AddSingleton<IDependencyCircuitBreaker, DependencyCircuitBreaker>();
+
+        // HU-005, T-012 & T-067: Registro de Redis protegido por Circuit Breaker (Decorador)
+        services.AddSingleton<RedisService>();
+        services.AddSingleton<IRedisService>(sp => new ResilientRedisService(
+            sp.GetRequiredService<RedisService>(),
+            sp.GetRequiredService<IDependencyCircuitBreaker>()));
 
         // HU-011 & T-021: GeoLocation (HTTP + caché en memoria, timeout -> fail-safe).
         // Config (URL/timeout) vía options pattern (GeoLocationOptions), no hardcode.
@@ -129,7 +142,11 @@ public static class DependencyInjection
                 sp.GetRequiredService<UserProfileStore>()));
         services.AddScoped<IAnomalyDetector, RandomizedPcaAnomalyDetector>();
 
-        // HU-017: services.AddSingleton<ISecretProvider, KeyVaultSecretProvider>();
+        // HU-017 & T-068: Registro de Azure Key Vault y Validador de Startup (HU-031)
+        services.AddOptions<KeyVaultOptions>()
+            .BindConfiguration(KeyVaultOptions.SectionName);
+        services.AddSingleton<ISecretProvider, KeyVaultSecretProvider>();
+        services.AddSingleton<KeyVaultStartupValidator>();
 
         services.AddScoped<IGatewayTokenService, GatewayTokenService>();
         services.AddScoped<ILoginService, LoginService>();
