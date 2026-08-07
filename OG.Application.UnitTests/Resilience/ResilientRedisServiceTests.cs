@@ -21,8 +21,8 @@ public class ResilientRedisServiceTests
 
         // Configurar el mock del CircuitBreaker para ejecutar la función provista
         _circuitBreakerMock
-            .ExecuteRedisAsync(Arg.Any<Func<Task<SessionData?>>>(), Arg.Any<CancellationToken>())
-            .Returns(callInfo => callInfo.Arg<Func<Task<SessionData?>>>()());
+            .ExecuteRedisAsync(Arg.Any<Func<Task<string?>>>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo => callInfo.Arg<Func<Task<string?>>>()());
 
         _circuitBreakerMock
             .ExecuteRedisAsync(Arg.Any<Func<Task<bool>>>(), Arg.Any<CancellationToken>())
@@ -36,19 +36,19 @@ public class ResilientRedisServiceTests
     }
 
     [Fact]
-    public async Task GetSessionAsync_ShouldExecuteThroughCircuitBreaker()
+    public async Task GetCachedProfileAsync_ShouldExecuteThroughCircuitBreaker()
     {
         // Arrange
-        var expectedSession = new SessionData("jti_123", "client", DateTimeOffset.UtcNow);
-        _innerMock.GetSessionAsync("user_1").Returns(expectedSession);
+        var expectedProfile = "{\"score\": 12}";
+        _innerMock.GetCachedProfileAsync("user_1").Returns(expectedProfile);
 
         // Act
-        var result = await _resilientRedis.GetSessionAsync("user_1");
+        var result = await _resilientRedis.GetCachedProfileAsync("user_1");
 
         // Assert
-        Assert.Equal(expectedSession, result);
-        await _circuitBreakerMock.Received(1).ExecuteRedisAsync(Arg.Any<Func<Task<SessionData?>>>(), Arg.Any<CancellationToken>());
-        await _innerMock.Received(1).GetSessionAsync("user_1");
+        Assert.Equal(expectedProfile, result);
+        await _circuitBreakerMock.Received(1).ExecuteRedisAsync(Arg.Any<Func<Task<string?>>>(), Arg.Any<CancellationToken>());
+        await _innerMock.Received(1).GetCachedProfileAsync("user_1");
     }
 
     [Fact]

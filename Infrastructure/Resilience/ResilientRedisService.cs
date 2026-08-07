@@ -17,20 +17,6 @@ public sealed class ResilientRedisService : IRedisService
         _circuitBreaker = circuitBreaker;
     }
 
-    public Task SetSessionAsync(string userId, string jti, string userType, TimeSpan ttl)
-    {
-        return _circuitBreaker.ExecuteRedisAsync(() => _inner.SetSessionAsync(userId, jti, userType, ttl));
-    }
-
-    public Task<SessionData?> GetSessionAsync(string userId)
-    {
-        return _circuitBreaker.ExecuteRedisAsync(() => _inner.GetSessionAsync(userId));
-    }
-
-    public Task InvalidateSessionAsync(string userId)
-    {
-        return _circuitBreaker.ExecuteRedisAsync(() => _inner.InvalidateSessionAsync(userId));
-    }
 
     public Task AddToBlacklistAsync(string jti, TimeSpan expiration)
     {
@@ -67,10 +53,6 @@ public sealed class ResilientRedisService : IRedisService
         return _circuitBreaker.ExecuteRedisAsync(() => _inner.IncrementRateLimitAsync(ip, window));
     }
 
-    public Task<long> GetRateLimitAsync(string ip)
-    {
-        return _circuitBreaker.ExecuteRedisAsync(() => _inner.GetRateLimitAsync(ip));
-    }
 
     public Task PublishAsync(string channel, string message)
     {
