@@ -95,8 +95,13 @@ function construirPeticion() {
   // Accept-Encoding. De los tres, Accept-Language es el único que el navegador permite
   // fijar desde fetch, así que cambiarlo basta para que la petición llegue con una huella
   // distinta y el sistema la trate como un dispositivo que no reconoce.
+  //
+  // El valor se genera distinto en cada envío a propósito. La regla, además de puntuar el
+  // dispositivo desconocido, lo registra como conocido, de modo que repetir la misma
+  // cabecera dejaría de provocar el desafío a partir del segundo intento. Con un valor
+  // nuevo cada vez, la demostración es repetible tantas veces como haga falta.
   if ($("dispositivo-desconocido").checked) {
-    cabeceras["Accept-Language"] = "qq-ZZ";
+    cabeceras["Accept-Language"] = "qq-ZZ-" + Math.random().toString(36).slice(2, 10);
   }
 
   return { ruta: $("servicio").value, cabeceras };
