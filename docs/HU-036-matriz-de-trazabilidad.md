@@ -158,6 +158,79 @@ está cubierta para las dependencias no críticas y no para las críticas.
 
 ---
 
+## Resultados de las pruebas de estrés
+
+Corrida del 6 de agosto de 2026: cien usuarios virtuales concurrentes durante cinco minutos
+contra un servicio de destino local, con el límite de tasa elevado para que la carga alcanzara
+el motor en lugar de rebotar en el limitador.
+
+| Métrica | Valor |
+|---|---|
+| Evaluaciones | 203.964 |
+| Rendimiento sostenido | 566,5 peticiones por segundo |
+| Percentil 50 | 9,56 ms |
+| Percentil 90 | 14,56 ms |
+| Percentil 95 | 20,82 ms |
+| Percentil 99 | 44,88 ms |
+| Peticiones fallidas | 0,00 % |
+| Eventos de auditoría descartados | 0 |
+
+El percentil 99 queda por debajo del presupuesto de 50 ms, de modo que el requisito se cumple
+para el 99 % del tráfico y no solo para el 95 % exigido. El procedimiento completo está en
+[`load-tests/README.md`](../load-tests/README.md).
+
+La primera corrida instrumentada incumplió el presupuesto con un percentil 95 de 103,56 ms. El
+desglose por fase mostró que el 83 % del tiempo se consumía en entrada y salida, mientras que
+la inferencia del modelo representaba el 16,7 %. Corregidas las lecturas repetidas mediante
+cachés de vigencia breve y una memorización del perfil por petición, la latencia bajó un orden
+de magnitud. El análisis está en la sección 10.6 de
+[`HU-034-simulacion-de-ataques.md`](HU-034-simulacion-de-ataques.md).
+
+## Resultados de las simulaciones de ataque
+
+Ejecución controlada de los cinco escenarios del banco de casos etiquetados, con la
+configuración calibrada.
+
+| Escenario | Regla que debía disparar | Resultado |
+|---|---|---|
+| Viaje imposible entre dos países en pocos minutos | Viaje imposible | Detectado |
+| Ráfaga en horario atípico | Anomalía de conducta | Detectado |
+| Huella de dispositivo desconocida | Huella de dispositivo | Detectado |
+| Fuerza bruta de credenciales | Bloqueo de cuenta | Detectado |
+| Combinación de factores | Varias | Detectado |
+
+| Métrica | Valor |
+|---|---|
+| Verdaderos positivos | 6 de 6 |
+| Falsos negativos | 0 |
+| Falsos positivos | 0 de 3 casos legítimos |
+| Exactitud del veredicto | 9 de 9 |
+
+Estas cifras corresponden a una ejecución controlada por escenario y no a un muestreo
+poblacional: con nueve casos no sostienen una afirmación sobre población, sino que evidencian
+que el mecanismo discrimina en los casos previstos y sustentan la calibración adoptada. El
+detalle de cada escenario, con sus precondiciones y sus veredictos, está en
+[`HU-034-simulacion-de-ataques.md`](HU-034-simulacion-de-ataques.md).
+
+## Evidencia del flujo de confianza cero de extremo a extremo
+
+Recorrido completo registrado en `audit_logs` durante la validación del cliente de
+demostración, que es la prueba de que las tres decisiones del motor funcionan en conjunto.
+
+| Evaluación | Puntaje | Veredicto | Regla registrada |
+|---|---|---|---|
+| Petición desde país denegado | 73,75 | BLOCK | `GEOFENCE` |
+| Petición desde dispositivo no reconocido | 35,50 | CHALLENGE | `FINGERPRINT` |
+| Verificación de segundo factor fallida | — | — | `MFA_FAILED` |
+| Reintento tras verificar el segundo factor | 35,50 | ALLOW | `MFA_SATISFIED` |
+
+Las dos últimas filas merecen atención: **el mismo puntaje de 35,50 produjo desafío la primera
+vez y acceso la segunda**, porque la ventana de step-up estaba vigente. Es la demostración de
+que el segundo factor no reduce el riesgo sino que autoriza continuar pese a él, de forma
+acotada en el tiempo y auditada, tal como establece el SRS §9.9.
+
+---
+
 ## Trabajo del ciclo que no se completó
 
 Se declara aquí para que la matriz no dé una impresión de cobertura total.
