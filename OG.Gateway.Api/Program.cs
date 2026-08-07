@@ -2,6 +2,7 @@ using Application;
 using Application.Middlewares;
 using Infrastructure;
 using Infrastructure.Security;
+using Infrastructure.Resilience;
 using Infrastructure.Persistence;
 using Infrastructure.Persistence.Seeding;
 using Microsoft.EntityFrameworkCore;
@@ -39,11 +40,17 @@ builder.Services.AddGatewayApiConfiguration(builder.Configuration);
 
 var app = builder.Build();
 
+// HU-031 & T-068: Validación estricta de secretos en Azure Key Vault durante el inicio (Fail-Closed)
+await app.ValidateKeyVaultOnStartupAsync();
+
 // ── Middleware Pipeline ────────────────────────────────────────────────────────
 app.UseForwardedHeaders();
 
 app.UseCors(ApiExtensions.FrontendCorsPolicy);
 app.UseMiddleware<SecurityHeadersMiddleware>();
+
+// HU-031 & T-067: Middleware de resiliencia Fail-Closed (503 ante fallos de Redis / PostgreSQL)
+app.UseMiddleware<DependencyCircuitBreakerMiddleware>();
 
 app.UseMiddleware<RateLimitMiddleware>();
 
