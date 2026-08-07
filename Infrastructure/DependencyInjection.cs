@@ -38,8 +38,13 @@ public static class DependencyInjection
     public static IServiceCollection AddInfrastructure(
         this IServiceCollection services)
     {
-        // HU-006
+        // HU-006 y HU-036 / T-077.
+        // El orden de registro es el orden de ejecución: OmakaseDbSeeder deja la configuración
+        // del motor, los roles y el administrador, de los que depende el material de
+        // demostración (access_policies.created_by, entre otros). DemoDataSeeder además se
+        // autoprotege y no hace nada si esa base no está.
         services.AddScoped<IDbSeeder, OmakaseDbSeeder>();
+        services.AddScoped<IDbSeeder, DemoDataSeeder>();
 
         // HU-005 & T-012: Registro del servicio unificado de Redis
         services.AddSingleton<IRedisService, RedisService>();
