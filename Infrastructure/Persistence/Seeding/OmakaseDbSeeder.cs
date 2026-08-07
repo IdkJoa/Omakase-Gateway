@@ -53,6 +53,20 @@ public sealed class OmakaseDbSeeder : IDbSeeder
         await _db.SaveChangesAsync(cancellationToken);
     }
 
+    /// <summary>
+    /// Siembra la configuración del motor con los valores CALIBRADOS en HU-035, no con los
+    /// de diseño inicial.
+    /// <para>
+    /// Importa la distinción. Los valores originales (0.6/0.4, umbrales 40 y 75) se fijaron
+    /// antes de tener datos: con ellos el eje de anomalía topa en 40 y no puede accionar por
+    /// sí solo, y una violación determinista al 100 % con anomalía neutra da exactamente
+    /// 75.00 —el borde— por lo que quedaba degradada a desafío en vez de denegar. La
+    /// calibración empírica igualó los pesos y bajó los umbrales a 33 y 70; es lo que reporta
+    /// el Capítulo IV de la tesis y lo que debe encontrar quien levante el entorno, porque un
+    /// motor sembrado sin calibrar no reproduce los resultados publicados.
+    /// </para>
+    /// <para>Siguen siendo recalibrables desde el Dashboard sin redesplegar (SRS §9.1).</para>
+    /// </summary>
     private async Task SeedRiskScoreConfigAsync(CancellationToken ct)
     {
         if (await _db.RiskScoreConfigs.AnyAsync(ct)) return;
@@ -60,12 +74,12 @@ public sealed class OmakaseDbSeeder : IDbSeeder
         _db.RiskScoreConfigs.Add(new RiskScoreConfig
         {
             Id                 = RiskScoreConfigId.New(),
-            PolicyWeight       = 0.6m,
-            AnomalyWeight      = 0.4m,
+            PolicyWeight       = 0.5m,
+            AnomalyWeight      = 0.5m,
             ColdStartPenalty   = 30m,
             ColdStartN         = 10,
-            ChallengeThreshold = 40m,
-            BlockThreshold     = 75m,
+            ChallengeThreshold = 33m,
+            BlockThreshold     = 70m,
         });
     }
 
