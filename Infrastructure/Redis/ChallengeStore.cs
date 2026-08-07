@@ -2,53 +2,73 @@ using System;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Application.Common.Security.Mfa;
+using Infrastructure.Resilience;
 using StackExchange.Redis;
 
 namespace Infrastructure.Redis;
 
 /// <summary>
-/// Implementación Redis de <see cref="IChallengeStore"/> (HU-046 / T-103).
+/// Implementación Redis de <see cref="IChallengeStore"/> protegida por Circuit Breaker (HU-046 / T-103 / T-107).
 /// Clave <c>challenge:{challengeId}</c> → String JSON con TTL 2–5 min (SRS §7.11.2).
 /// </summary>
 public sealed class ChallengeStore : IChallengeStore
 {
     private readonly IDatabase _db;
+    private readonly IDependencyCircuitBreaker? _circuitBreaker;
 
-    public ChallengeStore(IConnectionMultiplexer redis)
+    public ChallengeStore(IConnectionMultiplexer redis, IDependencyCircuitBreaker? circuitBreaker = null)
     {
         _db = redis.GetDatabase();
+        _circuitBreaker = circuitBreaker;
     }
 
     internal static string GetKey(Guid challengeId) => $"challenge:{challengeId:D}";
 
-    public async Task StoreAsync(Guid challengeId, ChallengeData data, TimeSpan ttl)
+    private Task<T> ExecuteAsync<T>(Func<Task<T>> action)
+    {
+        return _circuitBreaker is not null 
+            ? _circuitBreaker.ExecuteRedisAsync(action) 
+            : action();
+    }
+
+    private Task ExecuteAsync(Func<Task> action)
+    {
+        return _circuitBreaker is not null 
+            ? _circuitBreaker.ExecuteRedisAsync(action) 
+            : action();
+    }
+
+    public Task StoreAsync(Guid challengeId, ChallengeData data, TimeSpan ttl)
     {
         ArgumentNullException.ThrowIfNull(data);
         if (ttl <= TimeSpan.Zero)
             throw new ArgumentOutOfRangeException(nameof(ttl), "El TTL del desafío debe ser positivo.");
 
         var json = JsonSerializer.Serialize(data);
-        await _db.StringSetAsync(GetKey(challengeId), json, ttl);
+        return ExecuteAsync(() => _db.StringSetAsync(GetKey(challengeId), json, ttl));
     }
 
-    public async Task<ChallengeData?> GetAsync(Guid challengeId)
+    public Task<ChallengeData?> GetAsync(Guid challengeId)
     {
-        var value = await _db.StringGetAsync(GetKey(challengeId));
-        if (!value.HasValue)
-            return null;
+        return ExecuteAsync(async () =>
+        {
+            var value = await _db.StringGetAsync(GetKey(challengeId));
+            if (!value.HasValue)
+                return null;
 
-        try
-        {
-            return JsonSerializer.Deserialize<ChallengeData>(value.ToString());
-        }
-        catch (JsonException)
-        {
-            return null;
-        }
+            try
+            {
+                return JsonSerializer.Deserialize<ChallengeData>(value.ToString());
+            }
+            catch (JsonException)
+            {
+                return null;
+            }
+        });
     }
 
-    public async Task RemoveAsync(Guid challengeId)
+    public Task RemoveAsync(Guid challengeId)
     {
-        await _db.KeyDeleteAsync(GetKey(challengeId));
+        return ExecuteAsync(() => _db.KeyDeleteAsync(GetKey(challengeId)));
     }
 }

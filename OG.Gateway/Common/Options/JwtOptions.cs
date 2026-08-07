@@ -10,7 +10,7 @@ public sealed class JwtOptions
     public const string SectionName = "Jwt";
 
     /// <summary>Clave simétrica HS256. Mínimo 32 bytes (256 bits).</summary>
-    public string SecretKey { get; init; } = string.Empty;
+    public string SecretKey { get; set; } = string.Empty;
 
     /// <summary>Emisor (<c>iss</c>) incluido en el token.</summary>
     public string Issuer { get; init; } = "omakase-gateway";
