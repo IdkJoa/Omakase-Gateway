@@ -9,10 +9,28 @@ namespace Domain.Entities;
 /// </summary>
 public class ProtectedService
 {
+    /// <summary>
+    /// Primeros segmentos de ruta que pertenecen al propio Gateway y no pueden nombrar un
+    /// servicio protegido: registrar uno con estos nombres lo dejaría inalcanzable, porque el
+    /// prefijo se resuelve antes de llegar al proxy.
+    /// <para>
+    /// Es también la fuente única de las rutas que el motor de riesgo deja pasar sin evaluar.
+    /// Mantener una segunda lista en el middleware invitaba a que ambas divergieran, y una
+    /// divergencia aquí significa o bien evaluar el endpoint de autenticación (que no tiene
+    /// identidad todavía) o bien dejar sin evaluar algo que sí debía pasar por el motor.
+    /// </para>
+    /// </summary>
     public static readonly HashSet<string> ReservedNames = new(StringComparer.OrdinalIgnoreCase)
     {
-        "auth", "health", "alive", "openapi"
+        "auth", "health", "alive", "openapi", "demo"
     };
+
+    /// <summary>
+    /// <see cref="ReservedNames"/> en forma de prefijo de ruta, para comparar contra
+    /// <c>HttpRequest.Path</c> sin recomponer la cadena en cada petición.
+    /// </summary>
+    public static readonly string[] ReservedPathPrefixes =
+        [.. ReservedNames.Select(name => "/" + name)];
 
     public ProtectedServiceId Id { get; init; }
 

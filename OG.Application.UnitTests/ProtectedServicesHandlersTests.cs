@@ -142,6 +142,7 @@ public class ProtectedServicesHandlersTests : IDisposable
     [InlineData("auth")]
     [InlineData("alive")]
     [InlineData("openapi")]
+    [InlineData("demo")]
     [InlineData("HEALTH")]
     public async Task Create_ShouldFail_WhenNameIsReserved(string reservedName)
     {
@@ -166,6 +167,7 @@ public class ProtectedServicesHandlersTests : IDisposable
     [InlineData("auth")]
     [InlineData("alive")]
     [InlineData("openapi")]
+    [InlineData("demo")]
     public async Task Update_ShouldFail_WhenNameIsReserved(string reservedName)
     {
         // Arrange

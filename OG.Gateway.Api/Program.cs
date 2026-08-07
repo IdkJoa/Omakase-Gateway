@@ -53,6 +53,19 @@ app.UseMiddleware<SecurityHeadersMiddleware>();
 app.UseMiddleware<DependencyCircuitBreakerMiddleware>();
 
 app.UseMiddleware<RateLimitMiddleware>();
+
+// Cliente de demostración (HU-048), servido solo en desarrollo desde wwwroot/demo.
+// Va después del limitador de tasa —no se le exime de esa defensa— y antes de la
+// autenticación, porque la página es pública: quien la abre todavía no tiene sesión.
+// El motor de riesgo no la evalúa: '/demo' es uno de los nombres reservados del Gateway
+// (ProtectedService.ReservedNames), de modo que ni se proxea ni puede registrarse un
+// servicio protegido que lo eclipse.
+if (app.Environment.IsDevelopment())
+{
+    app.UseDefaultFiles();
+    app.UseStaticFiles();
+}
+
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseMiddleware<RiskEvaluationMiddleware>();
@@ -64,8 +77,10 @@ if (app.Environment.IsDevelopment())
     var db = scope.ServiceProvider.GetRequiredService<OmakaseDbContext>();
     await db.Database.MigrateAsync();
 
-    var seeder = scope.ServiceProvider.GetRequiredService<IDbSeeder>();
-    await seeder.SeedAsync();
+    // GetServices y no GetRequiredService: hay más de un sembrador registrado y todos deben
+    // correr, en el orden en que se registraron (Infrastructure.DependencyInjection).
+    foreach (var seeder in scope.ServiceProvider.GetServices<IDbSeeder>())
+        await seeder.SeedAsync();
 }
 
 // ── Endpoints & YARP ──────────────────────────────────────────────────────────
