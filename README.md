@@ -231,6 +231,8 @@ load-tests/          pruebas de carga con k6
 
 | Documento | Contenido |
 |---|---|
+| [Pendientes antes de la defensa](docs/PENDIENTES-PRE-DEFENSA.md) | Lista consolidada de arreglos de backend y frontend, por prioridad |
+| [ADR-001](docs/adr/ADR-001-identidad-de-los-usuarios-cliente.md) | Por qué los usuarios cliente usan token propio y no federación |
 | [Matriz de trazabilidad](docs/HU-036-matriz-de-trazabilidad.md) | Cada requisito obligatorio del SRS con su evidencia y ubicación en el código |
 | [Simulación de ataques y calibración](docs/HU-034-simulacion-de-ataques.md) | Banco de casos etiquetados, escenarios y calibración empírica |
 | [Resultados del capítulo IV](docs/HU-036-resultados-capitulo-4.md) | Mediciones trasladadas al formato de la tesis |
