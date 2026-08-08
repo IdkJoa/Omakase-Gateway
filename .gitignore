@@ -33,6 +33,8 @@ docs/*
 !docs/HU-*.md
 ## T-076 exige el diagrama ER visual: los generadores y sus SVG son entregables.
 !docs/diagramas/
+## Los ADR se citan desde la memoria (Apendice G) y desde el SRS §11: deben viajar con el repo.
+!docs/adr/
 PLANIFICACION_HU.md
 evidencia-*.txt
 

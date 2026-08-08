@@ -241,6 +241,14 @@ Se declara aquí para que la matriz no dé una impresión de cobertura total.
 | Elemento | Historia | Situación |
 |---|---|---|
 | El panel de Angular no lo levanta `aspire run` | HU-036 | Vive en otro repositorio; el README documenta cómo arrancarlo al lado |
-| Suite de pruebas de integración extremo a extremo | HU-039 | No se creó el proyecto de pruebas de integración |
-| Pruebas de aceptación de usuario | HU-040 | No se ejecutaron sesiones |
-| Manuales de instalación y de usuario | HU-041 | El README cubre la instalación; el manual del panel no se redactó |
+| Capturas del panel en funcionamiento | HU-021…HU-027 | No se tomaron; el Apéndice E las sustituye por la descripción textual de cada módulo |
+
+### Cerrado después de la primera versión de esta matriz
+
+| Elemento | Historia | Situación actual |
+|---|---|---|
+| Suite de pruebas de integración extremo a extremo | HU-039 | **Creada.** `OG.IntegrationTests` (PR #54): flujo de autenticación dual, contrato de la API del panel y evaluación de riesgo con auditoría |
+| Pruebas de aceptación de usuario | HU-040 | **Ejecutadas** el 5-ago-2026 con 3 evaluadores. SUS 87,5/100; 3 tareas al 100 % sin asistencia; 5 hallazgos, 2 críticos corregidos. Informe: `Reporte_UAT_OmakaseUI.pdf` (Apéndice F de la memoria) |
+| Manual de usuario del panel | HU-041 | **Redactado.** `Manual_Usuario_Dashboard_Omakase_Security_Gateway.pdf` (Apéndice E). El README sigue cubriendo la instalación (Apéndice D). Ver la advertencia de `HU-036-resultados-capitulo-4.md` §7 antes de adjuntarlo |
+| Degradación fail-closed de Redis y PostgreSQL | HU-031 | **Implementada y probada.** Circuit breaker con Polly, middleware que responde 503, validador de arranque de Key Vault (PR #50). Tabla 5 de la memoria cerrada |
+| Registro de decisión ADR-001 | — | **Escrito.** `docs/adr/ADR-001-identidad-de-los-usuarios-cliente.md` |
