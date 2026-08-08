@@ -46,14 +46,24 @@ superiormente el overhead de evaluación que exige el requisito. Elaboración pr
 > —todas introducidas por decoración, sin modificar las clases existentes—, el percentil 95 bajó a
 > 27,72 ms (−73 %) y el rendimiento subió un 23 % con la misma carga.
 
-### ⚠ Dato que falta capturar
+### ✅ Resuelto: p50 y p99 extremo a extremo
 
-**p50 y p99 extremo a extremo.** El documento de HU-035 registra p90, p95 y media, no p50 ni p99.
-Dos opciones:
+Se volvió a correr k6 y se capturó el resumen completo. La **corrida final** (6-ago-2026,
+203.964 evaluaciones, 100 VU, 566,5 req/s, 0 % de fallos) es la que está en la memoria y
+sustituye a las cifras de esta sección:
 
-1. **Recomendada:** reportar p50 / p90 / p95 (lo medido) y decirlo en la nota.
-2. Volver a correr k6 y capturar el resumen completo (`http_req_duration` trae min, med, p90, p95,
-   max). Ver §5 de este documento.
+| Métrica | Objetivo | Medido |
+|---|---|---|
+| p50 (mediana) | — | **9,56 ms** |
+| p90 | — | 14,56 ms |
+| p95 | ≤ 50 ms | **20,82 ms** ✓ |
+| p99 | — | **44,88 ms** |
+| Media | — | 11,46 ms |
+| Mínimo | — | 6,27 ms |
+
+La Tabla 3 y la Figura 10 de la memoria ya recogen este perfil completo. Las cifras de la tabla
+de arriba (27,72 ms p95 sobre 201.217 evaluaciones) corresponden a la corrida **anterior** y se
+conservan solo como registro histórico de la optimización.
 
 ---
 
@@ -124,34 +134,37 @@ denegar el acceso, pero el SRS §3.9 especifica lo contrario: si Keycloak cae, l
 no pueden autenticarse pero el flujo de client users —que usa JWT propio— sigue operativo. Es
 precisamente el beneficio de la identidad dual, y dejarlo mal contradice el §9.5 del propio SRS.
 
-| Escenario de fallo | Resultado esperado (diseño) | Resultado observado |
+**Estado: cerrada.** Tras el merge de HU-031 (PR #50) todas las filas tienen evidencia. La suite
+completa de `OG.Application.UnitTests` pasa 400/400, de las cuales 17 cubren fail-closed.
+
+| Escenario de fallo | Resultado esperado (diseño) | Evidencia |
 |---|---|---|
-| Indisponibilidad de Redis | Fail-closed: denegar y registrar | *(pendiente de captura)* |
-| Indisponibilidad de PostgreSQL | Fail-closed: denegar y registrar | *(pendiente de captura)* |
-| Indisponibilidad del modelo de ML.NET | Degradación controlada: opera solo la capa determinista; Anomaly Score = 50 | *(pendiente de captura)* |
-| Timeout del servicio de geolocalización | Degradación controlada: se omite Viaje Imposible y sube el Policy Score base | *(pendiente de captura)* |
-| **Indisponibilidad de Keycloak** | **Degradación: los administradores no autentican; el flujo de client users sigue operativo** | *(pendiente de captura)* |
-| Redis no responde en la verificación del step-up | Fail-closed: el desafío no puede completarse → BLOCK | *(pendiente de captura)* |
-| Client user no interactivo con veredicto CHALLENGE | Escala a BLOCK (no puede completar el segundo factor) | *(pendiente de captura)* |
-| Azure Key Vault no responde en el arranque | El sistema no arranca; fallo explícito en logs | *(pendiente de captura)* |
+| Indisponibilidad de Redis | Fail-closed: denegar y registrar | `DependencyCircuitBreakerTests.Redis_ThreeConsecutiveFailures_ShouldOpenCircuit` + `DependencyCircuitBreakerMiddlewareTests` → **503** |
+| Indisponibilidad de PostgreSQL | Fail-closed: denegar y registrar | `DependencyCircuitBreakerTests.Postgres_ThreeConsecutiveFailures_ShouldOpenCircuit` → **503** |
+| Indisponibilidad del modelo de ML.NET | Degradación controlada: opera solo la capa determinista; Anomaly Score = 50 | `DegradationHandlingTests.cs` |
+| Timeout del servicio de geolocalización | Degradación controlada: se omite Viaje Imposible y sube el Policy Score base | `DegradationHandlingTests.cs` + 52 evaluaciones en ejecución, todas con Policy Score 15,00 |
+| **Indisponibilidad de Keycloak** | **Degradación: los administradores no autentican; el flujo de client users sigue operativo** | Verificado por inspección: `AuthenticationExtensions.cs` (JWKS, solo admins) frente a `GatewayTokenService.cs` (JWT propio). **Sin prueba automatizada** — así se declara en la memoria |
+| Redis no responde en la verificación del step-up | Fail-closed: el desafío no puede completarse → BLOCK | `MfaStepUpFailClosedTests` (3 casos: Challenge, StepUp y MfaAttempt stores) |
+| Client user no interactivo con veredicto CHALLENGE | Escala a BLOCK (no puede completar el segundo factor) | `EvaluateRiskHandlerStepUpTests` |
+| Azure Key Vault no responde en el arranque | El sistema no arranca; fallo explícito en logs | `KeyVaultStartupValidatorTests` (401, 404, timeout, secreto con placeholder, secreto < 32 bytes) |
 
 Ver §5 para cómo capturar cada fila.
 
 ---
 
-## 5. Capturas que faltan y de qué historia dependen
+## 5. Evidencia para el Capítulo IV: estado de cierre
 
-| # | Qué capturar | HU | ¿Se puede ya? | Cómo |
+| # | Qué capturar | HU | Estado | Nota |
 |---|---|---|---|---|
-| 1 | Resumen completo de k6 (p50/p99) y Figura 10 (histograma de latencia) | HU-033 | **Sí** | Levantar el entorno, elevar `RateLimiting:Limit`, correr el script de `load-tests/` y capturar la salida de k6 + el panel de Grafana «Latencia de Evaluación» |
-| 2 | Tabla 5, filas de Redis y PostgreSQL | HU-031 | **Sí** | Con el sistema arriba, detener el contenedor y lanzar una petición: capturar el 403 y la fila de `audit_logs` |
-| 3 | Tabla 5, filas de ML.NET y geolocalización | HU-032 | **Sí** | Mismo procedimiento; el comportamiento ya está cubierto por `DegradationHandlingTests.cs`, la captura es la evidencia visual |
-| 4 | Tabla 5, filas de step-up y client no interactivo | HU-046 | **Sí** | Poner `is_interactive = false` a un client user y forzar una evaluación en zona de desafío |
-| 5 | Cobertura de reglas contextuales (variable 4 del §1.6) | HU-037 | **Sí** | Consulta SQL, abajo |
-| 6 | Capturas del Dashboard para el Apéndice B | HU-021…HU-027 | **Sí** | Navegar el panel con los datos semilla |
-| 7 | Resultados de UAT | HU-040 | **No** | Requiere sesiones con usuarios; si no se harán, ajustar el objetivo específico 4 y el Apéndice B |
-| 8 | Manuales de instalación y usuario | HU-041 | **No** | Si no van a existir, quitarlos del Apéndice B |
-| 9 | Demo de extremo a extremo del client user | HU-048 | **No** | El cliente de demostración no está en el repositorio |
+| 1 | Resumen de k6 (p50/p99) y Figura 10 | HU-033 | **Hecho** | Tabla 3 y Figura 10 recogen p50 = 9,56 ms y p99 = 44,88 ms |
+| 2 | Tabla 5, filas de Redis y PostgreSQL | HU-031 | **Hecho** | Cubierto por `DependencyCircuitBreakerTests` y `DependencyCircuitBreakerMiddlewareTests`. Ojo: la respuesta es **503**, no 403 |
+| 3 | Tabla 5, filas de ML.NET y geolocalización | HU-032 | **Hecho** | `DegradationHandlingTests.cs` + 52 evaluaciones observadas en ejecución |
+| 4 | Tabla 5, filas de step-up y client no interactivo | HU-046 | **Hecho** | `MfaStepUpFailClosedTests`, `EvaluateRiskHandlerStepUpTests` |
+| 5 | Cobertura de reglas contextuales (variable 4 del §1.6) | HU-037 | **Hecho** | Consulta SQL abajo; resultados en §4.2.5 de la memoria |
+| 6 | Capturas del Dashboard | HU-021…HU-027 | **No** | No se tomaron. El Apéndice E describe cada módulo por escrito |
+| 7 | Resultados de UAT | HU-040 | **Hecho** | Sesión del 5-ago-2026, SUS 87,5/100. Apéndice F |
+| 8 | Manuales de instalación y usuario | HU-041 | **Hecho** | README (Apéndice D) y manual del panel (Apéndice E), este último con correcciones pendientes: ver §7 |
+| 9 | Demo de extremo a extremo del client user | HU-048 | **Hecho** | Cliente de demostración añadido en `wwwroot/demo` |
 
 ### Consulta para el indicador de cobertura de reglas (§1.6, variable 4)
 
@@ -185,8 +198,8 @@ FROM    audit_logs;
 | Resumen, Abstract, §1.4, §1.5.1 | Listan «límite de tasa» como una de las reglas deterministas del motor. En el SRS y en el código solo hay **cuatro** tipos de política; el límite de tasa es middleware **anterior** al motor | «…y, como control previo a la evaluación, límite de tasa por IP» |
 | Tabla 5, fila 4 | Contradice el SRS §3.9 | Ver §4 de este documento |
 | §4.2.5, Tabla 4 y Figura 11 | Piden AUC y ROC, imposibles con un modelo no supervisado y n = 9 | Ver §2 y §3 |
-| Recomendación 6 y SRS §11 | Citan un «registro de decisión de arquitectura ADR-001» que **no existe** en el repositorio | Escribirlo (una página) o eliminar ambas referencias |
-| Agradecimientos y Dedicatoria | Ocho marcadores «(Aquí va…)» sin rellenar | Rellenar |
+| ~~Recomendación 6 y SRS §11~~ | ~~Citan un «registro de decisión de arquitectura ADR-001» que **no existe**~~ | **Resuelto:** escrito en `docs/adr/ADR-001-identidad-de-los-usuarios-cliente.md` e incorporado como Apéndice G |
+| Agradecimientos y Dedicatoria | Seis marcadores «(Aquí va…)» sin rellenar, de Joaquín, Joel y Juan David | Pendiente: lo rellena el equipo a mano |
 | §1.4 Limitaciones | Solo recoge limitaciones de alcance | Añadir las limitaciones empíricas medidas (ver abajo) |
 | §4.2.4 | Describe cuatro figuras que no estaban insertadas | Insertar las Figuras 6 a 9 de `docs/diagramas/` |
 
@@ -231,3 +244,98 @@ diferencia      : 0
 Ni un solo evento descartado a 558,9 eventos por segundo, pese a que el canal en memoria está
 configurado para descartar bajo presión. Sugerencia: incorporarlo como fila de la Tabla 3 o como
 párrafo del §4.2.5.
+
+---
+
+## 7. Advertencia sobre el Manual de Usuario del panel (Apéndice E)
+
+El manual existe y cubre bien la navegación, el inicio de sesión con Keycloak y la matriz RBAC.
+Pero **dos de sus secciones describen un sistema que no es el que está construido**. Antes de
+adjuntarlo a la memoria hay que corregirlas: si un jurado abre el manual y luego el panel real,
+la discrepancia es visible de inmediato.
+
+### 7.1 Sección 6.1 «Calibración de Pesos de Factores de Riesgo»
+
+El manual presenta cuatro deslizadores que deben sumar 100 %:
+
+| Factor que enumera el manual | ¿Existe? |
+|---|---|
+| Reputación de Dirección IP (35 %) | **No.** No hay listas negras, ni nodos TOR, ni reputación de IP |
+| Velocidad Geográfica / Viaje Imposible (25 %) | Existe la **regla**, pero no como peso de la fórmula |
+| Discrepancia de Huella de Dispositivo (20 %) | Existe la **regla**, pero no como peso de la fórmula |
+| Firma y Heurística del Payload (20 %) | **No.** El sistema no inspecciona el cuerpo de la petición |
+
+Lo que el panel expone de verdad son los seis campos de `risk_score_config`
+(`Domain/Entities/RiskScoreConfig.cs`, y su espejo en el frontend
+`risk configuration/interfaces/risk-configuration.interface.ts`):
+
+- `policyWeight` y `anomalyWeight` — dos pesos, no cuatro: capa determinista frente a capa de
+  anomalía, calibrados en 0,5 y 0,5.
+- `coldStartPenalty` y `coldStartN` — penalización de arranque en frío y su decaimiento.
+- `challengeThreshold` y `blockThreshold`.
+
+Las cuatro reglas deterministas (`Geofence`, `TimeWindow`, `Fingerprint`, `ImpossibleTravel`) se
+ponderan **una a una**, en el campo `weight` de cada política, desde el módulo de Políticas; no
+desde la pantalla de configuración de riesgo.
+
+### 7.2 Sección 4.1 «Crear una Nueva Política de Seguridad»
+
+El manual pide rellenar «Endpoint Objetivo», «Métodos HTTP», «Acción (BLOCK/CHALLENGE/ALLOW)» y
+«Umbral Máximo de Peticiones». **Ninguno de esos cuatro campos existe.** Una política es
+`name` + `type` + `config` (JSONB) + `weight` + `isActive` (`Domain/Entities/AccessPolicy.cs`).
+El veredicto no se fija por política: lo decide el Risk Score consolidado contra los umbrales
+globales. Y el límite de tasa es middleware anterior al motor, configurado en
+`RateLimiting:Limit`, no un campo de política.
+
+### 7.3 Detalle menor
+
+Los umbrales de ejemplo del manual (0-30 / 31-70 / 71-100) no son los calibrados. Los valores
+empíricos son **33** y **70**.
+
+---
+
+## 8. Defecto abierto en el panel: las plantillas de configuración de política no casan con el motor
+
+Detectado al redactar el Apéndice E contrastando el panel con el motor. **No afecta a la
+seguridad** —la API valida y rechaza lo que no sabe evaluar— pero sí a la demostración: quien
+cree una política de ventana horaria desde el panel siguiendo la plantilla que el propio
+formulario propone, recibe un error de validación.
+
+El motor lee las claves en `snake_case`. El formulario las propone en `camelCase`:
+
+`policies-form.component.ts`, `defaultConfigs`:
+
+| Tipo | Plantilla que propone el panel | Lo que lee el motor | Efecto |
+|---|---|---|---|
+| `Timewindow` | `{ startHour: 8, endHour: 18, daysOfWeek: [1..5] }` | `start_time`, `end_time`, `timezone` (strings) | **400 al guardar.** `TimeWindowConfigValidator` exige las tres claves; ninguna coincide |
+| `Geofence` | `{ allowedCountries: [...], denied_countries: [...] }` | `allowed_countries`, `denied_countries` | **Se guarda a medias.** Pasa la validación por `denied_countries`, pero `allowedCountries` lo ignoran validador y evaluador: la lista de permitidos no surte efecto |
+
+Además, `defaultConfigs` solo define plantillas para `Geofence` y `Timewindow`; al elegir
+`Fingerprint` o `impossibleTravel` el formulario conserva la configuración anterior. En esos dos
+casos da igual a efectos de evaluación —ninguno de los dos evaluadores lee `policy.Config`, solo
+usan `policy.Weight`— pero deja al usuario con un JSON que no significa nada.
+
+### Corrección sugerida (repositorio del frontend)
+
+En `src/app/feature/policies/components/policies-form.component/policies-form.component.ts`:
+
+```ts
+readonly defaultConfigs: Record<string, string> = {
+  Geofence: JSON.stringify({ allowed_countries: ['DO', 'US'], denied_countries: ['RU', 'CN'] }, null, 2),
+  Timewindow: JSON.stringify({ start_time: '08:00', end_time: '18:00', timezone: 'America/Santo_Domingo' }, null, 2),
+  Fingerprint: JSON.stringify({}, null, 2),
+  impossibleTravel: JSON.stringify({}, null, 2),
+};
+```
+
+Y alinear el `placeholder` del textarea en `policies-form.component.html` (línea 102) y la
+interfaz `Config` de `policies.interface.ts`, que declara `startHour`, `endHour`, `daysOfWeek`,
+`maxSpeedKmh` y `maxDevicesPerSession`: ninguna de las cinco existe en el backend.
+
+### Verificado contra
+
+- `OG.Gateway/Common/RiskEngine/Rules/TimeWindowRuleEvaluator.cs` (líneas 42-47)
+- `OG.Gateway/Common/RiskEngine/Rules/GeofenceRuleEvaluator.cs` (líneas 54-55, 80-91)
+- `OG.Gateway/Common/RiskEngine/Rules/Validation/TimeWindowConfigValidator.cs`
+- `OG.Gateway/Common/RiskEngine/Rules/Validation/GeofenceConfigValidator.cs`
+- `OG.Dashboard.Api/Endpoints/PoliciesEndpoints.cs` (`ValidateRequest`, línea 259)
