@@ -291,3 +291,51 @@ globales. Y el límite de tasa es middleware anterior al motor, configurado en
 
 Los umbrales de ejemplo del manual (0-30 / 31-70 / 71-100) no son los calibrados. Los valores
 empíricos son **33** y **70**.
+
+---
+
+## 8. Defecto abierto en el panel: las plantillas de configuración de política no casan con el motor
+
+Detectado al redactar el Apéndice E contrastando el panel con el motor. **No afecta a la
+seguridad** —la API valida y rechaza lo que no sabe evaluar— pero sí a la demostración: quien
+cree una política de ventana horaria desde el panel siguiendo la plantilla que el propio
+formulario propone, recibe un error de validación.
+
+El motor lee las claves en `snake_case`. El formulario las propone en `camelCase`:
+
+`policies-form.component.ts`, `defaultConfigs`:
+
+| Tipo | Plantilla que propone el panel | Lo que lee el motor | Efecto |
+|---|---|---|---|
+| `Timewindow` | `{ startHour: 8, endHour: 18, daysOfWeek: [1..5] }` | `start_time`, `end_time`, `timezone` (strings) | **400 al guardar.** `TimeWindowConfigValidator` exige las tres claves; ninguna coincide |
+| `Geofence` | `{ allowedCountries: [...], denied_countries: [...] }` | `allowed_countries`, `denied_countries` | **Se guarda a medias.** Pasa la validación por `denied_countries`, pero `allowedCountries` lo ignoran validador y evaluador: la lista de permitidos no surte efecto |
+
+Además, `defaultConfigs` solo define plantillas para `Geofence` y `Timewindow`; al elegir
+`Fingerprint` o `impossibleTravel` el formulario conserva la configuración anterior. En esos dos
+casos da igual a efectos de evaluación —ninguno de los dos evaluadores lee `policy.Config`, solo
+usan `policy.Weight`— pero deja al usuario con un JSON que no significa nada.
+
+### Corrección sugerida (repositorio del frontend)
+
+En `src/app/feature/policies/components/policies-form.component/policies-form.component.ts`:
+
+```ts
+readonly defaultConfigs: Record<string, string> = {
+  Geofence: JSON.stringify({ allowed_countries: ['DO', 'US'], denied_countries: ['RU', 'CN'] }, null, 2),
+  Timewindow: JSON.stringify({ start_time: '08:00', end_time: '18:00', timezone: 'America/Santo_Domingo' }, null, 2),
+  Fingerprint: JSON.stringify({}, null, 2),
+  impossibleTravel: JSON.stringify({}, null, 2),
+};
+```
+
+Y alinear el `placeholder` del textarea en `policies-form.component.html` (línea 102) y la
+interfaz `Config` de `policies.interface.ts`, que declara `startHour`, `endHour`, `daysOfWeek`,
+`maxSpeedKmh` y `maxDevicesPerSession`: ninguna de las cinco existe en el backend.
+
+### Verificado contra
+
+- `OG.Gateway/Common/RiskEngine/Rules/TimeWindowRuleEvaluator.cs` (líneas 42-47)
+- `OG.Gateway/Common/RiskEngine/Rules/GeofenceRuleEvaluator.cs` (líneas 54-55, 80-91)
+- `OG.Gateway/Common/RiskEngine/Rules/Validation/TimeWindowConfigValidator.cs`
+- `OG.Gateway/Common/RiskEngine/Rules/Validation/GeofenceConfigValidator.cs`
+- `OG.Dashboard.Api/Endpoints/PoliciesEndpoints.cs` (`ValidateRequest`, línea 259)

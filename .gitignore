@@ -35,6 +35,8 @@ docs/*
 !docs/diagramas/
 ## Los ADR se citan desde la memoria (Apendice G) y desde el SRS §11: deben viajar con el repo.
 !docs/adr/
+## Lista de arreglos previos a la defensa: la comparte todo el equipo, no es una nota local.
+!docs/PENDIENTES-PRE-DEFENSA.md
 PLANIFICACION_HU.md
 evidencia-*.txt
 

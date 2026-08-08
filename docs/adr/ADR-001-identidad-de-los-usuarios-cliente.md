@@ -4,7 +4,7 @@
 - **Fecha:** 2026-08-07
 - **Ámbito:** HU-024, HU-025, HU-031, HU-049
 - **Decide:** equipo de Omakase-Gateway
-- **Sustituye a:** —
+- **Sustituye a:** ninguna decisión previa
 
 > Nota de procedencia. Este registro se redacta al cierre del ciclo para dejar constancia
 > escrita de una decisión que se tomó durante el Sprint 3 y que hasta ahora solo existía
@@ -67,8 +67,8 @@ gestionan su propia identidad, sin que la pasarela emita credenciales.
   JWKS por emisor y una política de caché de claves que no comprometa el presupuesto de
   latencia.
 - Ninguna de esas piezas estaba en el alcance declarado del trabajo (§1.4 de la memoria), y
-  añadirlas habría desplazado esfuerzo desde el motor de riesgo —que es el objeto de la
-  investigación— hacia la gestión de identidad.
+  añadirlas habría desplazado esfuerzo desde el motor de riesgo, que es el objeto de la
+  investigación, hacia la gestión de identidad.
 
 ## Decisión
 
