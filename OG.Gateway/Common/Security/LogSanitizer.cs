@@ -2,11 +2,7 @@ using System.Buffers;
 
 namespace Application.Common.Security;
 
-/// <summary>
-/// Implementación optimizada de <see cref="ILogSanitizer"/> con Fast-Path Zero-Allocation (HU-028 T-059).
-/// Neutraliza caracteres de inyección en logs sin generar objetos innecesarios en la Heap.
-/// Registrar como Singleton (thread-safe, sin estado mutable).
-/// </summary>
+// Registrar como Singleton (thread-safe, sin estado mutable).
 public sealed class LogSanitizer : ILogSanitizer
 {
     private static bool IsControlChar(char c) =>
@@ -25,7 +21,6 @@ public sealed class LogSanitizer : ILogSanitizer
         if (span.Length > maxLength)
             span = span[..maxLength];
 
-        // 1. Fast-Path: Escanear si la cadena requiere modificación
         bool needsSanitization = false;
         foreach (char c in span)
         {
@@ -36,14 +31,12 @@ public sealed class LogSanitizer : ILogSanitizer
             }
         }
 
-        // Si la cadena no contiene caracteres de control y no requiere recortado respecto a la entrada:
         if (!needsSanitization && span.Length == input.Length)
             return input;
 
         if (!needsSanitization)
             return span.ToString();
 
-        // 2. Slow-Path: Reemplazar caracteres de control usando stackalloc char[]
         char[]? rented = null;
         Span<char> buffer = span.Length <= 512
             ? stackalloc char[span.Length]

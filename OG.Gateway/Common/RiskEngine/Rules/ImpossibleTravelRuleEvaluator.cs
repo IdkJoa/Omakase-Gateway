@@ -8,11 +8,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Application.Common.RiskEngine.Rules;
 
-/// <summary>
-/// Evaluador de la regla determinista de Viaje Imposible (HU-014 / T-027).
-/// Compara las ubicaciones geográficas y marcas de tiempo entre la petición actual
-/// y el último acceso registrado en base de datos para detectar velocidades físicas imposibles (>900 km/h).
-/// </summary>
 public sealed class ImpossibleTravelRuleEvaluator : IRuleEvaluator
 {
     private const decimal CoherentScore = 0m;
@@ -43,8 +38,6 @@ public sealed class ImpossibleTravelRuleEvaluator : IRuleEvaluator
     {
         var userId = context.UserId;
 
-        // Si no hay UserId (usuario anónimo), la regla no se puede evaluar contra un historial.
-        // Se omite de forma coherente.
         if (string.IsNullOrWhiteSpace(userId))
         {
             return new RuleEvaluationResult(
@@ -53,7 +46,6 @@ public sealed class ImpossibleTravelRuleEvaluator : IRuleEvaluator
 
         try
         {
-            // 1. Geolocalizar la IP de la petición actual
             var currentGeoResult = await _geoLocationService.ResolveAsync(context.SourceIp, cancellationToken);
             if (currentGeoResult.IsFailure)
             {
@@ -64,31 +56,25 @@ public sealed class ImpossibleTravelRuleEvaluator : IRuleEvaluator
 
             var currentGeo = currentGeoResult.Value;
 
-            // 2. Obtener el historial del último acceso del usuario
             var lastAccess = await _lastAccessService.GetLastAccessAsync(userId, cancellationToken);
             if (lastAccess is null)
             {
-                // Cold start: Primer acceso registrado del usuario
                 return new RuleEvaluationResult(
                     RuleName, CoherentScore, policy.Weight, Triggered: false, Detail: "no_history");
             }
 
-            // 3. Calcular distancia física en kilómetros usando la fórmula de Haversine (T-026)
             var distance = Haversine.Distance(
                 lastAccess.Latitude, lastAccess.Longitude,
                 currentGeo.Latitude, currentGeo.Longitude);
 
-            // 4. Calcular delta de tiempo transcurrido en horas
             var timeDelta = context.Timestamp - lastAccess.Timestamp;
-            
-            // Forzar un mínimo de 1 segundo de intervalo para prevenir divisiones por cero en peticiones concurrentes
+
+            // Mínimo de 1 segundo para evitar división por cero en peticiones concurrentes.
             var seconds = Math.Max(timeDelta.TotalSeconds, 1.0);
             var hours = seconds / 3600.0;
 
-            // 5. Calcular velocidad implícita (km/h)
             var speed = distance / hours;
 
-            // 6. Validar si la velocidad supera el límite comercial (900 km/h)
             if (speed > MaxVelocityKmh)
             {
                 _logger.LogWarning(
@@ -112,8 +98,8 @@ public sealed class ImpossibleTravelRuleEvaluator : IRuleEvaluator
         }
         catch (Exception ex)
         {
-            // En caso de fallo crítico al evaluar la regla, retornamos score coherente (0)
-            // para evitar falsos positivos de bloqueo, pero registrando el error en OTel/logs.
+            // Score coherente ante fallo para evitar falsos positivos de bloqueo; el error queda
+            // registrado en logs/OTel.
             _logger.LogError(ex, "Error inesperado al evaluar la regla Viaje Imposible para el usuario {UserId}.", userId);
             return new RuleEvaluationResult(
                 RuleName, CoherentScore, policy.Weight, Triggered: false, Detail: "evaluation_failed");

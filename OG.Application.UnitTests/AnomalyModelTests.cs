@@ -4,11 +4,7 @@ using Xunit;
 
 namespace OG.Application.UnitTests;
 
-/// <summary>
-/// Pruebas del modelo de anomalías (HU-016 / T-032): RandomizedPCA nativo + calibración por
-/// percentil. Verifica que el Anomaly Score calibrado SÍ separa lo normal de lo anómalo
-/// (el score crudo del PCA no lo hacía) y que respeta el cold-start.
-/// </summary>
+// Modelo de anomalías (HU-016 / T-032): el Anomaly Score calibrado por percentil separa normal de anómalo, a diferencia del score crudo del PCA.
 public class AnomalyModelTests
 {
     private const int Seed = 7;

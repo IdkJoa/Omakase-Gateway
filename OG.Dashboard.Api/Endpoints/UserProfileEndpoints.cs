@@ -90,8 +90,6 @@ public static class UserProfileEndpoints
             recentAccesses));
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
-
     private static async Task<List<RecentAccessDto>> LoadRecentAccessesAsync(
         OmakaseDbContext db, UserId userId, CancellationToken ct)
     {

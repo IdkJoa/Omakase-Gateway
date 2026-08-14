@@ -11,17 +11,9 @@ using Xunit;
 
 namespace OG.Application.UnitTests;
 
-/// <summary>
-/// Pruebas del cliente de geolocalización (T-021) centradas en el comportamiento ante fallo:
-/// caché negativa y fail-safe total (RF-M9).
-/// </summary>
-/// <remarks>
-/// El fallo importa tanto como el acierto porque una sola evaluación resuelve la misma IP hasta
-/// cuatro veces (comprobación de degradación y desglose de auditoría en <c>EvaluateRiskHandler</c>,
-/// más Geofence y Viaje Imposible). Sin cachear el fallo, una IP irresoluble cuesta cuatro salidas
-/// a la red por petición: medido en vivo, el p95 de evaluación subió de ~10 ms a 3.081 ms cuando
-/// ip-api.com agotó la cuota gratuita durante una corrida de carga.
-/// </remarks>
+// Cliente de geolocalización (T-021): caché negativa y fail-safe total (RF-M9). Sin cachear el fallo,
+// una IP irresoluble cuesta 4 salidas de red por evaluación (Geofence + Viaje Imposible + auditoría);
+// medido en vivo, el p95 subió de ~10ms a 3.081ms cuando ip-api.com agotó su cuota bajo carga.
 public class GeoLocationServiceTests
 {
     /// <summary>Handler que cuenta las llamadas y devuelve siempre la misma respuesta programada.</summary>

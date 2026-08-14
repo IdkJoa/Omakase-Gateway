@@ -21,7 +21,6 @@ public static class UsersEndpoints
             .WithTags("Users")
             .WithOpenApi();
 
-        // GET /api/v1/users
         group.MapGet("/", GetAll)
             .RequireAuthorization("ReadAccess")
             .WithName("GetUsers")
@@ -31,7 +30,6 @@ public static class UsersEndpoints
                 "con sus roles asignados y resumen de perfil de comportamiento. " +
                 "Soporta filtro por userType e isActive.");
 
-        // GET /api/v1/users/{id}
         group.MapGet("/{id:guid}", GetById)
             .RequireAuthorization("ReadAccess")
             .WithName("GetUserById")
@@ -94,7 +92,6 @@ public static class UsersEndpoints
             ))
             .ToListAsync();
 
-        // T-060: Output encoding para prevención de XSS en campos de origen externo.
         var encoded = users.Select(u => u with
         {
             Username = enc.Sanitize(u.Username)

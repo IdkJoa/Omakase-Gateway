@@ -2,12 +2,8 @@ using System.Threading.Channels;
 
 namespace Application.Common.RiskEngine.AnomalyDetection;
 
-/// <summary>
-/// Implementación del <see cref="IProfileUpdateChannel"/> con <see cref="System.Threading.Channels"/>.
-/// Registrar como <b>Singleton</b>: el canal vive toda la aplicación.
-/// <para><b>FullMode</b> = <see cref="BoundedChannelFullMode.DropWrite"/>: nunca bloquea al escritor (la
-/// evaluación no espera). <b>SingleReader</b> = true (un solo worker); <b>SingleWriter</b> = false.</para>
-/// </summary>
+// Registrar como Singleton: el canal vive toda la aplicación. DropWrite para que nunca bloquee al
+// escritor (la evaluación no espera); SingleReader=true (un solo worker); SingleWriter=false.
 public sealed class InMemoryProfileUpdateChannel : IProfileUpdateChannel
 {
     private readonly Channel<ProfileUpdate> _channel;
@@ -23,10 +19,8 @@ public sealed class InMemoryProfileUpdateChannel : IProfileUpdateChannel
         });
     }
 
-    /// <inheritdoc/>
     public bool TryWrite(ProfileUpdate update) => _channel.Writer.TryWrite(update);
 
-    /// <inheritdoc/>
     public IAsyncEnumerable<ProfileUpdate> ReadAllAsync(CancellationToken cancellationToken = default)
         => _channel.Reader.ReadAllAsync(cancellationToken);
 }

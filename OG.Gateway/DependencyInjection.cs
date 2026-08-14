@@ -11,22 +11,16 @@ namespace Application;
 
 public static class DependencyInjection
 {
-    /// <summary>
-    /// Registra los servicios de aplicación, mediador, comandos del motor de riesgo y opciones de la capa Application (OG.Gateway).
-    /// </summary>
     public static IServiceCollection AddGatewayApplication(
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        // ── Mediador & Comandos del Motor de Riesgo 
         services.AddScoped<IMediator, Mediator>();
         services.AddScoped<IRequestHandler<EvaluateRiskCommand, RiskEvaluationResult>, EvaluateRiskHandler>();
 
-        // ── Auditoría Asíncrona & Sanitización de Seguridad 
         services.AddSingleton<ILogSanitizer, LogSanitizer>();
         services.AddSingleton<IAuditChannel, InMemoryAuditChannel>();
 
-        // ── Options Pattern (Configuración Tipada de la Capa de Aplicación) 
         services.Configure<AuditChannelOptions>(configuration.GetSection(AuditChannelOptions.SectionName));
         services.Configure<RateLimitingOptions>(configuration.GetSection(RateLimitingOptions.SectionName));
         services.Configure<MfaOptions>(configuration.GetSection(MfaOptions.SectionName));

@@ -4,10 +4,7 @@ using System.Text;
 
 namespace Application.Common.Security;
 
-/// <summary>
-/// Implementación optimizada de alto rendimiento del servicio de hashing de huella digital de navegador (HU-013 / T-024).
-/// Minimiza las asignaciones en la Heap utilizando Spans y stackalloc para el pipeline crítico del Gateway.
-/// </summary>
+// Usa Spans/stackalloc para minimizar asignaciones en heap: está en el pipeline crítico del Gateway.
 public sealed class FingerprintService : IFingerprintService
 {
     public string GenerateHash(string? userAgent, string? acceptLanguage, string? acceptEncoding)
@@ -16,7 +13,6 @@ public sealed class FingerprintService : IFingerprintService
         ReadOnlySpan<char> lang = acceptLanguage.AsSpan().Trim();
         ReadOnlySpan<char> enc = acceptEncoding.AsSpan().Trim();
 
-        // Estimar tamaño máximo de bytes UTF-8 para "UA:{ua}|LANG:{lang}|ENC:{enc}"
         int maxByteCount = 14 + Encoding.UTF8.GetByteCount(ua) + Encoding.UTF8.GetByteCount(lang) + Encoding.UTF8.GetByteCount(enc);
 
         byte[]? rented = null;
@@ -34,7 +30,7 @@ public sealed class FingerprintService : IFingerprintService
             bytesWritten += Encoding.UTF8.GetBytes("|ENC:", buffer[bytesWritten..]);
             bytesWritten += Encoding.UTF8.GetBytes(enc, buffer[bytesWritten..]);
 
-            Span<byte> hashBuffer = stackalloc byte[32]; // SHA256 son 32 bytes
+            Span<byte> hashBuffer = stackalloc byte[32];
             SHA256.HashData(buffer[..bytesWritten], hashBuffer);
 
             return Convert.ToHexStringLower(hashBuffer);

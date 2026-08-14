@@ -25,10 +25,7 @@ public sealed record RiskScorePointResult(
     long EvaluationCount
 );
 
-/// <summary>
-/// Handler de aplicación para calcular métricas y KPIs reales sobre audit_logs (HU-021 / T-061).
-/// Soporta filtrado opcional por rango de fechas (por defecto últimas 24 horas).
-/// </summary>
+/// <summary>Filtrado opcional por rango de fechas; por defecto, últimas 24 horas.</summary>
 public sealed class GetMetricsSummaryHandler(
     OmakaseDbContext context,
     ILogger<GetMetricsSummaryHandler> logger)
@@ -84,7 +81,6 @@ public sealed class GetMetricsSummaryHandler(
                 .Distinct()
                 .CountAsync(cancellationToken);
 
-            // Proyección optimizada para la serie temporal (agrupamiento por hora)
             var rawLogs = await query
                 .Select(a => new { a.EvaluatedAt, a.RiskScore })
                 .ToListAsync(cancellationToken);

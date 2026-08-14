@@ -2,22 +2,17 @@ using System.Diagnostics.Metrics;
 
 namespace Infrastructure.Resilience;
 
-/// <summary>
-/// Métricas de OpenTelemetry para registrar apertura/cierre/half-open de Circuit Breakers (T-067 / HU-031).
-/// </summary>
 public static class ResilienceMetrics
 {
     public const string MeterName = "Omakase.Resilience";
 
     private static readonly Meter ResilienceMeter = new(MeterName, "1.0.0");
 
-    // Contador total de cambios de estado del Circuit Breaker
     private static readonly Counter<long> StateChangeCounter = ResilienceMeter.CreateCounter<long>(
         "omakase_circuit_breaker_state_changes_total",
         "count",
         "Número total de cambios de estado en los Circuit Breakers de dependencias");
 
-    // Gauge para monitorear el estado actual del circuito (0 = Closed, 1 = HalfOpen, 2 = Open)
     private static readonly UpDownCounter<long> RedisCircuitStateGauge = ResilienceMeter.CreateUpDownCounter<long>(
         "omakase_circuit_breaker_redis_state",
         "state",

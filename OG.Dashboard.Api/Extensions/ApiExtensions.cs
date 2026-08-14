@@ -8,9 +8,6 @@ public static class ApiExtensions
 {
     public const string FrontendCorsPolicy = "FrontendCors";
 
-    /// <summary>
-    /// Registra los servicios pertenecientes a la capa de API (Swagger, Autenticación HTTP, CORS y Servicios Web).
-    /// </summary>
     public static IServiceCollection AddDashboardApiConfiguration(
         this IServiceCollection services,
         IConfiguration configuration)
@@ -19,7 +16,6 @@ public static class ApiExtensions
         services.AddAuth(configuration);
         services.AddCorsConfiguration();
 
-        // Servicios de contexto HTTP / Web API
         services.AddSingleton<ILogSanitizer, LogSanitizer>();
         services.AddSingleton<IOutputSanitizer, HtmlOutputSanitizer>();
         services.AddScoped<ICurrentUserService, KeycloakCurrentUserService>();
@@ -28,9 +24,6 @@ public static class ApiExtensions
         return services;
     }
 
-    /// <summary>
-    /// Registra la política de CORS para el Frontend.
-    /// </summary>
     public static IServiceCollection AddCorsConfiguration(this IServiceCollection services)
     {
         return services.AddCors(options =>

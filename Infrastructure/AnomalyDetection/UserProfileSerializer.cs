@@ -20,7 +20,6 @@ public static class UserProfileSerializer
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     };
 
-    /// <summary>Empaqueta la ventana de entrenamiento y los accesos recientes en un documento JSONB.</summary>
     public static JsonDocument Serialize(
         IReadOnlyList<AnomalyFeatureVector> trainingWindow,
         IReadOnlyList<UserAccessSample> recentAccesses)
@@ -91,7 +90,6 @@ public static class UserProfileSerializer
         return JsonSerializer.Serialize(payload, SerializerOptions);
     }
 
-    /// <summary>Reconstruye el perfil íntegro desde la caché Redis; <c>null</c> si viene nulo o malformado.</summary>
     public static UserAnomalyProfile? DeserializeFromCache(string? json)
     {
         if (string.IsNullOrWhiteSpace(json))

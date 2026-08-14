@@ -1,16 +1,6 @@
 namespace OG.Dashboard.Api.Contracts.Mfa;
 
-/// <summary>
-/// Estado de MFA (TOTP) de un client user para el Dashboard (HU-047 / T-108).
-/// </summary>
-/// <param name="UserId">Identificador del usuario.</param>
-/// <param name="Username">Nombre de usuario (para mostrar en el perfil).</param>
-/// <param name="MfaEnabled">True si el segundo factor TOTP está activo y confirmado.</param>
-/// <param name="EnrollmentPending">
-/// True si hay un secreto provisionado pero aún sin confirmar (enrolamiento a medias).
-/// </param>
-/// <param name="Locked">True si la cuenta está bloqueada por intentos MFA (HU-046) en este momento.</param>
-/// <param name="LockedUntil">Instante hasta el que dura el bloqueo, o null si no está bloqueada.</param>
+/// <summary>Estado de MFA (TOTP) de un client user para el Dashboard (HU-047 / T-108). EnrollmentPending = secreto provisionado pero aún sin confirmar.</summary>
 public sealed record MfaStatusDto(
     Guid UserId,
     string Username,

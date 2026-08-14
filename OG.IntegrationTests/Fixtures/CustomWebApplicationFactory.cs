@@ -35,13 +35,11 @@ public class CustomWebApplicationFactory<TEntryPoint> : WebApplicationFactory<TE
 
     public async Task InitializeAsync()
     {
-        // Iniciar los contenedores Docker efímeros en paralelo
         await Task.WhenAll(
             _postgresContainer.StartAsync(),
             _redisContainer.StartAsync()
         );
 
-        // Asegurar que la BD PostgreSQL tenga el esquema creado y listo
         using var scope = Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<OmakaseDbContext>();
         await db.Database.EnsureCreatedAsync();
@@ -70,7 +68,6 @@ public class CustomWebApplicationFactory<TEntryPoint> : WebApplicationFactory<TE
 
     private static async Task SeedInitialDataAsync(OmakaseDbContext db)
     {
-        // Sembrar datos iniciales requeridos para las pruebas de integración si la BD está vacía
         if (!await db.ProtectedServices.AnyAsync())
         {
             db.ProtectedServices.Add(new Domain.Entities.ProtectedService

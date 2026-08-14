@@ -19,12 +19,10 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        // ── Aspire ServiceDefaults & Data Resources ──────────────────────────────────
         builder.AddServiceDefaults();
         builder.AddNpgsqlDbContext<OmakaseDbContext>("Omakase");
         builder.AddRedisClient("redis");
 
-        // ── 1. Capa de Aplicación (Mediador, Comandos, Opciones & Reglas de Negocio) ─
         builder.Services.AddGatewayApplication(builder.Configuration);
 
         // Fail-closed (SRS §6.3.1 / T-068): en Producción la clave que firma los JWT propios DEBE venir de
@@ -38,24 +36,20 @@ public class Program
                 "Jwt:SecretKey invalida para Produccion: inyecte una clave >=32 bytes desde Azure Key Vault (T-068), no el placeholder.")
             .ValidateOnStart();
 
-        // ── 2. Capa de Infraestructura (EF Core, Redis, ML.NET, Seeder, GeoLocation) ─
         builder.Services.AddInfrastructure();
-
-        // ── 3. Capa de API / Presentación (YARP, Forwarded Headers, Auth & OpenAPI) ────
         builder.Services.AddGatewayApiConfiguration(builder.Configuration);
 
         var app = builder.Build();
 
-        // HU-031 & T-068: Validación estricta de secretos en Azure Key Vault durante el inicio (Fail-Closed)
+        // HU-031 & T-068: validación estricta de secretos en Azure Key Vault durante el inicio (Fail-Closed).
         await app.ValidateKeyVaultOnStartupAsync();
 
-        // ── Middleware Pipeline ────────────────────────────────────────────────────────
         app.UseForwardedHeaders();
 
         app.UseCors(ApiExtensions.FrontendCorsPolicy);
         app.UseMiddleware<SecurityHeadersMiddleware>();
 
-        // HU-031 & T-067: Middleware de resiliencia Fail-Closed (503 ante fallos de Redis / PostgreSQL)
+        // HU-031 & T-067: middleware de resiliencia Fail-Closed (503 ante fallos de Redis / PostgreSQL).
         app.UseMiddleware<DependencyCircuitBreakerMiddleware>();
 
         app.UseMiddleware<RateLimitMiddleware>();
@@ -76,7 +70,6 @@ public class Program
         app.UseAuthorization();
         app.UseMiddleware<RiskEvaluationMiddleware>();
 
-        // ── Migraciones & Seed Data al arranque en Desarrollo ────────────────────────
         if (app.Environment.IsDevelopment())
         {
             using var scope = app.Services.CreateScope();
@@ -89,7 +82,6 @@ public class Program
                 await seeder.SeedAsync();
         }
 
-        // ── Endpoints & YARP ──────────────────────────────────────────────────────────
         app.MapDefaultEndpoints();
 
         if (app.Environment.IsDevelopment())

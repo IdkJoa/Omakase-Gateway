@@ -18,7 +18,7 @@ public static class DependencyInjection
         services.AddScoped<GetMetricsSummaryHandler>();
         services.AddScoped<RolesHandler>();
 
-        // Validadores de Configuración de Reglas (Open/Closed Seam)
+        // Registrados como colección abierta (Open/Closed): agregar un validador nuevo no requiere tocar este archivo.
         services.AddSingleton<IPolicyConfigValidator, GeofenceConfigValidator>();
         services.AddSingleton<IPolicyConfigValidator, TimeWindowConfigValidator>();
 

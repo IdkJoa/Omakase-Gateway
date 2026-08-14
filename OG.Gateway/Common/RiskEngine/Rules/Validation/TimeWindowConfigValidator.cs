@@ -3,16 +3,10 @@ using Domain.Entities;
 
 namespace Application.Common.RiskEngine.Rules.Validation;
 
-/// <summary>
-/// Valida la config de <see cref="PolicyType.TimeWindow"/> en espejo con
-/// <c>TimeWindowRuleEvaluator</c>: <c>start_time</c> y <c>end_time</c> parseables como
-/// hora (<c>HH:mm</c>) y <c>timezone</c> resoluble (IDs de sistema Windows/IANA o las
-/// abreviaturas AST/EST que soporta el evaluador). El cruce de medianoche
-/// (start &gt; end) es válido.
-/// </summary>
+// Debe mantenerse en espejo con TimeWindowRuleEvaluator. El cruce de medianoche (start > end) es válido.
 public sealed class TimeWindowConfigValidator : IPolicyConfigValidator
 {
-    /// <summary>Abreviaturas con resolución propia en <c>TimeWindowRuleEvaluator.GetTimeZone</c>.</summary>
+    // Abreviaturas con resolución propia en TimeWindowRuleEvaluator.GetTimeZone.
     private static readonly string[] SupportedAbbreviations = ["AST", "EST"];
 
     public PolicyType Type => PolicyType.TimeWindow;

@@ -21,11 +21,9 @@ public static class AuthenticationExtensions
                 options.Authority = configuration["Authentication:Keycloak:Authority"]
                     ?? "http://localhost:8080/realms/omakase-gateway";
 
-                // Seguro por defecto: la metadata OIDC (incluidas las claves de firma) SOLO se
-                // descarga por HTTPS salvo que se desactive explícitamente. Estaba fijo en false,
-                // así que en cualquier despliegue real un atacante en la red podía servir su propio
-                // documento de descubrimiento y con él sus propias claves: token forjado aceptado.
-                // Development lo pone en false porque el Keycloak del AppHost habla HTTP plano.
+                // Seguro por defecto (antes estaba fijo en false): sin HTTPS, un atacante en la red
+                // podía servir su propio documento de descubrimiento OIDC y sus propias claves de
+                // firma. Development lo desactiva porque el Keycloak del AppHost habla HTTP plano.
                 options.RequireHttpsMetadata =
                     configuration.GetValue("Authentication:Keycloak:RequireHttpsMetadata", true);
                 
@@ -39,27 +37,13 @@ public static class AuthenticationExtensions
                     NameClaimType = "preferred_username"
                 };
 
-                // Map Keycloak realm roles to standard ASP.NET Role claims
                 options.Events = new JwtBearerEvents
                 {
-                    // Un fallo de validación de token NO es un fallo de Keycloak. Este handler se
-                    // dispara con cualquier token inválido —expirado, malformado, firma ajena— que
-                    // es exactamente lo que un atacante envía a propósito.
-                    //
-                    // Antes, cada uno de esos fallos: (1) marcaba el span como "Dependency failure:
-                    // Keycloak", falseando la señal de degradación de HU-032; y (2) escribía una fila
-                    // SÍNCRONA en audit_logs con Verdict=Block y PolicyScore/AnomalyScore/RiskScore=100.
-                    //
-                    // Eso último era el problema serio, por tres motivos:
-                    //   · Fabricaba puntuaciones de riesgo que ningún motor calculó. Esas filas
-                    //     alimentan las métricas de HU-021, el explorador de HU-022 y la calibración
-                    //     de HU-035, contaminando las tres con datos inventados.
-                    //   · Un INSERT síncrono por token inválido, dentro del pipeline de autenticación,
-                    //     es un amplificador de carga trivial: basta con inundar de tokens basura.
-                    //   · La etiqueta "SEC-001" no traza a ningún requisito del SRS ni del backlog.
-                    //
-                    // El evento de seguridad se sigue registrando como log estructurado (va a Loki y
-                    // es consultable); audit_logs queda reservado a evaluaciones reales del motor.
+                    // Un token inválido (expirado, malformado, firma ajena) NO es un fallo de Keycloak.
+                    // Antes cada fallo de validación falseaba la señal de degradación de HU-032 y
+                    // escribía una fila síncrona en audit_logs con scores inventados (100), contaminando
+                    // las métricas de HU-021/HU-022/HU-035 y sirviendo de amplificador de carga trivial.
+                    // Ahora solo se deja log estructurado; audit_logs queda para evaluaciones reales.
                     OnAuthenticationFailed = context =>
                     {
                         var logger = context.HttpContext.RequestServices.GetRequiredService<Microsoft.Extensions.Logging.ILogger<JwtBearerHandler>>();
@@ -69,10 +53,9 @@ public static class AuthenticationExtensions
                         var ip = logSanitizer.Sanitize(context.HttpContext.Connection.RemoteIpAddress?.ToString());
                         var detail = logSanitizer.Sanitize(context.Exception.Message);
 
-                        // SecurityTokenException y sus derivadas (expirado, firma inválida, emisor
-                        // ajeno...) significan "token malo", no "Keycloak caído". Cualquier otra cosa
-                        // —fallo al descargar la metadata OIDC, timeout, error de transporte— sí es
-                        // una degradación real de la dependencia (HU-032).
+                        // SecurityTokenException significa "token malo"; cualquier otra excepción
+                        // (fallo al descargar metadata OIDC, timeout, transporte) es degradación real
+                        // de la dependencia (HU-032).
                         var esTokenInvalido = context.Exception is SecurityTokenException;
 
                         if (esTokenInvalido)
@@ -103,10 +86,9 @@ public static class AuthenticationExtensions
                         var identity = context.Principal?.Identity as ClaimsIdentity;
                         if (identity != null)
                         {
-                            // Hardening: se acota la audiencia por el claim `azp` (authorized party) —
-                            // solo se aceptan tokens emitidos PARA este cliente. Es la forma recomendada
-                            // por Keycloak de validar la audiencia en un cliente público sin depender de
-                            // un audience-mapper del realm. Fail-closed ante un azp ajeno.
+                            // Hardening: acota la audiencia por el claim `azp` (authorized party) — forma
+                            // recomendada por Keycloak para validar audiencia en un cliente público sin
+                            // audience-mapper del realm. Fail-closed ante un azp ajeno.
                             var expectedClient = configuration["Authentication:Keycloak:ClientId"] ?? "omakase-dashboard";
                             var azp = identity.FindFirst("azp")?.Value;
                             if (!string.IsNullOrEmpty(azp) && !string.Equals(azp, expectedClient, StringComparison.Ordinal))
@@ -139,21 +121,19 @@ public static class AuthenticationExtensions
                                 }
                             }
 
-                            // JIT Sync to local PostgreSQL users table
+                            // Alta JIT en la tabla local de usuarios (users)
                             if (!string.IsNullOrEmpty(sub) && !string.IsNullOrEmpty(username))
                             {
                                 try
                                 {
                                     var db = context.HttpContext.RequestServices.GetRequiredService<OmakaseDbContext>();
-                                    
-                                    // 1. Buscar si el usuario ya existe por KeycloakSub o por Username
+
                                     var existingUser = await db.Users
                                         .Include(u => u.UserRoles)
                                         .FirstOrDefaultAsync(u => u.KeycloakSub == sub || u.Username == username);
 
                                     if (existingUser == null)
                                     {
-                                        // Crear nuevo Security Officer
                                         var typedUserId = UserId.New();
                                         var newUser = new User
                                         {
@@ -167,7 +147,6 @@ public static class AuthenticationExtensions
                                         };
                                         db.Users.Add(newUser);
 
-                                        // Mapear los roles desde Keycloak a la DB local
                                         foreach (var roleName in rolesList)
                                         {
                                             var dbRole = await db.Roles.FirstOrDefaultAsync(r => r.Name.ToUpper() == roleName.ToUpper());
@@ -186,7 +165,6 @@ public static class AuthenticationExtensions
                                     }
                                     else
                                     {
-                                        // Sincronizar KeycloakSub por si se creó vía seeder sin Sub
                                         bool updated = false;
                                         if (existingUser.KeycloakSub != sub)
                                         {

@@ -7,18 +7,11 @@ namespace Infrastructure.Persistence.Caching;
 
 /// <summary>
 /// Decorador de <see cref="IRiskConfigProvider"/> que memoriza la fila única de
-/// <c>risk_score_config</c> durante <see cref="RiskEngineCacheOptions.RiskConfigTtlSeconds"/> (T-072).
+/// <c>risk_score_config</c> durante <see cref="RiskEngineCacheOptions.RiskConfigTtlSeconds"/>.
 /// </summary>
 /// <remarks>
-/// Medido con 1.000 muestras bajo 100 VUs sostenidos: <b>8,16 ms de media (12,9 % del total)</b>
-/// gastados en releer en cada evaluación una fila singleton que solo cambia cuando un Security
-/// Officer guarda el editor de pesos y umbrales (HU-025).
-/// <para>
-/// El criterio de HU-025 pide que «las siguientes evaluaciones usen el nuevo umbral». Con el TTL
-/// por defecto de 5 s eso se cumple con un retardo acotado y sin invalidación explícita entre
-/// procesos (el Dashboard y el Gateway son procesos distintos). Con TTL 0 se recupera la lectura
-/// directa en cada evaluación.
-/// </para>
+/// Evita releer en cada evaluación una fila que solo cambia cuando se guarda el editor de pesos/umbrales;
+/// el TTL de 5 s acota el retardo de propagación sin invalidación explícita entre Dashboard y Gateway (procesos distintos).
 /// </remarks>
 public sealed class CachedRiskConfigProvider : IRiskConfigProvider
 {

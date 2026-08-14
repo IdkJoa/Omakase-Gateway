@@ -38,18 +38,15 @@ public class ProtectedServicesHandlersTests : IDisposable
     [Fact]
     public async Task Create_ShouldInsertToDatabase_AndPublishToRedisYarpChannel()
     {
-        // Arrange
         var loggerMock = Substitute.For<ILogger<CreateProtectedServiceHandler>>();
         var handler = new CreateProtectedServiceHandler(_context, _redisServiceMock, loggerMock);
 
-        // Act
         var result = await handler.CreateProtectedServiceAsync(
             "test-service", 
             "http://test-upstream", 
             false, 
             true);
 
-        // Assert
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Value);
         Assert.Equal("test-service", result.Value.Name);
@@ -65,7 +62,6 @@ public class ProtectedServicesHandlersTests : IDisposable
     [Fact]
     public async Task Update_ShouldModifyDatabase_AndPublishToRedisYarpChannel()
     {
-        // Arrange
         var serviceId = ProtectedServiceId.New();
         var existingService = new ProtectedService 
         { 
@@ -81,7 +77,6 @@ public class ProtectedServicesHandlersTests : IDisposable
         var loggerMock = Substitute.For<ILogger<UpdateProtectedServiceHandler>>();
         var handler = new UpdateProtectedServiceHandler(_context, _redisServiceMock, loggerMock);
 
-        // Act
         var result = await handler.UpdateProtectedServiceAsync(
             serviceId.Value,
             "new-name",
@@ -89,7 +84,6 @@ public class ProtectedServicesHandlersTests : IDisposable
             true,
             false);
 
-        // Assert
         Assert.True(result.IsSuccess);
         Assert.Equal("new-name", result.Value.Name);
         Assert.Equal("http://new-url", result.Value.UpstreamUrl);
@@ -106,7 +100,6 @@ public class ProtectedServicesHandlersTests : IDisposable
     [Fact]
     public async Task Delete_ShouldSoftDelete_AndPublishToRedisYarpChannel()
     {
-        // Arrange
         var serviceId = ProtectedServiceId.New();
         var existingService = new ProtectedService 
         { 
@@ -122,10 +115,8 @@ public class ProtectedServicesHandlersTests : IDisposable
         var loggerMock = Substitute.For<ILogger<DeleteProtectedServiceHandler>>();
         var handler = new DeleteProtectedServiceHandler(_context, _redisServiceMock, loggerMock);
 
-        // Act
         var result = await handler.DeleteProtectedServiceAsync(serviceId.Value);
 
-        // Assert
         Assert.True(result.IsSuccess);
 
         // Verify DB soft delete
@@ -146,18 +137,15 @@ public class ProtectedServicesHandlersTests : IDisposable
     [InlineData("HEALTH")]
     public async Task Create_ShouldFail_WhenNameIsReserved(string reservedName)
     {
-        // Arrange
         var loggerMock = Substitute.For<ILogger<CreateProtectedServiceHandler>>();
         var handler = new CreateProtectedServiceHandler(_context, _redisServiceMock, loggerMock);
 
-        // Act
         var result = await handler.CreateProtectedServiceAsync(
             reservedName, 
             "http://test-upstream", 
             false, 
             true);
 
-        // Assert
         Assert.True(result.IsFailure);
         Assert.Equal("ProtectedService.ReservedName", result.Error.Code);
     }
@@ -170,7 +158,6 @@ public class ProtectedServicesHandlersTests : IDisposable
     [InlineData("demo")]
     public async Task Update_ShouldFail_WhenNameIsReserved(string reservedName)
     {
-        // Arrange
         var serviceId = ProtectedServiceId.New();
         var existingService = new ProtectedService 
         { 
@@ -186,7 +173,6 @@ public class ProtectedServicesHandlersTests : IDisposable
         var loggerMock = Substitute.For<ILogger<UpdateProtectedServiceHandler>>();
         var handler = new UpdateProtectedServiceHandler(_context, _redisServiceMock, loggerMock);
 
-        // Act
         var result = await handler.UpdateProtectedServiceAsync(
             serviceId.Value,
             reservedName,
@@ -194,7 +180,6 @@ public class ProtectedServicesHandlersTests : IDisposable
             true,
             false);
 
-        // Assert
         Assert.True(result.IsFailure);
         Assert.Equal("ProtectedService.ReservedName", result.Error.Code);
     }

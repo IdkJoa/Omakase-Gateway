@@ -6,9 +6,6 @@ public enum UserType
     Client = 2
 }
 
-/// <summary>
-/// Discriminates the type of deterministic access policy rule.
-/// </summary>
 public enum PolicyType
 {
     Geofence = 1,
@@ -17,9 +14,6 @@ public enum PolicyType
     ImpossibleTravel = 4
 }
 
-/// <summary>
-/// The verdict produced by the risk-score evaluation engine.
-/// </summary>
 public enum Verdict
 {
     Allow = 1,

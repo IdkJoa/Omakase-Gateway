@@ -42,8 +42,6 @@ public sealed class RoleConfiguration : IEntityTypeConfiguration<Role>
                .HasColumnType("timestamptz")
                .IsRequired(false);
 
-        // Relationships
-
         builder.HasMany(r => r.UserRoles)
                .WithOne(ur => ur.Role)
                .HasForeignKey(ur => ur.RoleId)

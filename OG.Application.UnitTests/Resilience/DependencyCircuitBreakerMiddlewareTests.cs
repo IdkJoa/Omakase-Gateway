@@ -43,14 +43,11 @@ public class DependencyCircuitBreakerMiddlewareTests
     [Fact]
     public async Task InvokeAsync_NormalExecution_ShouldCallNextMiddleware()
     {
-        // Arrange
         var context = CreateHttpContext();
         var middleware = new DependencyCircuitBreakerMiddleware(_next, _loggerMock);
 
-        // Act
         await middleware.InvokeAsync(context, _circuitBreakerMock);
 
-        // Assert
         Assert.True(_nextCalled);
         Assert.Equal(200, context.Response.StatusCode);
     }
@@ -58,15 +55,12 @@ public class DependencyCircuitBreakerMiddlewareTests
     [Fact]
     public async Task InvokeAsync_NextThrowsBrokenCircuitException_ShouldCatchAndReturn503()
     {
-        // Arrange
         var context = CreateHttpContext();
         RequestDelegate nextThrowing = (ctx) => throw new BrokenCircuitException("Circuit Breaker para Redis está ABIERTO.");
         var middleware = new DependencyCircuitBreakerMiddleware(nextThrowing, _loggerMock);
 
-        // Act
         await middleware.InvokeAsync(context, _circuitBreakerMock);
 
-        // Assert
         Assert.Equal((int)HttpStatusCode.ServiceUnavailable, context.Response.StatusCode);
         Assert.Equal("application/problem+json", context.Response.ContentType);
 

@@ -7,10 +7,7 @@ using StackExchange.Redis;
 
 namespace Infrastructure.Redis;
 
-/// <summary>
-/// Implementación Redis de <see cref="IStepUpStore"/> protegida por Circuit Breaker (HU-046 / T-104, T-105, T-107).
-/// Clave <c>stepup:{userId}</c> → String JSON con TTL 10 min (SRS §7.11.2).
-/// </summary>
+// TTL de 10 min impuesto por SRS §7.11.2; el llamador decide el valor exacto, no se valida aquí.
 public sealed class StepUpStore : IStepUpStore
 {
     private readonly IDatabase _db;

@@ -4,10 +4,7 @@ using Xunit;
 
 namespace OG.Application.UnitTests;
 
-/// <summary>
-/// Pruebas del FeatureExtractor (HU-016 / T-031): codificación cíclica de la hora,
-/// frecuencia y diversidad, todo normalizado a [0,1]. Componente puro y determinista.
-/// </summary>
+// FeatureExtractor (HU-016 / T-031): codificación cíclica de la hora, frecuencia y diversidad normalizadas a [0,1]. Componente puro y determinista.
 public class FeatureExtractorTests
 {
     private readonly FeatureExtractor _sut = new(new AnomalyDetectionOptions());
@@ -20,7 +17,7 @@ public class FeatureExtractorTests
 
     private static UserAccessSample Access(DateTimeOffset ts, string endpoint) => new(ts, endpoint);
 
-    // ── Codificación de la hora (sin/cos → [0,1]) ────────────────────────────
+    // Codificación de la hora (sin/cos → [0,1])
 
     [Theory]
     [InlineData(0, 0.5, 1.0)]    // 00:00 → sin 0, cos 1
@@ -46,7 +43,7 @@ public class FeatureExtractorTests
         Assert.True(Distance(a, b) < Distance(b, far));
     }
 
-    // ── Frecuencia ────────────────────────────────────────────────────────────
+    // Frecuencia
 
     [Fact]
     public void Frequency_And_Diversity_AreZero_When_NoHistory()
@@ -88,7 +85,7 @@ public class FeatureExtractorTests
         Assert.Equal(1f, v.Frequency);
     }
 
-    // ── Diversidad (únicos / total) ─────────────────────────────────────────────
+    // Diversidad (únicos / total)
 
     [Fact]
     public void Diversity_Is_Low_When_All_Accesses_Hit_Same_Endpoint()
@@ -119,7 +116,7 @@ public class FeatureExtractorTests
         Assert.Equal(1f, v.Diversity);
     }
 
-    // ── Invariante global: todo en [0,1] ────────────────────────────────────────
+    // Invariante global: todo en [0,1]
 
     [Theory]
     [InlineData(0)]

@@ -46,8 +46,6 @@ public static class AuditLogsEndpoints
         return app;
     }
 
-    // ── Handlers ──────────────────────────────────────────────────────────────
-
     private static async Task<IResult> GetLogs(
         OmakaseDbContext db,
         IOutputSanitizer enc,
@@ -135,8 +133,6 @@ public static class AuditLogsEndpoints
 
         return Results.Ok(ToDto(row, enc));
     }
-
-    // ── Mapeo entidad → DTO (mismo contrato que el mock anterior) ───────────────
 
     private sealed record LogRow(
         Guid EvaluationId, DateTimeOffset EvaluatedAt, UserId? UserId, string? Username, string? ServiceName,

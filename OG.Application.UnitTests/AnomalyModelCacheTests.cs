@@ -4,10 +4,7 @@ using Xunit;
 
 namespace OG.Application.UnitTests;
 
-/// <summary>
-/// Pruebas de la caché de modelos por usuario (HU-016/017): construye el modelo una sola vez y
-/// <see cref="IAnomalyModelCache.Clear"/> fuerza la reconstrucción — base del reentrenamiento (T-035).
-/// </summary>
+// Caché de modelos por usuario (HU-016/017): construye una sola vez; IAnomalyModelCache.Clear fuerza la reconstrucción (T-035).
 public class AnomalyModelCacheTests
 {
     private static AnomalyModel BuildModel()

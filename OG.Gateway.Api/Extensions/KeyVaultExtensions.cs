@@ -4,15 +4,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace OG.Gateway.Api.Extensions;
 
-/// <summary>
-/// Métodos de extensión para ejecutar la validación de Azure Key Vault en el arranque (T-068 / HU-031).
-/// </summary>
 public static class KeyVaultExtensions
 {
-    /// <summary>
-    /// Intenta consultar los secretos obligatorios desde Azure Key Vault durante el arranque.
-    /// Si falla por timeout, 401, 403, 404 o error de red, TERMINA el proceso inmediatamente (Fail-Closed).
-    /// </summary>
+    /// <summary>Fail-closed (T-068/HU-031): timeout, 401, 403, 404 o error de red al leer Key Vault termina el proceso.</summary>
     public static async Task ValidateKeyVaultOnStartupAsync(this WebApplication app)
     {
         using var scope = app.Services.CreateScope();

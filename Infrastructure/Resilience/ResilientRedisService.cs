@@ -2,10 +2,6 @@ using Application.Common.Security;
 
 namespace Infrastructure.Resilience;
 
-/// <summary>
-/// Decorador de IRedisService protegido por el Circuit Breaker de Redis (T-067 / HU-031).
-/// Enruta cada llamada a Redis a través de IDependencyCircuitBreaker.
-/// </summary>
 public sealed class ResilientRedisService : IRedisService
 {
     private readonly IRedisService _inner;

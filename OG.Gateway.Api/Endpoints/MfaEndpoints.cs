@@ -10,20 +10,12 @@ using System.Text.Json;
 
 namespace OG.Gateway.Api.Endpoints;
 
-/// <summary>
-/// Endpoints de step-up MFA para client users (HU-046):
-/// <list type="bullet">
-///   <item><c>POST /auth/mfa/enroll</c> y <c>POST /auth/mfa/enroll/confirm</c> — provisión del secreto TOTP (T-102).</item>
-///   <item><c>POST /auth/challenge/verify</c> — verificación del desafío y apertura de la ventana de step-up (T-104).</item>
-/// </list>
-/// Estos paths están exentos de la evaluación de riesgo (bypass en RiskEvaluationMiddleware)
-/// y NO los consume el Dashboard: son para la aplicación del usuario interceptado (SRS §4.1).
-/// <para>
-/// El enrolamiento exige el JWT propio del Gateway (HU-019): el usuario se identifica por
-/// el claim <c>sub</c> de su sesión — nunca por un username arbitrario del body.
-/// La verificación del desafío es anónima por diseño: el challengeId es la credencial.
-/// </para>
-/// </summary>
+/// <remarks>
+/// Estos paths están exentos de la evaluación de riesgo (bypass en RiskEvaluationMiddleware) y no
+/// los consume el Dashboard: son para la aplicación del usuario interceptado (SRS §4.1). El
+/// enrolamiento identifica al usuario por el claim <c>sub</c> de su sesión, nunca por un username
+/// arbitrario del body. La verificación del desafío es anónima por diseño: el challengeId es la credencial.
+/// </remarks>
 public static class MfaEndpoints
 {
     public sealed record EnrollConfirmRequest(string Otp);
@@ -33,11 +25,10 @@ public static class MfaEndpoints
     {
         var group = app.MapGroup("/auth");
 
-        // T-102: enrolamiento self-service — requiere la sesión del propio usuario (HU-019).
         group.MapPost("/mfa/enroll", EnrollAsync).RequireAuthorization();
         group.MapPost("/mfa/enroll/confirm", ConfirmEnrollAsync).RequireAuthorization();
 
-        // T-104: verificación del desafío — anónima (el challengeId es la credencial).
+        // Anónima: el challengeId es la credencial.
         group.MapPost("/challenge/verify", VerifyChallengeAsync).AllowAnonymous();
 
         return app;
@@ -59,7 +50,6 @@ public static class MfaEndpoints
         return user is { IsActive: true, Type: UserType.Client } ? user : null;
     }
 
-    /// <summary>T-102: genera el secreto TOTP, lo cifra en reposo y devuelve el provisioning URI.</summary>
     private static async Task<IResult> EnrollAsync(
         OmakaseDbContext db,
         ITotpService totp,
@@ -76,7 +66,7 @@ public static class MfaEndpoints
 
         if (user.MfaEnabled)
             return Results.Json(
-                new { errorCode = GatewayErrorCodes.MfaInvalid, message = "La cuenta ya tiene MFA activo; use el reset del Dashboard (HU-047).", traceId = http.TraceIdentifier },
+                new { errorCode = GatewayErrorCodes.MfaInvalid, message = "La cuenta ya tiene MFA activo; use el reset del Dashboard.", traceId = http.TraceIdentifier },
                 statusCode: StatusCodes.Status409Conflict);
 
         var secret = totp.GenerateSecret();
@@ -89,7 +79,6 @@ public static class MfaEndpoints
         return Results.Ok(new { provisioningUri = uri });
     }
 
-    /// <summary>T-102: confirma el enrolamiento con el primer OTP válido y activa mfa_enabled.</summary>
     private static async Task<IResult> ConfirmEnrollAsync(
         EnrollConfirmRequest request,
         OmakaseDbContext db,
@@ -123,11 +112,7 @@ public static class MfaEndpoints
         return Results.Ok(new { status = "enrolled" });
     }
 
-    /// <summary>
-    /// T-104: valida el TOTP (±1 paso), aplica uso único del desafío y rate-limit/lockout.
-    /// Al éxito fija <c>stepup:{userId}</c> (TTL 10 min, ligado al fingerprint del desafío).
-    /// Contrato de respuestas: SRS §4.1 (200 verified / 401 MFA_INVALID|MFA_EXPIRED / 423 ACCOUNT_LOCKED).
-    /// </summary>
+    /// <summary>Contrato de respuestas: SRS §4.1 (200 verified / 401 MFA_INVALID|MFA_EXPIRED / 423 ACCOUNT_LOCKED).</summary>
     private static async Task<IResult> VerifyChallengeAsync(
         VerifyChallengeRequest request,
         OmakaseDbContext db,
@@ -151,7 +136,6 @@ public static class MfaEndpoints
 
         try
         {
-            // Desafío vigente (uso único, TTL corto). Expirado → re-emitir (SRS §3.6).
             var challenge = await challenges.GetAsync(request.ChallengeId);
             if (challenge is null)
                 return Results.Json(
@@ -173,7 +157,6 @@ public static class MfaEndpoints
 
             var now = DateTimeOffset.UtcNow;
 
-            // Cuenta ya bloqueada → 423 con contexto (SRS §3.6).
             if (user.LockedUntil is { } locked && locked > now)
                 return AccountLocked(http, locked, now);
 
@@ -203,8 +186,6 @@ public static class MfaEndpoints
             var secret = TryUnprotect(protector, user.TotpSecret, logger);
             if (secret is null || !totp.ValidateCode(secret, request.Otp, now))
             {
-                // AC HU-046: al quinto intento fallido la cuenta se bloquea (HTTP 423)
-                // y cada intento se registra como MFA_FAILED.
                 if (attemptCount >= cfg.MaxAttempts)
                 {
                     user.LockedUntil = now.AddMinutes(cfg.LockoutMinutes);
@@ -224,8 +205,7 @@ public static class MfaEndpoints
                     statusCode: StatusCodes.Status401Unauthorized);
             }
 
-            // Éxito: uso único del desafío, reset del contador y apertura de la ventana de step-up
-            // ligada a la huella del dispositivo que originó el desafío (SRS §3.6).
+            // Uso único: consumir el desafío y ligar la ventana de step-up al fingerprint que lo originó.
             await challenges.RemoveAsync(request.ChallengeId);
             await attempts.ResetAsync(challenge.UserId);
             await stepUps.SetAsync(
@@ -293,10 +273,7 @@ public static class MfaEndpoints
             new { errorCode = "VALIDATION_ERROR", message, traceId = http.TraceIdentifier },
             statusCode: StatusCodes.Status400BadRequest);
 
-    /// <summary>
-    /// Registra el evento MFA en auditoría vía el canal asíncrono (T-100): la escritura
-    /// nunca bloquea la respuesta, coherente con RF-M1/§9.8 del SRS.
-    /// </summary>
+    /// <summary>Escritura vía canal asíncrono: nunca bloquea la respuesta (SRS §9.8).</summary>
     private static void EnqueueMfaAudit(
         IAuditChannel audit,
         ChallengeData challenge,

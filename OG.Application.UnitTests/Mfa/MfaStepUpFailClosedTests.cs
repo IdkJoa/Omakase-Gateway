@@ -49,13 +49,11 @@ public class MfaStepUpFailClosedTests
     [Fact]
     public async Task ChallengeStore_GetAsync_RedisFails_ShouldExecuteThroughCircuitBreakerAndThrow()
     {
-        // Arrange
         _dbMock.StringGetAsync(Arg.Any<RedisKey>(), Arg.Any<CommandFlags>())
             .Throws(new RedisConnectionException(ConnectionFailureType.UnableToConnect, "Redis indisponible"));
 
         var store = new ChallengeStore(_redisMock, _circuitBreakerMock);
 
-        // Act & Assert
         await Assert.ThrowsAsync<RedisConnectionException>(() => store.GetAsync(Guid.NewGuid()));
         await _circuitBreakerMock.Received(1).ExecuteRedisAsync(Arg.Any<Func<Task<ChallengeData?>>>(), Arg.Any<CancellationToken>());
     }
@@ -63,7 +61,6 @@ public class MfaStepUpFailClosedTests
     [Fact]
     public async Task StepUpStore_SetAsync_RedisFails_ShouldExecuteThroughCircuitBreakerAndThrow()
     {
-        // Arrange
         var circuitBreakerMock = Substitute.For<IDependencyCircuitBreaker>();
         circuitBreakerMock.ExecuteRedisAsync(Arg.Any<Func<Task<bool>>>(), Arg.Any<CancellationToken>())
             .Throws(new RedisConnectionException(ConnectionFailureType.UnableToConnect, "Redis indisponible"));
@@ -73,20 +70,17 @@ public class MfaStepUpFailClosedTests
         var store = new StepUpStore(_redisMock, circuitBreakerMock);
         var data = new StepUpData("fingerprint_hash", DateTimeOffset.UtcNow);
 
-        // Act & Assert
         await Assert.ThrowsAsync<RedisConnectionException>(() => store.SetAsync("user_1", data, TimeSpan.FromMinutes(10)));
     }
 
     [Fact]
     public async Task MfaAttemptStore_IncrementAsync_RedisFails_ShouldExecuteThroughCircuitBreakerAndThrow()
     {
-        // Arrange
         _dbMock.StringIncrementAsync(Arg.Any<RedisKey>(), Arg.Any<long>(), Arg.Any<CommandFlags>())
             .Throws(new RedisConnectionException(ConnectionFailureType.UnableToConnect, "Redis indisponible"));
 
         var store = new MfaAttemptStore(_redisMock, _circuitBreakerMock);
 
-        // Act & Assert
         await Assert.ThrowsAsync<RedisConnectionException>(() => store.IncrementAsync("user_1", TimeSpan.FromMinutes(15)));
         await _circuitBreakerMock.Received(1).ExecuteRedisAsync(Arg.Any<Func<Task<long>>>(), Arg.Any<CancellationToken>());
     }

@@ -8,9 +8,6 @@ using System.Threading.Tasks;
 
 namespace Infrastructure.Redis;
 
-/// <summary>
-/// Implementación unificada del servicio de Redis utilizando StackExchange.Redis.
-/// </summary>
 public sealed class RedisService : IRedisService
 {
     private readonly IDatabase _db;

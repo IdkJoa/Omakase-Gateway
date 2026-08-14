@@ -9,13 +9,10 @@ namespace Infrastructure.AnomalyDetection;
 /// </summary>
 public interface IAnomalyModelCache
 {
-    /// <summary>Devuelve el modelo del usuario, construyéndolo una sola vez con <paramref name="factory"/>.</summary>
     AnomalyModel GetOrBuild(string userId, Func<AnomalyModel> factory);
 
-    /// <summary>Descarta el modelo del usuario para forzar su reconstrucción (reentrenamiento T-035).</summary>
     void Invalidate(string userId);
 
-    /// <summary>Descarta todos los modelos (reentrenamiento periódico global, T-035).</summary>
     void Clear();
 }
 

@@ -6,20 +6,11 @@ namespace Infrastructure.Persistence.Caching;
 
 /// <summary>
 /// Decorador de <see cref="IUserMfaInfoProvider"/> que memoriza el estado MFA por usuario durante
-/// <see cref="RiskEngineCacheOptions.UserMfaInfoTtlSeconds"/> (T-072).
+/// <see cref="RiskEngineCacheOptions.UserMfaInfoTtlSeconds"/>.
 /// </summary>
 /// <remarks>
-/// Este proveedor consulta la tabla <c>users</c> y solo se invoca cuando el veredicto es CHALLENGE
-/// (SRS §3.6), lo que le da una propiedad indeseable en un gateway de seguridad: <b>cuanto más
-/// desafía el sistema, más carga genera contra la base de datos</b>. Un ataque por volumen —que por
-/// definición produce desafíos— se convierte así en un amplificador. Medido bajo 100 VUs
-/// sostenidos, donde el 99,9 % de las peticiones resolvieron CHALLENGE, la fase de step-up costó
-/// <b>16,28 ms de media (25,7 % del total)</b>.
-/// <para>
-/// Los campos cacheados (<c>IsInteractive</c>, <c>MfaEnabled</c>) cambian con el enrolamiento, no
-/// con el tráfico. El TTL acota a 5 s el retardo con que se ve un cambio de enrolamiento; con TTL 0
-/// se recupera la consulta directa.
-/// </para>
+/// Este proveedor solo se invoca en veredicto CHALLENGE (SRS §3.6), así que sin caché un ataque por volumen
+/// amplifica la carga contra la base de datos; los campos cacheados cambian con el enrolamiento, no con el tráfico.
 /// </remarks>
 public sealed class CachedUserMfaInfoProvider : IUserMfaInfoProvider
 {

@@ -57,16 +57,13 @@ public class RateLimitMiddlewareTests
     [Fact]
     public async Task InvokeAsync_RequestUnderLimit_ShouldCallNextMiddleware()
     {
-        // Arrange
         var context = CreateHttpContext("192.168.1.50");
         _redisMock.IncrementRateLimitAsync("192.168.1.50", Arg.Any<TimeSpan>()).Returns(99);
 
         var middleware = new RateLimitMiddleware(_next, _options, _loggerMock);
 
-        // Act
         await middleware.InvokeAsync(context, _redisMock);
 
-        // Assert
         Assert.True(_nextCalled);
         Assert.Equal(200, context.Response.StatusCode); // Estado HTTP por defecto es OK (200)
     }
@@ -74,16 +71,13 @@ public class RateLimitMiddlewareTests
     [Fact]
     public async Task InvokeAsync_RequestOverLimit_ShouldReturnHttp429AndStopPipeline()
     {
-        // Arrange
         var context = CreateHttpContext("192.168.1.50");
         _redisMock.IncrementRateLimitAsync("192.168.1.50", Arg.Any<TimeSpan>()).Returns(101);
 
         var middleware = new RateLimitMiddleware(_next, _options, _loggerMock);
 
-        // Act
         await middleware.InvokeAsync(context, _redisMock);
 
-        // Assert
         Assert.False(_nextCalled);
         Assert.Equal(429, context.Response.StatusCode);
 
@@ -100,16 +94,13 @@ public class RateLimitMiddlewareTests
     [Fact]
     public async Task InvokeAsync_RedisThrowsException_ShouldApplyFailClosedAndReturnHttp503()
     {
-        // Arrange
         var context = CreateHttpContext("192.168.1.50");
         _redisMock.IncrementRateLimitAsync("192.168.1.50", Arg.Any<TimeSpan>()).Throws(new Exception("Redis connection failed."));
 
         var middleware = new RateLimitMiddleware(_next, _options, _loggerMock);
 
-        // Act
         await middleware.InvokeAsync(context, _redisMock);
 
-        // Assert
         Assert.False(_nextCalled);
         Assert.Equal(503, context.Response.StatusCode);
 

@@ -5,10 +5,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Persistence;
 
-/// <summary>
-/// Loads the active policies associated with a service via service_policies
-/// (T-028). Implements <see cref="IServicePolicyProvider"/> over the DbContext.
-/// </summary>
 public sealed class ServicePolicyProvider : IServicePolicyProvider
 {
     private readonly OmakaseDbContext _db;

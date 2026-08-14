@@ -16,17 +16,12 @@ public sealed class AnomalyModelTrainer
     private readonly AnomalyDetectionOptions _options;
     private readonly int? _seed;
 
-    /// <param name="options">Configuración del motor (rank del PCA, mínimo de muestras).</param>
-    /// <param name="seed">Semilla opcional para reproducibilidad (tests / entrenamiento determinista).</param>
     public AnomalyModelTrainer(AnomalyDetectionOptions options, int? seed = null)
     {
         _options = options;
         _seed = seed;
     }
 
-    /// <summary>
-    /// Ajusta un <see cref="AnomalyModel"/> sobre el baseline de vectores de características del usuario.
-    /// </summary>
     /// <exception cref="InvalidOperationException">
     /// Si el baseline tiene menos de <see cref="AnomalyDetectionOptions.MinTrainingSamples"/> muestras:
     /// el usuario sigue en cold-start (HU-017) y no debe entrenarse un modelo poco fiable.
@@ -65,8 +60,7 @@ public sealed class AnomalyModelTrainer
         return new AnomalyModel(ml, transformer, baselineScores);
     }
 
-    /// <summary>Puntúa el baseline con el modelo recién ajustado y devuelve los scores crudos ordenados
-    /// ascendentemente (insumo de la calibración por percentil).</summary>
+    // Devuelve los scores crudos ordenados ascendentemente: insumo de la calibración por percentil.
     private static float[] ScoreBaseline(MLContext ml, ITransformer transformer, IDataView data)
     {
         var scored = transformer.Transform(data);

@@ -7,10 +7,7 @@ using Xunit;
 
 namespace OG.Application.UnitTests;
 
-/// <summary>
-/// Pruebas del DatabaseProxyConfigProvider (HU-009 / T-017 y T-018):
-/// mapeo de protected_services a rutas/clusters de YARP y recarga vía change token.
-/// </summary>
+// DatabaseProxyConfigProvider (HU-009 / T-017, T-018): mapeo de protected_services a rutas/clusters YARP y recarga vía change token.
 public class DatabaseProxyConfigProviderTests
 {
     private static ProtectedService Service(string name, string url, bool active = true) => new()

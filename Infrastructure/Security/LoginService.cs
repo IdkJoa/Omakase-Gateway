@@ -10,28 +10,12 @@ using Microsoft.Extensions.Logging;
 
 namespace Infrastructure.Security;
 
-/// <summary>
-/// Implementación del caso de uso de login para Client Users.
-/// HU-019 / T-038 / T-039 / T-040.
-/// </summary>
-/// <remarks>
-/// Flujo:
-/// 1. Buscar usuario por username.
-/// 2. Verificar is_active.
-/// 3. Verificar locked_until → HTTP 423 si está bloqueado.
-/// 4. Verificar contraseña con BCrypt (factor ≥12).
-///    - Fallo: incrementar failed_attempts; bloquear si llega a 5 → HTTP 423.
-///    - Éxito: reset failed_attempts + locked_until.
-/// 5. Emitir access token (JWT HS256, jti UUID) + refresh token (UUID v4 opaco).
-/// 6. Persistir refresh token: SHA-256 del valor plano + device_info + expires_at.
-/// 7. Registrar evento de auditoría (T-040) vía IAuditChannel (fire-and-forget).
-/// </remarks>
+// Caso de uso de login para Client Users. Bloquea la cuenta 30 min tras 5 intentos fallidos.
 public sealed class LoginService : ILoginService
 {
     private const int MaxFailedAttempts = 5;
     private static readonly TimeSpan LockDuration = TimeSpan.FromMinutes(30);
 
-    // Reglas de autenticación para TriggeredRules en audit_logs
     private static readonly JsonDocument RuleLoginSuccess =
         JsonDocument.Parse("[\"AUTH_LOGIN_SUCCESS\"]");
     private static readonly JsonDocument RuleLoginFailed =
@@ -65,7 +49,6 @@ public sealed class LoginService : ILoginService
         string? sourceIp = null,
         CancellationToken ct = default)
     {
-        // ── 1. Buscar usuario ─────────────────────────────────────────────────
         var user = await _db.Users
             .FirstOrDefaultAsync(u => u.Username == request.Username, ct);
 
@@ -77,7 +60,6 @@ public sealed class LoginService : ILoginService
             return LoginResult.Unauthorized();
         }
 
-        // ── 2. Verificar cuenta activa ────────────────────────────────────────
         if (!user.IsActive)
         {
             _logger.LogWarning("Login fallido: usuario '{Username}' inactivo.", request.Username);
@@ -85,7 +67,6 @@ public sealed class LoginService : ILoginService
             return LoginResult.Unauthorized();
         }
 
-        // ── 2b. Solo Client Users con contraseña local pueden usar este flujo ─
         // FIX HU-046: los SECURITY_OFFICER (Keycloak) tienen password_hash NULL;
         // sin este guard, BCrypt.Verify(null) lanza excepción → HTTP 500.
         if (user.Type != UserType.Client || string.IsNullOrEmpty(user.PasswordHash))
@@ -97,7 +78,6 @@ public sealed class LoginService : ILoginService
             return LoginResult.Unauthorized();
         }
 
-        // ── 3. Verificar bloqueo ──────────────────────────────────────────────
         if (user.LockedUntil.HasValue && user.LockedUntil.Value > DateTimeOffset.UtcNow)
         {
             _logger.LogWarning(
@@ -107,7 +87,6 @@ public sealed class LoginService : ILoginService
             return LoginResult.Locked(user.LockedUntil.Value);
         }
 
-        // ── 4. Verificar contraseña ───────────────────────────────────────────
         var passwordValid = BC.Verify(request.Password, user.PasswordHash);
 
         if (!passwordValid)
@@ -123,7 +102,6 @@ public sealed class LoginService : ILoginService
                     user.Username, MaxFailedAttempts);
                 await _db.SaveChangesAsync(ct);
 
-                // T-040: evento de bloqueo (cuenta recién bloqueada en este intento)
                 EmitAudit(user.Id, Verdict.Block, RuleLoginBlocked, sourceIp: sourceIp, userAgent: deviceInfo);
                 return LoginResult.Locked(user.LockedUntil.Value);
             }
@@ -133,22 +111,18 @@ public sealed class LoginService : ILoginService
                 user.Username, user.FailedAttempts, MaxFailedAttempts);
             await _db.SaveChangesAsync(ct);
 
-            // T-040: evento de credenciales inválidas
             EmitAudit(user.Id, Verdict.Block, RuleLoginFailed, sourceIp: sourceIp, userAgent: deviceInfo);
             return LoginResult.Unauthorized();
         }
 
-        // ── 5. Login exitoso — reset de contadores ────────────────────────────
         user.FailedAttempts = 0;
         user.LockedUntil = null;
         user.UpdatedAt = DateTimeOffset.UtcNow;
 
-        // ── 6. Emitir tokens ──────────────────────────────────────────────────
         var (accessToken, _) = _tokenService.GenerateAccessToken(user);
         var refreshTokenRaw = _tokenService.GenerateRefreshTokenRaw();
         var refreshTokenHash = _tokenService.HashRefreshToken(refreshTokenRaw);
 
-        // ── 7. Persistir refresh token (T-039) ────────────────────────────────
         // Solo el hash SHA-256 del UUID v4 se guarda en la BD; el valor plano
         // se envía únicamente en la cookie HttpOnly y nunca se re-almacena.
         var refreshToken = new RefreshToken
@@ -156,7 +130,7 @@ public sealed class LoginService : ILoginService
             Id = RefreshTokenId.New(),
             UserId = user.Id,
             TokenHash = refreshTokenHash,
-            DeviceInfo = deviceInfo,          // User-Agent capturado en el endpoint
+            DeviceInfo = deviceInfo,
             ExpiresAt = DateTimeOffset.UtcNow.AddDays(7),
             IsRevoked = false,
             CreatedAt = DateTimeOffset.UtcNow
@@ -169,7 +143,6 @@ public sealed class LoginService : ILoginService
             "Login exitoso: usuario '{Username}' (Id={UserId}).",
             user.Username, user.Id);
 
-        // T-040: evento de éxito (Allow)
         EmitAudit(user.Id, Verdict.Allow, RuleLoginSuccess, sourceIp: sourceIp, userAgent: deviceInfo);
 
         return LoginResult.Success(accessToken, refreshTokenRaw);
@@ -200,7 +173,6 @@ public sealed class LoginService : ILoginService
         // con Include la descarta. El ! documenta esa invariante en lugar de añadir una rama muerta.
         var user = storedToken.User!;
 
-        // Verificar si el token ya expiró o el usuario fue desactivado
         if (storedToken.ExpiresAt <= DateTimeOffset.UtcNow || !user.IsActive)
         {
             _logger.LogWarning("Intento de refresh con token expirado o usuario inactivo.");
@@ -208,7 +180,7 @@ public sealed class LoginService : ILoginService
             return LoginResult.Unauthorized();
         }
 
-        // T-041: Si el token está revocado, revocar TODOS los tokens del usuario (alerta de compromiso)
+        // Si el token está revocado, es señal de posible robo/reuso: revocar TODOS los tokens del usuario.
         if (storedToken.IsRevoked)
         {
             _logger.LogWarning("ALERTA DE SEGURIDAD: Intento de uso de refresh token revocado. Revocando todos los tokens del usuario {UserId}.", user.Id);
@@ -228,10 +200,8 @@ public sealed class LoginService : ILoginService
             return LoginResult.Unauthorized();
         }
 
-        // Rotar: Marcar el actual como revocado
         storedToken.IsRevoked = true;
 
-        // Generar nuevo par de tokens
         var (accessToken, _) = _tokenService.GenerateAccessToken(user);
         var refreshTokenRaw = _tokenService.GenerateRefreshTokenRaw();
         var newRefreshTokenHash = _tokenService.HashRefreshToken(refreshTokenRaw);
@@ -258,17 +228,10 @@ public sealed class LoginService : ILoginService
 
     /// <inheritdoc/>
     /// <remarks>
-    /// FIX HU-020: la versión anterior localizaba el refresh token por la cookie de la petición,
-    /// pero esa cookie se emite con <c>Path=/auth/refresh</c> (SRS §3.6) y por tanto NUNCA llega a
-    /// <c>/auth/logout</c>: el logout salía sin revocar nada y devolvía 204, dejando vivos el access
-    /// token (15 min) y el refresh token (7 días). La sesión se identifica ahora por el claim
-    /// <c>sub</c> del access token, que siempre está presente (el endpoint exige autenticación).
-    /// <para>
-    /// Al no poder distinguir qué refresh token corresponde al dispositivo actual (la cookie es
-    /// opaca y no viaja hasta aquí), se revocan todos los del usuario. Es un superconjunto de
-    /// «revocar el refresh token actual» (HU-020) y la lectura fail-closed coherente con Zero Trust
-    /// (SRS §9.4): ante un logout, ninguna sesión sobrevive.
-    /// </para>
+    /// FIX HU-020: la cookie del refresh token se emite con <c>Path=/auth/refresh</c> (SRS §3.6) y
+    /// nunca llega a <c>/auth/logout</c>, así que la sesión se identifica por el claim <c>sub</c> del
+    /// access token. Al no poder distinguir qué refresh token es el del dispositivo actual, se
+    /// revocan todos los del usuario (fail-closed, Zero Trust SRS §9.4: ninguna sesión sobrevive).
     /// </remarks>
     public async Task LogoutAsync(
         string userId,
@@ -278,7 +241,7 @@ public sealed class LoginService : ILoginService
         string? sourceIp = null,
         CancellationToken ct = default)
     {
-        // T-042: revocar el access token en Redis es lo prioritario — es la credencial en uso.
+        // Revocar el access token en Redis es lo prioritario: es la credencial en uso.
         if (!string.IsNullOrEmpty(accessTokenJti) && accessTokenRemainingLifetime > TimeSpan.Zero)
         {
             await _redisService.AddToBlacklistAsync(accessTokenJti, accessTokenRemainingLifetime);
@@ -309,13 +272,8 @@ public sealed class LoginService : ILoginService
         EmitAudit(ownerId, Verdict.Allow, JsonDocument.Parse("[\"AUTH_LOGOUT\"]"), sourceIp, deviceInfo);
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
-
-    /// <summary>
-    /// Encola un evento de autenticación en el canal de auditoría (fire-and-forget).
-    /// No bloquea el flujo de login; el <see cref="AuditPersistenceWorker"/> lo persiste asíncronamente.
-    /// T-040.
-    /// </summary>
+    // Encola el evento en el canal de auditoría sin bloquear el flujo de login;
+    // AuditPersistenceWorker lo persiste asíncronamente (fire-and-forget).
     private void EmitAudit(
         UserId? userId,
         Verdict verdict,

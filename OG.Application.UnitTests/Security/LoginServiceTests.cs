@@ -20,18 +20,9 @@ using Xunit;
 
 namespace OG.Application.UnitTests.Security;
 
-/// <summary>
-/// Tests de HU-019 — Autenticación de Client Users con JWT propio del Gateway.
-/// Cubre T-038 (login / access token), T-039 (refresh token / cookie) y T-040 (bloqueo + auditoría).
-///
-/// Estrategia de persistencia:
-///   SqliteTestFixture mantiene una conexión SQLite en memoria compartida.
-///   TestDbContext añade ValueConverters de JsonDocument para compatibilidad con SQLite.
-/// </summary>
+// Tests de HU-019 (autenticación JWT propia del Gateway): T-038 login, T-039 refresh, T-040 bloqueo + auditoría.
 public class LoginServiceTests : IDisposable
 {
-    // ── Fixtures ──────────────────────────────────────────────────────────────
-
     private readonly SqliteConnection _connection;
     private readonly OmakaseDbContext _db;
     private readonly IGatewayTokenService _tokenService;
@@ -54,7 +45,6 @@ public class LoginServiceTests : IDisposable
 
     public LoginServiceTests()
     {
-        // Conexión nueva per test para asegurar aislamiento completo
         _connection = new SqliteConnection("DataSource=:memory:");
         _connection.Open();
 
@@ -80,8 +70,6 @@ public class LoginServiceTests : IDisposable
         _db.Dispose();
         _connection.Dispose();
     }
-
-    // ── Helpers ───────────────────────────────────────────────────────────────
 
     private User SeedUser(
         string username = "johndoe",
@@ -124,9 +112,7 @@ public class LoginServiceTests : IDisposable
         return token;
     }
 
-    // ══════════════════════════════════════════════════════════════════════════
-    // ESCENARIO 1 — Login exitoso (HU-019 Criterio 1)
-    // ══════════════════════════════════════════════════════════════════════════
+    // Escenario 1: login exitoso (HU-019 criterio 1)
 
     [Fact]
     public async Task Login_ConCredencialesValidas_RetornaAccessToken()
@@ -194,14 +180,10 @@ public class LoginServiceTests : IDisposable
             .FirstOrDefaultAsync(r => r.UserId == user.Id);
 
         Assert.NotNull(stored);
-        // El hash NO debe ser igual al valor plano
         Assert.NotEqual(result.RefreshTokenRaw, stored!.TokenHash);
-        // El hash debe ser un SHA-256 (64 hex chars)
         Assert.Equal(64, stored.TokenHash.Length);
         Assert.Matches("^[0-9a-f]+$", stored.TokenHash);
-        // device_info persistido correctamente
         Assert.Equal("TestAgent/1.0", stored.DeviceInfo);
-        // TTL correcto
         Assert.True(stored.ExpiresAt > DateTimeOffset.UtcNow.AddDays(6));
         Assert.False(stored.IsRevoked);
     }
@@ -210,7 +192,7 @@ public class LoginServiceTests : IDisposable
     public async Task Login_ConCredencialesValidas_ResetearFailedAttemptsYLockedUntil()
     {
         var user = SeedUser(failedAttempts: 3,
-            lockedUntil: DateTimeOffset.UtcNow.AddMinutes(-5)); // bloqueo expirado
+            lockedUntil: DateTimeOffset.UtcNow.AddMinutes(-5)); // bloqueo ya expirado
 
         await _sut.LoginAsync(new LoginRequest("johndoe", RawPassword));
 
@@ -236,9 +218,7 @@ public class LoginServiceTests : IDisposable
                 e.TriggeredRules.RootElement.ToString().Contains("AUTH_LOGIN_SUCCESS")));
     }
 
-    // ══════════════════════════════════════════════════════════════════════════
-    // ESCENARIO 2 — Credenciales inválidas y bloqueo progresivo (HU-019 Criterio 2)
-    // ══════════════════════════════════════════════════════════════════════════
+    // Escenario 2: credenciales inválidas y bloqueo progresivo (HU-019 criterio 2)
 
     [Fact]
     public async Task Login_ConContrasenaIncorrecta_Retorna401()
@@ -267,7 +247,7 @@ public class LoginServiceTests : IDisposable
     [Fact]
     public async Task Login_ConUsuarioInexistente_Retorna401_SinFiltrarInfo()
     {
-        // No se crea ningún usuario — la respuesta debe ser idéntica a contraseña incorrecta
+        // Sin usuario creado: la respuesta debe ser idéntica a la de contraseña incorrecta (no enumeración de usuarios)
         var result = await _sut.LoginAsync(new LoginRequest("ghost", "anypassword"));
 
         Assert.True(result.IsUnauthorized);
@@ -288,18 +268,16 @@ public class LoginServiceTests : IDisposable
     [Fact]
     public async Task Login_Al5toIntentoFallido_BloqueaCuenta30Minutos_T040()
     {
-        SeedUser(failedAttempts: 4); // el 5to intento lo dispara este test
+        SeedUser(failedAttempts: 4); // este 5to intento dispara el bloqueo
         var antes = DateTimeOffset.UtcNow;
 
         var result = await _sut.LoginAsync(new LoginRequest("johndoe", "WrongPassword!"));
 
-        // Resultado HTTP 423
         Assert.True(result.IsLocked);
         Assert.False(result.IsUnauthorized);
         Assert.Null(result.AccessToken);
         Assert.True(result.LockedSecondsRemaining > 0);
 
-        // locked_until persistido correctamente (~30 min)
         _db.ChangeTracker.Clear();
         var updated = await _db.Users
             .FirstOrDefaultAsync(u => u.Username == "johndoe");
@@ -341,24 +319,22 @@ public class LoginServiceTests : IDisposable
     [Fact]
     public async Task Login_Intento1A4_NoBloquea_SiSigueDebajo5()
     {
-        SeedUser(failedAttempts: 3); // 4to intento (sigue sin bloqueo)
+        SeedUser(failedAttempts: 3); // 4to intento: todavía por debajo del umbral de bloqueo
 
         await _sut.LoginAsync(new LoginRequest("johndoe", "WrongPassword!"));
 
         _db.ChangeTracker.Clear();
         var updated = await _db.Users.FirstOrDefaultAsync(u => u.Username == "johndoe");
         Assert.Equal(4, updated!.FailedAttempts);
-        Assert.Null(updated.LockedUntil); // todavía sin bloqueo
+        Assert.Null(updated.LockedUntil);
     }
 
-    // ══════════════════════════════════════════════════════════════════════════
-    // ESCENARIO 3 — Cuenta bloqueada (HU-019 Criterio 3)
-    // ══════════════════════════════════════════════════════════════════════════
+    // Escenario 3: cuenta bloqueada (HU-019 criterio 3)
 
     [Fact]
     public async Task Login_ConCuentaBloqueada_Retorna423_AunConContrasenaCorrecta()
     {
-        // locked_until en el futuro — las credenciales son correctas pero la cuenta está bloqueada
+        // Credenciales correctas pero locked_until en el futuro: la cuenta sigue bloqueada
         SeedUser(lockedUntil: DateTimeOffset.UtcNow.AddMinutes(15));
 
         var result = await _sut.LoginAsync(new LoginRequest("johndoe", RawPassword));
@@ -376,7 +352,7 @@ public class LoginServiceTests : IDisposable
         var result = await _sut.LoginAsync(new LoginRequest("johndoe", "WrongPassword!"));
 
         Assert.True(result.LockedSecondsRemaining > 0);
-        Assert.True(result.LockedSecondsRemaining <= 1800); // ≤30 min en segundos
+        Assert.True(result.LockedSecondsRemaining <= 1800);
     }
 
     [Fact]
@@ -395,7 +371,7 @@ public class LoginServiceTests : IDisposable
     [Fact]
     public async Task Login_ConBloqueoExpirado_PermiteLoginExitoso()
     {
-        // locked_until en el PASADO → el bloqueo ya expiró, debe permitir el login
+        // locked_until en el pasado: el bloqueo ya expiró
         SeedUser(lockedUntil: DateTimeOffset.UtcNow.AddMinutes(-1));
 
         var result = await _sut.LoginAsync(new LoginRequest("johndoe", RawPassword));
@@ -405,9 +381,7 @@ public class LoginServiceTests : IDisposable
         Assert.NotNull(result.AccessToken);
     }
 
-    // ══════════════════════════════════════════════════════════════════════════
-    // GatewayTokenService — T-038 / T-039
-    // ══════════════════════════════════════════════════════════════════════════
+    // GatewayTokenService: T-038 / T-039
 
     [Fact]
     public void TokenService_GeneraAccessToken_ConClaimsSubJtiUsernameUserType()
@@ -495,12 +469,10 @@ public class LoginServiceTests : IDisposable
         for (var i = 0; i < 100; i++)
             tokens.Add(service.GenerateRefreshTokenRaw());
 
-        Assert.Equal(100, tokens.Count); // sin colisiones en 100 generaciones
+        Assert.Equal(100, tokens.Count);
     }
 
-    // ══════════════════════════════════════════════════════════════════════════
-    // ESCENARIO 4 — Refresh Session (HU-020 / T-041)
-    // ══════════════════════════════════════════════════════════════════════════
+    // Escenario 4: refresh session (HU-020 / T-041)
 
     [Fact]
     public async Task Refresh_ConTokenValido_RenuevaTokensYMarcaAnteriorComoRevocado()
@@ -553,12 +525,10 @@ public class LoginServiceTests : IDisposable
     public async Task Refresh_ConTokenRevocado_RevocaTodosLosTokensYRetornaUnauthorized()
     {
         var user = SeedUser();
-        // Tokens activos
         SeedRefreshToken(user.Id, "active-1");
         SeedRefreshToken(user.Id, "active-2");
         SeedRefreshToken(user.Id, "active-3");
-        
-        // Token revocado
+
         var revokedRaw = "revoked-token";
         SeedRefreshToken(user.Id, revokedRaw, isRevoked: true);
 
@@ -572,14 +542,10 @@ public class LoginServiceTests : IDisposable
         _auditChannel.Received(1).TryWrite(Arg.Is<AuditEvent>(e => e.Verdict == Verdict.Block && e.TriggeredRules!.RootElement.ToString().Contains("AUTH_TOKEN_COMPROMISED")));
     }
 
-    // ══════════════════════════════════════════════════════════════════════════
-    // ESCENARIO 5 — Logout (HU-020 / T-042)
-    // ══════════════════════════════════════════════════════════════════════════
-
-    // El logout identifica la sesión por el claim `sub` del access token, NO por la cookie del
-    // refresh token: esa cookie se emite con Path=/auth/refresh (SRS §3.6) y nunca llega a
-    // /auth/logout. Condicionar el logout a su presencia dejaba vivos el access token y el
-    // refresh token pese a responder 204 (fix HU-020).
+    // Escenario 5: logout (HU-020 / T-042)
+    // El logout identifica la sesión por el claim `sub` del access token, no por la cookie de refresh
+    // (Path=/auth/refresh, SRS §3.6, nunca llega a /auth/logout); condicionarlo a esa cookie dejaba
+    // vivos ambos tokens pese a responder 204 (fix HU-020).
 
     [Fact]
     public async Task Logout_ConTokenValido_RevocaTokenYAgregaAccessABlacklist()
@@ -603,8 +569,7 @@ public class LoginServiceTests : IDisposable
     [Fact]
     public async Task Logout_RevocaTodasLasSesionesActivasDelUsuario()
     {
-        // Sin la cookie no se puede singularizar el token del dispositivo actual, así que el
-        // logout revoca todas las sesiones activas (fail-closed, SRS §9.4).
+        // Sin cookie no se puede singularizar el dispositivo actual, así que revoca todas las sesiones (fail-closed, SRS §9.4)
         var user = SeedUser();
         SeedRefreshToken(user.Id, "sesion-1");
         SeedRefreshToken(user.Id, "sesion-2");
@@ -620,8 +585,7 @@ public class LoginServiceTests : IDisposable
     [Fact]
     public async Task Logout_NoDejaSesionesQueSobrevivanAlCierre()
     {
-        // Regresión del bug: el refresh token seguía activo tras el logout y permitía
-        // renovar la sesión con la cookie robada.
+        // Regresión: el refresh token seguía activo tras logout, permitiendo renovar con la cookie robada
         var user = SeedUser();
         var rawToken = "sesion-robada";
         SeedRefreshToken(user.Id, rawToken);
@@ -656,8 +620,6 @@ public class LoginServiceTests : IDisposable
         await _redisService.Received(1).AddToBlacklistAsync(jti, lifetime);
     }
 
-    // ── Utilidades ────────────────────────────────────────────────────────────
-
     private static JsonElement DecodeJwtPayload(string jwt)
     {
         var segment = jwt.Split('.')[1];
@@ -671,7 +633,6 @@ public class LoginServiceTests : IDisposable
         return JsonDocument.Parse(json).RootElement;
     }
 
-    /// <summary>Extrae el número de versión de UUID del nibble correspondiente.</summary>
     private static int GuidVersion(Guid guid)
     {
         // En little-endian de .NET, el byte 7 del array tiene el nibble de versión en bits [4..7]

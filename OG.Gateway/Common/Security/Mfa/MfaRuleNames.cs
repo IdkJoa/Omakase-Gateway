@@ -1,10 +1,6 @@
 namespace Application.Common.Security.Mfa;
 
-/// <summary>
-/// Nombres de las entradas MFA registradas en <c>triggered_rules</c> de la auditoría
-/// (HU-046: MFA_SATISFIED en la reanudación, MFA_FAILED en intentos fallidos y la
-/// escalada de clientes no interactivos).
-/// </summary>
+// Nombres de las entradas MFA registradas en triggered_rules de la auditoría.
 public static class MfaRuleNames
 {
     public const string Satisfied = "MFA_SATISFIED";

@@ -3,10 +3,6 @@ using OG.Dashboard.Features.Metrics;
 
 namespace OG.Dashboard.Api.Endpoints;
 
-/// <summary>
-/// Endpoints de métricas y KPIs del Dashboard principal (HU-021 / T-062).
-/// GET /api/v1/metrics/summary — Tarjetas de KPI y serie temporal del Risk Score calculadas sobre audit_logs.
-/// </summary>
 public static class MetricsEndpoints
 {
     public static IEndpointRouteBuilder MapMetricsEndpoints(this IEndpointRouteBuilder app)

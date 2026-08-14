@@ -44,8 +44,6 @@ public static class RiskConfigEndpoints
         return app;
     }
 
-    // ── Handlers ──────────────────────────────────────────────────────────────
-
     private static async Task<IResult> Get(
         OmakaseDbContext db, ILoggerFactory loggerFactory, CancellationToken ct)
     {
@@ -106,14 +104,7 @@ public static class RiskConfigEndpoints
         return Results.Ok(ToDto(config));
     }
 
-    // ── Validación (T-052) ──────────────────────────────────────────────────────
-
-    /// <summary>
-    /// Reglas de T-052: pesos en [0,1] que suman 1.0 (±0.001), umbrales enteros en [0,100]
-    /// con el de desafío &lt; el de bloqueo, penalización en [0,100] y N ≥ 1. Devuelve el
-    /// 400 listo o null. (<c>ChallengeThreshold</c> es el techo de ALLOW y <c>BlockThreshold</c>
-    /// el de CHALLENGE, por eso la validación exige ChallengeThreshold &lt; BlockThreshold.)
-    /// </summary>
+    /// <summary><c>ChallengeThreshold</c> es el techo de ALLOW y <c>BlockThreshold</c> el de CHALLENGE (T-052); por eso se exige ChallengeThreshold &lt; BlockThreshold.</summary>
     private static IResult? Validate(UpdateRiskConfigRequest r)
     {
         if (r.PolicyWeight is < 0m or > 1m || r.AnomalyWeight is < 0m or > 1m)
@@ -144,8 +135,6 @@ public static class RiskConfigEndpoints
 
     private static bool IsIntegerInRange(decimal value, decimal min, decimal max) =>
         value == Math.Truncate(value) && value >= min && value <= max;
-
-    // ── Helpers ───────────────────────────────────────────────────────────────
 
     private static RiskScoreConfigDto ToDto(RiskScoreConfig c) => new(
         Id: c.Id.Value,

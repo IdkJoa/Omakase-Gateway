@@ -6,9 +6,7 @@ using Microsoft.Extensions.Options;
 
 namespace Infrastructure.KeyVault;
 
-/// <summary>
-/// Cliente de Azure Key Vault para consultar secretos con DefaultAzureCredential (T-068 / HU-031).
-/// </summary>
+// Usa DefaultAzureCredential (managed identity / az login / env vars) para autenticarse ante Key Vault.
 public class KeyVaultSecretProvider : ISecretProvider
 {
     private readonly SecretClient? _secretClient;

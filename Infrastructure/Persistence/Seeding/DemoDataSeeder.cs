@@ -10,39 +10,21 @@ using Microsoft.Extensions.Configuration;
 namespace Infrastructure.Persistence.Seeding;
 
 /// <summary>
-/// Datos de demostración para la defensa (HU-036 / T-077): tres servicios protegidos, cuatro
-/// políticas deterministas con sus asociaciones, cinco usuarios cliente con perfil de
-/// comportamiento y un historial de auditoría, de modo que el Dashboard muestre métricas
-/// reales desde el primer arranque en vez de tablas vacías.
-/// <para>
-/// <b>Por qué es una clase aparte.</b> <see cref="OmakaseDbSeeder"/> siembra el mínimo que el
-/// sistema necesita para funcionar: configuración del motor, roles, un administrador y el
-/// servicio de ejemplo. Lo de aquí es escenografía de demostración, que no debe existir en
-/// ningún entorno que no sea el de desarrollo. Separarlas deja el arranque productivo intacto
-/// y permite añadir o quitar material de demo sin tocar el camino crítico.
-/// </para>
-/// <para>
-/// <b>Reproducible e idempotente.</b> Todo se deriva de una semilla fija, así que dos entornos
-/// limpios obtienen exactamente los mismos datos, y cada bloque comprueba antes si su material
-/// ya está sembrado. Volver a arrancar no duplica nada.
-/// </para>
-/// <para>
-/// Se activa solo con <c>Demo:SeedExtendedData:Enabled=true</c>, declarado únicamente en
-/// <c>appsettings.Development.json</c>.
-/// </para>
+/// Datos de demostración: servicios, políticas, usuarios cliente y auditoría para que el Dashboard
+/// muestre métricas reales desde el primer arranque en vez de tablas vacías.
 /// </summary>
+/// <remarks>
+/// Separada de <see cref="OmakaseDbSeeder"/> (que siembra solo lo mínimo para funcionar) porque esta
+/// escenografía no debe existir fuera de desarrollo; se activa solo con
+/// <c>Demo:SeedExtendedData:Enabled=true</c> en <c>appsettings.Development.json</c>. Es idempotente:
+/// cada bloque comprueba si su material ya está sembrado antes de insertar.
+/// </remarks>
 public sealed class DemoDataSeeder : IDbSeeder
 {
-    /// <summary>
-    /// Semilla del material de demostración. Fija la reproducibilidad: identificadores,
-    /// marcas de tiempo y puntajes salen siempre iguales para un mismo día de referencia.
-    /// </summary>
+    /// <summary>Semilla fija: identificadores, marcas de tiempo y puntajes salen siempre iguales.</summary>
     private const int Seed = 20260806;
 
-    /// <summary>Días de historial de auditoría que se sintetizan hacia atrás.</summary>
     private const int HistoryDays = 7;
-
-    /// <summary>Evaluaciones históricas a sembrar. El backlog pide más de cincuenta.</summary>
     private const int HistoryEvaluations = 60;
 
     private readonly OmakaseDbContext _db;
@@ -70,8 +52,7 @@ public sealed class DemoDataSeeder : IDbSeeder
         if (!_configuration.GetValue("Demo:SeedExtendedData:Enabled", false))
             return;
 
-        // El material de demostración cuelga del administrador sembrado por OmakaseDbSeeder:
-        // access_policies.created_by es obligatorio. Si aún no existe, no hay nada que hacer.
+        // access_policies.created_by es obligatorio y depende del administrador sembrado por OmakaseDbSeeder.
         var admin = await _db.Users
             .AsNoTracking()
             .FirstOrDefaultAsync(u => u.Type == UserType.SecurityOfficer, cancellationToken);
@@ -96,15 +77,13 @@ public sealed class DemoDataSeeder : IDbSeeder
 
     // ── Políticas ────────────────────────────────────────────────────────────
 
-    /// <summary>Nombre de cada política de demostración; también su clave de idempotencia.</summary>
     private static readonly (string Name, PolicyType Type, string Config)[] DemoPolicies =
     [
         ("Demo · Geofencing de países denegados", PolicyType.Geofence,
             """{"denied_countries":["JP","RU","KP"]}"""),
 
-        // Ventana deliberadamente permisiva: el material de demostración no puede depender de
-        // la hora a la que se defienda el trabajo. Para ver la regla disparar, basta con
-        // estrecharla desde el Dashboard, que es justamente lo que HU-025 permite demostrar.
+        // Ventana deliberadamente permisiva: la demo no puede depender de la hora a la que se presente;
+        // estrecharla desde el Dashboard es justo lo que HU-025 permite demostrar.
         ("Demo · Ventana horaria de servicio", PolicyType.TimeWindow,
             """{"start_time":"00:00","end_time":"23:59","timezone":"AST"}"""),
 
@@ -139,15 +118,8 @@ public sealed class DemoDataSeeder : IDbSeeder
 
     // ── Servicios protegidos ─────────────────────────────────────────────────
 
-    /// <summary>
-    /// Los dos servicios que faltan para llegar a los tres del backlog. Ilustran el motivo por
-    /// el que <c>service_policies</c> existe: cada servicio aplica su propio conjunto de reglas.
-    /// <para>
-    /// <c>httpbin</c>, sembrado por <see cref="OmakaseDbSeeder"/>, se deja deliberadamente sin
-    /// políticas asociadas: es el destino de las pruebas de carga, cuya medición debe reflejar
-    /// el coste del motor y no el de las reglas.
-    /// </para>
-    /// </summary>
+    // httpbin (sembrado por OmakaseDbSeeder) queda deliberadamente sin políticas: es el destino de las
+    // pruebas de carga y su medición debe reflejar el coste del motor, no el de las reglas.
     private static readonly (string Name, string Upstream, bool RequiresAuth)[] DemoServices =
     [
         ("reportes", "https://httpbin.org/anything", false),
@@ -177,12 +149,7 @@ public sealed class DemoDataSeeder : IDbSeeder
         }
     }
 
-    /// <summary>
-    /// Asocia reglas distintas a servicios distintos, que es el caso de uso que el SRS §7.8
-    /// pone como ejemplo: la nómina exige las cuatro comprobaciones, mientras que el servicio
-    /// de reportes se conforma con las dos que no dependen de la hora ni del historial de
-    /// desplazamiento.
-    /// </summary>
+    // Nómina exige las cuatro comprobaciones; reportes solo las dos que no dependen de hora ni desplazamiento (SRS §7.8).
     private async Task SeedServicePoliciesAsync(CancellationToken ct)
     {
         var asignaciones = new Dictionary<string, string[]>
@@ -231,15 +198,8 @@ public sealed class DemoDataSeeder : IDbSeeder
 
     // ── Usuarios cliente ─────────────────────────────────────────────────────
 
-    /// <summary>
-    /// Cuatro usuarios cliente que, con <c>demo.cliente</c> de <see cref="OmakaseDbSeeder"/>,
-    /// completan los cinco del backlog.
-    /// <para>
-    /// <c>svc.integracion</c> se marca como no interactivo a propósito: es una cuenta de
-    /// servicio, no puede completar un segundo factor, y su veredicto de desafío escala a
-    /// bloqueo (SRS §3.6). Tenerla sembrada permite demostrar ese camino sin prepararlo a mano.
-    /// </para>
-    /// </summary>
+    // svc.integracion se marca como no interactivo a propósito: es cuenta de servicio, no puede completar
+    // MFA, y su veredicto de desafío escala a bloqueo (SRS §3.6) — demuestra ese camino sin prepararlo a mano.
     private static readonly (string Username, bool Interactive, int ProfileSeed)[] DemoClients =
     [
         ("cliente.ventas",    true,  Seed + 11),
@@ -280,11 +240,8 @@ public sealed class DemoDataSeeder : IDbSeeder
         }
     }
 
-    /// <summary>
-    /// Da a cada usuario cliente de demostración un perfil de comportamiento sintético con su
-    /// propia semilla, de modo que no sean copias del mismo patrón. Sin perfil, el motor los
-    /// trataría a todos como arranque en frío y el Dashboard mostraría una única forma repetida.
-    /// </summary>
+    // Cada cliente usa su propia semilla para no ser copia del mismo patrón; sin perfil el motor
+    // los trataría a todos como arranque en frío.
     private async Task SeedBehaviorProfilesAsync(CancellationToken ct)
     {
         var nombres = DemoClients.Select(c => c.Username).ToArray();
@@ -319,9 +276,8 @@ public sealed class DemoDataSeeder : IDbSeeder
                 LastTrainedAt   = DateTimeOffset.UtcNow,
             });
 
-            // La caché de Redis tiene prioridad sobre PostgreSQL en UserProfileStore: sembrar
-            // solo en la base dejaría al motor puntuando contra un perfil ausente hasta que la
-            // clave expirara. Se escriben los dos niveles a la vez.
+            // Redis tiene prioridad sobre PostgreSQL en UserProfileStore: sembrar solo en la base dejaría
+            // al motor puntuando contra un perfil ausente hasta que expire la caché.
             await _redis.CacheProfileAsync(
                 userId.Value.ToString(),
                 UserProfileSerializer.SerializeForCache(new UserAnomalyProfile(
@@ -334,13 +290,8 @@ public sealed class DemoDataSeeder : IDbSeeder
 
     private sealed record Origen(string Ip, string Country, string City, double Lat, double Lon);
 
-    /// <summary>
-    /// Orígenes del historial sintético. Cada dirección se comprobó contra el mismo proveedor
-    /// de geolocalización que consulta el motor, de modo que el país y la ciudad que aquí se
-    /// escriben coinciden con los que resolvería una petición real desde esa dirección. Sin esa
-    /// comprobación el historial diría una cosa y el sistema en vivo otra, y la contradicción
-    /// aparecería justo al comparar una fila sembrada con una recién evaluada.
-    /// </summary>
+    // Cada dirección se comprobó contra el mismo proveedor de geolocalización que consulta el motor,
+    // para que el historial sembrado no contradiga una fila recién evaluada.
     private static readonly Origen[] Origenes =
     [
         new("190.166.12.45", "DO", "Santo Domingo", 18.4861, -69.9312),
@@ -358,17 +309,8 @@ public sealed class DemoDataSeeder : IDbSeeder
         "OmakaseMobileClient/1.2.0 (Android 14; Mobile)",
     ];
 
-    /// <summary>
-    /// Sintetiza evaluaciones pasadas para que el panel de métricas y el explorador de logs
-    /// tengan algo que mostrar en la defensa.
-    /// <para>
-    /// Los puntajes no son aleatorios sueltos: cada fila se construye eligiendo un puntaje de
-    /// política y otro de anomalía y aplicando después la MISMA fórmula y los MISMOS umbrales
-    /// que usa el motor. Si un evaluador cruza el desglose con el veredicto, cuadra; datos de
-    /// relleno incoherentes serían peor que no tener datos.
-    /// </para>
-    /// <para>Idempotente por el identificador de evaluación, que es determinista.</para>
-    /// </summary>
+    // Cada fila aplica la MISMA fórmula y los MISMOS umbrales que el motor real, así que el desglose
+    // cuadra con el veredicto; idempotente porque el identificador de evaluación es determinista.
     private async Task SeedAuditHistoryAsync(CancellationToken ct)
     {
         var primeraEvaluacion = DeterministicGuid(0);
@@ -401,9 +343,8 @@ public sealed class DemoDataSeeder : IDbSeeder
             var origen = Origenes[rnd.Next(Origenes.Length)];
             var reglas = new List<object>();
 
-            // Reparto intencionado: la mayoría del tráfico es limpio, una minoría presenta una
-            // huella desconocida y unos pocos casos llegan desde un país denegado. Es el perfil
-            // que un sistema real produce y el que hace legible la distribución del Dashboard.
+            // Reparto intencionado: mayoría de tráfico limpio, minoría con huella desconocida y unos
+            // pocos desde país denegado, para que la distribución del Dashboard sea legible.
             decimal policyScore = 0m;
             if (origen.Country == "JP")
             {
@@ -417,8 +358,8 @@ public sealed class DemoDataSeeder : IDbSeeder
             }
 
             var anomalyScore = Math.Round((decimal)(rnd.NextDouble() < 0.80
-                ? rnd.Next(4, 34)        // dentro del perfil aprendido
-                : rnd.Next(58, 96)),     // desviación de conducta
+                ? rnd.Next(4, 34)
+                : rnd.Next(58, 96)),
                 2);
 
             var riskScore = Math.Clamp(
@@ -454,11 +395,7 @@ public sealed class DemoDataSeeder : IDbSeeder
         }
     }
 
-    /// <summary>
-    /// Identificador estable a partir de la semilla y un índice. Permite que el bloque de
-    /// auditoría sea idempotente sin necesidad de una marca aparte: si la primera evaluación
-    /// ya existe, el material está sembrado.
-    /// </summary>
+    // Identificador estable a partir de semilla+índice: si la primera evaluación ya existe, el material está sembrado.
     private static Guid DeterministicGuid(int index)
     {
         var bytes = new byte[16];

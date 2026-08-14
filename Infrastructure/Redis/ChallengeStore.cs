@@ -7,10 +7,7 @@ using StackExchange.Redis;
 
 namespace Infrastructure.Redis;
 
-/// <summary>
-/// Implementación Redis de <see cref="IChallengeStore"/> protegida por Circuit Breaker (HU-046 / T-103 / T-107).
-/// Clave <c>challenge:{challengeId}</c> → String JSON con TTL 2–5 min (SRS §7.11.2).
-/// </summary>
+// TTL de 2-5 min impuesto por SRS §7.11.2; el llamador decide el valor exacto, no se valida aquí.
 public sealed class ChallengeStore : IChallengeStore
 {
     private readonly IDatabase _db;

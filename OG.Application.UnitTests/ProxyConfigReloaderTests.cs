@@ -16,7 +16,6 @@ public class ProxyConfigReloaderTests
     [Fact]
     public async Task ExecuteAsync_ShouldSubscribeToYarpReloadChannel_OnStartup()
     {
-        // Arrange
         var provider = new DatabaseProxyConfigProvider();
         var scopeFactoryMock = Substitute.For<IServiceScopeFactory>();
         var redisServiceMock = Substitute.For<IRedisService>();
@@ -33,7 +32,6 @@ public class ProxyConfigReloaderTests
 
         using var cts = new CancellationTokenSource();
         
-        // Act
         // Invoke ExecuteAsync directly using reflection to avoid BackgroundService lifecycle timings
         var methodInfo = typeof(ProxyConfigReloader).GetMethod("ExecuteAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
         var executeTask = (Task)methodInfo!.Invoke(reloader, new object[] { cts.Token })!;
@@ -42,8 +40,6 @@ public class ProxyConfigReloaderTests
         await cts.CancelAsync();
         try { await executeTask; } catch (OperationCanceledException) {}
 
-        // Assert
-        // Verify that it subscribed to "yarp-reload-channel"
         await redisServiceMock.Received(1).SubscribeAsync("yarp-reload-channel", Arg.Any<Action<string, string>>());
     }
 }
