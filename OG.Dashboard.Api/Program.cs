@@ -14,15 +14,11 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        // ── Aspire ServiceDefaults & Data Resources ──────────────────────────────────
         builder.AddServiceDefaults();
         builder.AddNpgsqlDbContext<OmakaseDbContext>("Omakase");
         builder.AddRedisClient("redis");
 
-        // ── 1. Capa de Aplicación (Services & Handlers de OG.Dashboard) ───────────────
         builder.Services.AddDashboardApplication();
-
-        // ── 2. Capa de API (Swagger, Auth, CORS y Servicios Web de ApiExtensions) ─────
         builder.Services.AddDashboardApiConfiguration(builder.Configuration);
 
         // HU-047 T-108: gestión de MFA (TOTP) desde el Dashboard. Reutiliza los primitivos de HU-046
@@ -41,7 +37,6 @@ public class Program
 
         app.UseMiddleware<SecurityHeadersMiddleware>();
 
-        // ── Middleware Pipeline ────────────────────────────────────────────────────────
         app.UseCors(ApiExtensions.FrontendCorsPolicy);
         app.UseAuthentication();
         app.UseRbacAuthorization();
@@ -56,12 +51,8 @@ public class Program
             app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "OG Dashboard API v1"));
         }
 
-        // HU-028 T-058: autorización granular por endpoint (ReadAccess para lectura,
-        // AdminOnly para escritura). Cada endpoint declara su propia policy.
-        // NOTA: cada endpoint se registra UNA sola vez. El grupo tiene prefijo vacío y sin
-        // metadata, por lo que registrar además en `app` producía rutas duplicadas y rompía el
-        // arranque (InvalidOperationException "Duplicate endpoint name"). Se conserva una sola
-        // registración por endpoint (estructura previa al merge de rendimiento).
+        // El grupo tiene prefijo vacío y sin metadata: registrar el mismo endpoint también en
+        // `app` producía rutas duplicadas y rompía el arranque (Duplicate endpoint name).
         var apiGroup = app.MapGroup("");
 
         apiGroup.MapAuditLogsEndpoints();
@@ -70,14 +61,10 @@ public class Program
         apiGroup.MapUsersEndpoints();
         apiGroup.MapRolesEndpoints();
 
-        // HU-023 / HU-025 / HU-026: endpoints reales — declaran su propia autorización
-        // (AdminOnly en mutaciones, ReadAccess en lecturas).
         app.MapPoliciesEndpoints();
         app.MapRiskConfigEndpoints();
         app.MapServicePoliciesEndpoints();
         app.MapUserProfileEndpoints();
-
-        // HU-047: gestión de MFA (TOTP) por administrador — AdminOnly.
         app.MapUserMfaEndpoints();
 
         await app.RunAsync();

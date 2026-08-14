@@ -3,12 +3,7 @@ using Application.Common.RiskEngine.AnomalyDetection;
 
 namespace Infrastructure.AnomalyDetection;
 
-/// <summary>
-/// Baseline de comportamiento ya construido, listo para persistir en <c>user_behavior_profiles</c>.
-/// </summary>
-/// <param name="TrainingWindow">Ventana de vectores de features que entrenará RandomizedPCA.</param>
-/// <param name="RecentAccesses">Accesos recientes de los que se derivan frecuencia y diversidad.</param>
-/// <param name="AccessCount">Número de accesos representados por el baseline.</param>
+/// <summary>Baseline de comportamiento ya construido, listo para persistir en <c>user_behavior_profiles</c>.</summary>
 public sealed record BehaviorBaseline(
     IReadOnlyList<AnomalyFeatureVector> TrainingWindow,
     IReadOnlyList<UserAccessSample> RecentAccesses,
@@ -52,10 +47,6 @@ public sealed class BehaviorBaselineBootstrapper
     /// <see cref="ProfileUpdateWorker"/> en caliente: la feature de cada acceso se deriva del historial
     /// PREVIO, nunca de sí misma.
     /// </summary>
-    /// <param name="endingAt">Instante final del baseline (normalmente "ahora").</param>
-    /// <param name="days">Días de historial a sintetizar. Debe ser ≥ 1.</param>
-    /// <param name="seed">Semilla del generador; fija la reproducibilidad del experimento.</param>
-    /// <param name="profile">Perfil de tráfico a modelar. Por defecto, trabajador de oficina.</param>
     public BehaviorBaseline Build(
         DateTimeOffset endingAt,
         int days,
@@ -86,7 +77,7 @@ public sealed class BehaviorBaselineBootstrapper
         return new BehaviorBaseline(window, recent, samples.Count);
     }
 
-    /// <summary>Ventana rodante: conserva a lo sumo <paramref name="max"/> elementos, los más recientes.</summary>
+    // Ventana rodante: conserva a lo sumo max elementos, los más recientes.
     private static void Append<T>(List<T> target, T item, int max)
     {
         target.Add(item);

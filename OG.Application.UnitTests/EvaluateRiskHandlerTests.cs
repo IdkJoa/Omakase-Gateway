@@ -18,10 +18,7 @@ using Xunit;
 
 namespace OG.Application.UnitTests;
 
-/// <summary>
-/// Pruebas del motor de riesgo cableado (HU-015: EvaluateRiskHandler).
-/// Usa calculadora/consolidador reales y stub de anomalía; mockea providers y geoloc.
-/// </summary>
+// HU-015: EvaluateRiskHandler cableado con calculadora/consolidador reales y stub de anomalía; providers y geoloc mockeados.
 public class EvaluateRiskHandlerTests
 {
     private readonly IServicePolicyProvider _policyProvider = Substitute.For<IServicePolicyProvider>();
@@ -145,7 +142,7 @@ public class EvaluateRiskHandlerTests
         Assert.Null(result.ServiceId);
     }
 
-    // ── HU-017 / T-034: cold-start real desde el access_count del perfil ────────
+    // HU-017 / T-034: cold-start real desde el access_count del perfil
 
     private void GivenProfileAccessCount(string userId, int accessCount) =>
         _profileStore.GetAsync(userId, Arg.Any<CancellationToken>())
@@ -190,7 +187,7 @@ public class EvaluateRiskHandlerTests
         Assert.Equal(35m, result.RiskScore);
     }
 
-    // ── HU-024 / SRS §7.5: requires_auth (exige JWT antes de evaluar) ────────────
+    // HU-024 / SRS §7.5: requires_auth exige JWT antes de evaluar
 
     [Fact]
     public async Task ServiceRequiresAuth_NoIdentity_ShortCircuits_BeforeRulesAndMl()

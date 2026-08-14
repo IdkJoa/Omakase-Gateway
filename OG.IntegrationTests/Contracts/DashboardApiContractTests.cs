@@ -27,10 +27,9 @@ public class DashboardApiContractTests : IClassFixture<CustomWebApplicationFacto
     [InlineData("/api/v1/risk-config")]
     public async Task DashboardApiEndpoints_ShouldRespondWithValidHttpStatusAndJsonSchema(string endpoint)
     {
-        // Act
         var response = await _client.GetAsync(endpoint);
 
-        // Assert - SRS §4: Los endpoints del Dashboard deben responder con 200 OK o 401/403 según requiera auth
+        // SRS §4: los endpoints del Dashboard responden 200 OK o 401/403 según requiera auth.
         response.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.Unauthorized, HttpStatusCode.Forbidden);
 
         if (response.StatusCode == HttpStatusCode.OK)
@@ -40,7 +39,6 @@ public class DashboardApiContractTests : IClassFixture<CustomWebApplicationFacto
             var contentString = await response.Content.ReadAsStringAsync();
             contentString.Should().NotBeNullOrWhiteSpace();
 
-            // Validar que la respuesta sea un documento JSON válido
             using var jsonDoc = JsonDocument.Parse(contentString);
             jsonDoc.RootElement.ValueKind.Should().BeOneOf(JsonValueKind.Array, JsonValueKind.Object);
         }

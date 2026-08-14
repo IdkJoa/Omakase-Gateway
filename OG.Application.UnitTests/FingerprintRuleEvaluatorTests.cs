@@ -14,11 +14,7 @@ using Xunit;
 
 namespace OG.Application.UnitTests;
 
-/// <summary>
-/// Pruebas unitarias para verificar el comportamiento de FingerprintRuleEvaluator (HU-013).
-/// Valida el flujo en arranque en frío (primer registro), dispositivos conocidos,
-/// dispositivos desconocidos (retorna 50), usuarios anónimos, y fallos de Redis (Fail-Closed parcial).
-/// </summary>
+// FingerprintRuleEvaluator (HU-013): cold-start, dispositivos conocidos/desconocidos (score 50), usuarios anónimos y fallos de Redis (fail-closed parcial).
 public class FingerprintRuleEvaluatorTests
 {
     private readonly IFingerprintService _fingerprintService;
@@ -52,12 +48,10 @@ public class FingerprintRuleEvaluatorTests
     [Fact]
     public void FingerprintService_GenerateHash_IsDeterministicAndValid()
     {
-        // Act
         var hash1 = _fingerprintService.GenerateHash("Mozilla", "es-ES", "gzip");
         var hash2 = _fingerprintService.GenerateHash("Mozilla", "es-ES", "gzip");
         var hashDifferent = _fingerprintService.GenerateHash("Mozilla", "en-US", "gzip");
 
-        // Assert
         Assert.NotNull(hash1);
         Assert.Equal(64, hash1.Length); // Largo de SHA-256 en hexadecimal
         Assert.Equal(hash1, hash2);
@@ -67,7 +61,6 @@ public class FingerprintRuleEvaluatorTests
     [Fact]
     public async Task EvaluateAsync_AnonymousUser_ReturnsCoherentScore()
     {
-        // Arrange
         var context = new RequestContext
         {
             SourceIp = "127.0.0.1",
@@ -77,10 +70,8 @@ public class FingerprintRuleEvaluatorTests
             AcceptEncoding = "gzip"
         };
 
-        // Act
         var result = await CreateSut().EvaluateAsync(context, Policy);
 
-        // Assert
         Assert.Equal(0m, result.Score);
         Assert.False(result.Triggered);
         Assert.Equal("anonymous_user", result.Detail);
@@ -89,7 +80,6 @@ public class FingerprintRuleEvaluatorTests
     [Fact]
     public async Task EvaluateAsync_ColdStart_RegistersFirstDeviceAndReturnsCoherentScore()
     {
-        // Arrange
         var context = new RequestContext
         {
             SourceIp = "127.0.0.1",
@@ -104,10 +94,8 @@ public class FingerprintRuleEvaluatorTests
         // Redis no tiene huellas registradas para este usuario
         _redisMock.GetFingerprintsAsync("user-123").Returns(new List<string>());
 
-        // Act
         var result = await CreateSut().EvaluateAsync(context, Policy);
 
-        // Assert
         Assert.Equal(0m, result.Score);
         Assert.False(result.Triggered);
         Assert.Equal("cold_start_registered", result.Detail);
@@ -119,7 +107,6 @@ public class FingerprintRuleEvaluatorTests
     [Fact]
     public async Task EvaluateAsync_KnownDevice_RefreshesTtlAndReturnsCoherentScore()
     {
-        // Arrange
         var context = new RequestContext
         {
             SourceIp = "127.0.0.1",
@@ -134,10 +121,8 @@ public class FingerprintRuleEvaluatorTests
         // El usuario ya tiene este dispositivo registrado en Redis
         _redisMock.GetFingerprintsAsync("user-123").Returns(new List<string> { currentHash });
 
-        // Act
         var result = await CreateSut().EvaluateAsync(context, Policy);
 
-        // Assert
         Assert.Equal(0m, result.Score);
         Assert.False(result.Triggered);
         Assert.Equal("known_device", result.Detail);
@@ -149,7 +134,6 @@ public class FingerprintRuleEvaluatorTests
     [Fact]
     public async Task EvaluateAsync_UnknownDevice_RegistersNewDeviceAndReturnsPartialViolationScore()
     {
-        // Arrange
         var context = new RequestContext
         {
             SourceIp = "127.0.0.1",
@@ -165,10 +149,8 @@ public class FingerprintRuleEvaluatorTests
         // El usuario tiene registrado otro dispositivo pero no el actual
         _redisMock.GetFingerprintsAsync("user-123").Returns(new List<string> { oldHash });
 
-        // Act
         var result = await CreateSut().EvaluateAsync(context, Policy);
 
-        // Assert
         Assert.Equal(50m, result.Score);
         Assert.True(result.Triggered);
         Assert.Equal("unknown_device", result.Detail);
@@ -180,7 +162,6 @@ public class FingerprintRuleEvaluatorTests
     [Fact]
     public async Task EvaluateAsync_RedisConnectionFails_AppliesFailClosedPartialScore()
     {
-        // Arrange
         var context = new RequestContext
         {
             SourceIp = "127.0.0.1",
@@ -193,11 +174,9 @@ public class FingerprintRuleEvaluatorTests
         // Simular fallo de red/conexión con Redis
         _redisMock.GetFingerprintsAsync("user-123").Throws(new Exception("Redis timeout."));
 
-        // Act
         var result = await CreateSut().EvaluateAsync(context, Policy);
 
-        // Assert
-        Assert.Equal(50m, result.Score); // Retorna score de riesgo parcial
+        Assert.Equal(50m, result.Score);
         Assert.True(result.Triggered);
         Assert.Equal("redis_unavailable", result.Detail);
     }

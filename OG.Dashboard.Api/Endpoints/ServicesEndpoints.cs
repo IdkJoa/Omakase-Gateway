@@ -17,8 +17,6 @@ namespace OG.Dashboard.Api.Endpoints;
 /// </summary>
 public static class ServicesEndpoints
 {
-    // ── Registro de endpoints ─────────────────────────────────────────────────
-
     public static IEndpointRouteBuilder MapServicesEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app
@@ -26,20 +24,17 @@ public static class ServicesEndpoints
             .WithTags("Protected Services")
             .WithOpenApi();
 
-        // GET /api/v1/services
         group.MapGet("/", GetAll)
             .RequireAuthorization("ReadAccess")
             .WithName("GetServices")
             .WithSummary("Listar servicios protegidos")
             .WithDescription("Devuelve la lista paginada de servicios protegidos por el Gateway. Soporta filtro por isActive.");
 
-        // GET /api/v1/services/{id}
         group.MapGet("/{id:guid}", GetById)
             .RequireAuthorization("ReadAccess")
             .WithName("GetServiceById")
             .WithSummary("Obtener un servicio protegido por ID");
 
-        // POST /api/v1/services
         group.MapPost("/", Create)
             .RequireAuthorization("AdminOnly")
             .WithName("CreateService")
@@ -47,14 +42,12 @@ public static class ServicesEndpoints
             .Produces<ProtectedServiceDto>(StatusCodes.Status201Created)
             .ProducesValidationProblem();
 
-        // PUT /api/v1/services/{id}
         group.MapPut("/{id:guid}", Update)
             .RequireAuthorization("AdminOnly")
             .WithName("UpdateService")
             .WithSummary("Actualizar un servicio protegido existente")
             .Produces<ProtectedServiceDto>(StatusCodes.Status200OK);
 
-        // DELETE /api/v1/services/{id}
         group.MapDelete("/{id:guid}", Delete)
             .RequireAuthorization("AdminOnly")
             .WithName("DeleteService")
@@ -63,8 +56,6 @@ public static class ServicesEndpoints
 
         return app;
     }
-
-    // ── Handlers ──────────────────────────────────────────────────────────────
 
     private static async Task<IResult> GetAll(
         [FromQuery] int page,

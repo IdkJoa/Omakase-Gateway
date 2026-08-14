@@ -6,10 +6,7 @@ using Microsoft.Extensions.Options;
 
 namespace Infrastructure.KeyVault;
 
-/// <summary>
-/// Validador de inicio que exige la disponibilidad de Azure Key Vault para obtener los secretos críticos (T-068 / HU-031).
-/// Si falla la lectura por timeout, 401, 403, 404 o red, INTERRUMPE el arranque inmediatamente con código != 0.
-/// </summary>
+// Fail-closed: si falla la lectura del secreto (timeout, 401, 403, 404, red), interrumpe el arranque con código != 0.
 public sealed class KeyVaultStartupValidator
 {
     private readonly ISecretProvider _secretProvider;
@@ -59,7 +56,6 @@ public sealed class KeyVaultStartupValidator
                     FailStartupAndExit(msg);
                 }
 
-                // Inyectar el secreto oficial obtenido de Key Vault en JwtOptions
                 _jwtOptions.SecretKey = secretValue!;
                 _logger.LogInformation("[KeyVault] ÉXITO: Secreto JWT obtenido e inyectado desde Azure Key Vault en el arranque.");
             }

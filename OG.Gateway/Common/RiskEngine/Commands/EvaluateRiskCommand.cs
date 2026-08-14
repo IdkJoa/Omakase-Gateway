@@ -5,34 +5,12 @@ using Domain.Entities;
 
 namespace Application.Common.RiskEngine.Commands;
 
-/// <summary>
-/// Command que transporta el contexto de una petición interceptada al motor de riesgo.
-/// Despachado por <see cref="Middlewares.RiskEvaluationMiddleware"/> vía <see cref="IMediator"/>.
-/// </summary>
-/// <param name="Context">Contexto inmutable extraído de la petición HTTP.</param>
 public sealed record EvaluateRiskCommand(RequestContext Context)
     : IRequest<RiskEvaluationResult>;
 
-/// <summary>
-/// Resultado producido por el motor de riesgo para una petición interceptada.
-/// Incluye el desglose necesario para la auditoría (T-030).
-/// </summary>
-/// <param name="Verdict">Decisión de acceso: Allow, Challenge o Block.</param>
-/// <param name="RiskScore">Score de riesgo consolidado (0–100).</param>
-/// <param name="PolicyScore">Score de la capa determinista (0–100).</param>
-/// <param name="AnomalyScore">Score de la capa de anomalías (0–100).</param>
-/// <param name="Geo">Geolocalización del origen como JSON, o null si no se resolvió.</param>
-/// <param name="TriggeredRules">Reglas disparadas con su score parcial, como JSON.</param>
-/// <param name="ServiceId">Id del servicio destino evaluado, o null si no se resolvió.</param>
-/// <param name="AuthenticationRequired">
-/// Precondición fallida (SRS §7.5): el servicio destino exige JWT (<c>requires_auth</c>) y la
-/// petición llegó sin identidad. El middleware responde 401 (autenticar) en vez del veredicto de
-/// riesgo. Por defecto false.
-/// </param>
-/// <param name="Timings">
-/// Desglose del coste de cada fase de la evaluación, en milisegundos. Null cuando la evaluación
-/// se cortó antes de empezar (precondición de autenticación).
-/// </param>
+// AuthenticationRequired: precondición fallida (SRS §7.5) — el servicio exige JWT y la petición
+// llegó sin identidad; el middleware responde 401 en vez del veredicto de riesgo.
+// Timings es null cuando la evaluación se cortó antes de empezar (precondición de autenticación).
 public sealed record RiskEvaluationResult(
     Verdict Verdict,
     decimal RiskScore,
@@ -44,17 +22,8 @@ public sealed record RiskEvaluationResult(
     bool AuthenticationRequired = false,
     EvaluationTimings? Timings = null);
 
-/// <summary>
-/// Coste por fase de una evaluación, en milisegundos (T-072).
-/// </summary>
-/// <remarks>
-/// El requisito de rendimiento acota el overhead de evaluación a ≤50 ms en el p95, y T-072 exige
-/// identificar el cuello de botella cuando no se cumple. Un único total no dice dónde se va el
-/// tiempo: bajo carga sostenida hay al menos dos consultas a PostgreSQL sin caché por evaluación
-/// (políticas del servicio y configuración de riesgo), más el perfil en Redis y la inferencia de
-/// ML.NET. Este desglose permite atribuir el coste en vez de suponerlo.
-/// <para>Se mide con <see cref="System.Diagnostics.Stopwatch.GetTimestamp"/>, sin asignar objetos.</para>
-/// </remarks>
+// Desglose por fase (T-072): el presupuesto es <=50ms p95 y un total único no dice dónde se va
+// el tiempo entre las consultas a PostgreSQL, Redis e inferencia ML.NET.
 public sealed record EvaluationTimings(
     double ConfigMs,
     double PoliciesMs,

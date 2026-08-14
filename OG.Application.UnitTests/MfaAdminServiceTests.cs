@@ -94,7 +94,7 @@ public class MfaAdminServiceTests
     public void ConfirmEnrollment_WithoutPendingSecret_ReturnsFalse()
     {
         var sut = CreateSut();
-        var user = NewClientUser();   // TotpSecret == null (nunca se inició enrolamiento)
+        var user = NewClientUser();
 
         Assert.False(sut.ConfirmEnrollment(user, Rfc6238OtpAt59, At59));
         Assert.False(user.MfaEnabled);

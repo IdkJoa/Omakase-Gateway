@@ -6,17 +6,7 @@ using Domain.Entities;
 
 namespace Application.Common.RiskEngine.Rules;
 
-/// <summary>
-/// Evaluador de ventanas horarias (HU-012 / T-023).
-/// Valida si el momento en que se realiza la petición se encuentra dentro del rango
-/// permitido configurado para el servicio en la zona horaria especificada.
-/// <para>
-/// Estructura de la configuración JSON de la política:
-/// <code>
-/// { "start_time": "08:00", "end_time": "18:00", "timezone": "AST" }
-/// </code>
-/// </para>
-/// </summary>
+// Config shape: { "start_time": "08:00", "end_time": "18:00", "timezone": "AST" }
 public sealed class TimeWindowRuleEvaluator : IRuleEvaluator
 {
     private const decimal CoherentScore = 0m;
@@ -70,21 +60,13 @@ public sealed class TimeWindowRuleEvaluator : IRuleEvaluator
             }
 
             var tz = GetTimeZone(timezoneStr);
-            // Convertir la fecha y hora de la petición a la zona horaria destino
             var convertedTime = TimeZoneInfo.ConvertTime(context.Timestamp, tz);
             var timeOfDay = convertedTime.TimeOfDay;
 
-            bool isInside;
-            if (start <= end)
-            {
-                // Ventana normal (ej. 08:00 a 18:00)
-                isInside = timeOfDay >= start && timeOfDay <= end;
-            }
-            else
-            {
-                // Cruce de medianoche (ej. 22:00 a 06:00 del día siguiente)
-                isInside = timeOfDay >= start || timeOfDay <= end;
-            }
+            // start > end significa que la ventana cruza medianoche (ej. 22:00 a 06:00).
+            bool isInside = start <= end
+                ? timeOfDay >= start && timeOfDay <= end
+                : timeOfDay >= start || timeOfDay <= end;
 
             if (isInside)
             {
@@ -99,38 +81,36 @@ public sealed class TimeWindowRuleEvaluator : IRuleEvaluator
         }
         catch (Exception)
         {
-            // Fail-Closed para cualquier fallo en el procesado o zona horaria inválida (Módulo 9)
+            // Fail-closed ante fallo de procesado o zona horaria inválida.
             return Task.FromResult(new RuleEvaluationResult(
                 RuleName, SevereScore, policy.Weight, Triggered: true, Detail: "malformed_config"));
         }
     }
 
-    /// <summary>
-    /// Resuelve de forma robusta y multiplataforma una zona horaria.
-    /// Soporta abreviaciones comunes y detecta el sistema operativo (Windows/Linux).
-    /// </summary>
+    // Windows y Linux usan IDs de zona horaria distintos (Windows ID vs IANA); se intenta el
+    // Windows ID primero y se cae al IANA equivalente si FindSystemTimeZoneById falla.
     private static TimeZoneInfo GetTimeZone(string tzName)
     {
         if (string.Equals(tzName, "AST", StringComparison.OrdinalIgnoreCase))
         {
             try
             {
-                return TimeZoneInfo.FindSystemTimeZoneById("Atlantic Standard Time"); // Windows ID
+                return TimeZoneInfo.FindSystemTimeZoneById("Atlantic Standard Time");
             }
             catch
             {
-                return TimeZoneInfo.FindSystemTimeZoneById("America/Santo_Domingo"); // IANA/Linux ID (UTC-4)
+                return TimeZoneInfo.FindSystemTimeZoneById("America/Santo_Domingo");
             }
         }
         if (string.Equals(tzName, "EST", StringComparison.OrdinalIgnoreCase))
         {
             try
             {
-                return TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"); // Windows ID
+                return TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
             }
             catch
             {
-                return TimeZoneInfo.FindSystemTimeZoneById("America/New_York"); // IANA/Linux ID (UTC-5)
+                return TimeZoneInfo.FindSystemTimeZoneById("America/New_York");
             }
         }
 

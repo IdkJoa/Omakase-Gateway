@@ -7,10 +7,6 @@ using Application.Common.Options;
 
 namespace Application.Middlewares;
 
-/// <summary>
-/// Middleware para aplicar control de flujo y prevención de abusos (Rate Limiting) por dirección IP.
-/// Se ejecuta de forma temprana para cortar peticiones excesivas antes de consumir recursos.
-/// </summary>
 public sealed class RateLimitMiddleware
 {
     private readonly RequestDelegate _next;
@@ -33,7 +29,6 @@ public sealed class RateLimitMiddleware
     {
         var ipAddress = context.Connection.RemoteIpAddress?.ToString();
 
-        // En caso de que no se pueda resolver la IP, se usa un valor genérico
         if (string.IsNullOrWhiteSpace(ipAddress))
         {
             ipAddress = "unknown_ip";
@@ -41,7 +36,6 @@ public sealed class RateLimitMiddleware
 
         try
         {
-            // Incrementar contador en Redis con TTL correspondiente (HU-005 / HU-010)
             long count = await redisService.IncrementRateLimitAsync(ipAddress, _window);
 
             if (count > _limit)
@@ -64,8 +58,7 @@ public sealed class RateLimitMiddleware
         }
         catch (Exception ex)
         {
-            // Regla de Degradación Segura - Módulo 9 (Fail-Closed)
-            // Si Redis está caído o inaccesible, se bloquea el tráfico por seguridad y se reporta HTTP 503.
+            // Fail-closed (Módulo 9): si Redis está caído se bloquea el tráfico por seguridad, HTTP 503.
             _logger.LogCritical(
                 ex,
                 "Fallo crítico en Redis al evaluar el rate limit para la IP: {IpAddress}. Aplicando Fail-Closed.",

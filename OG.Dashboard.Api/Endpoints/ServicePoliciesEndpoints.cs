@@ -47,8 +47,6 @@ public static class ServicePoliciesEndpoints
         return app;
     }
 
-    // ── Handlers ──────────────────────────────────────────────────────────────
-
     private static async Task<IResult> GetAll(Guid serviceId, OmakaseDbContext db, IOutputSanitizer enc, CancellationToken ct)
     {
         var sid = ProtectedServiceId.From(serviceId);
@@ -159,8 +157,6 @@ public static class ServicePoliciesEndpoints
 
         return Results.NoContent();
     }
-
-    // ── Helpers ───────────────────────────────────────────────────────────────
 
     /// <summary>True si el fallo es la violación del índice único (SQLSTATE 23505 de Postgres).</summary>
     private static bool IsUniqueViolation(DbUpdateException ex) =>

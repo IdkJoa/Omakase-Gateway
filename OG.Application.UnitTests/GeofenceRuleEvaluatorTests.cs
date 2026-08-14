@@ -11,11 +11,7 @@ using Xunit;
 
 namespace OG.Application.UnitTests;
 
-/// <summary>
-/// Pruebas unitarias de la regla Geofencing (HU-011 / T-022).
-/// Cubre los escenarios del backlog (país permitido / país denegado),
-/// la lista deny explícita, el fail-safe de geolocalización y el peso.
-/// </summary>
+// Geofencing (HU-011 / T-022): país permitido/denegado, lista deny explícita, fail-safe de geolocalización y peso.
 public class GeofenceRuleEvaluatorTests
 {
     private readonly IGeoLocationService _geo = Substitute.For<IGeoLocationService>();

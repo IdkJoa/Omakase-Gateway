@@ -8,22 +8,11 @@ namespace Infrastructure.Persistence.Caching;
 
 /// <summary>
 /// Decorador de <see cref="IServicePolicyProvider"/> que memoriza el conjunto de políticas por
-/// servicio durante <see cref="RiskEngineCacheOptions.ServicePoliciesTtlSeconds"/> (T-072).
+/// servicio durante <see cref="RiskEngineCacheOptions.ServicePoliciesTtlSeconds"/>.
 /// </summary>
 /// <remarks>
-/// Es la fase más cara de la evaluación: <b>17,33 ms de media (27,4 % del total)</b> medidos con
-/// 1.000 muestras bajo 100 VUs sostenidos, porque <c>GetByServiceNameAsync</c> hace <b>dos</b>
-/// consultas a PostgreSQL —el servicio y sus políticas— en cada petición, sobre tablas que cambian
-/// solo cuando un administrador toca el CRUD.
-/// <para>
-/// Open/Closed: no modifica <see cref="ServicePolicyProvider"/>; se registra por delante en el
-/// contenedor. Con TTL 0 delega siempre y el comportamiento es idéntico al de antes.
-/// </para>
-/// <para>
-/// Seguro de cachear: el proveedor consulta con <c>AsNoTracking</c>, así que las entidades quedan
-/// desacopladas del change tracker y el <c>JsonDocument</c> de <c>Config</c> es independiente del
-/// DbContext que lo materializó (inmutable en lectura).
-/// </para>
+/// <c>GetByServiceNameAsync</c> hace dos consultas a PostgreSQL por petición sobre tablas que solo cambian por CRUD administrativo;
+/// es seguro cachear porque el proveedor consulta con <c>AsNoTracking</c> y el <c>JsonDocument</c> de <c>Config</c> es inmutable en lectura.
 /// </remarks>
 public sealed class CachedServicePolicyProvider : IServicePolicyProvider
 {

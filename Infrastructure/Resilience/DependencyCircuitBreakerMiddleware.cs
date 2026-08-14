@@ -6,11 +6,8 @@ using Polly.CircuitBreaker;
 
 namespace Infrastructure.Resilience;
 
-/// <summary>
-/// Middleware de protección Fail-Closed (T-067 / HU-031).
-/// Intercepta peticiones cuando el Circuit Breaker de Redis o PostgreSQL está ABIERTO,
-/// o cuando una dependencia falla durante el procesamiento, retornando HTTP 503 Service Unavailable.
-/// </summary>
+// Fail-Closed (T-067 / HU-031): responde 503 si el Circuit Breaker de Redis o PostgreSQL está abierto,
+// o si una dependencia falla durante el procesamiento de la petición.
 public sealed class DependencyCircuitBreakerMiddleware
 {
     private readonly RequestDelegate _next;

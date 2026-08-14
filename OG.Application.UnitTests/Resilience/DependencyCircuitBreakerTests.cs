@@ -38,16 +38,15 @@ public class DependencyCircuitBreakerTests
     [Fact]
     public async Task Redis_ThreeConsecutiveFailures_ShouldOpenCircuit()
     {
-        // Arrange
         Func<Task<int>> failingRedisOperation = () => throw new RedisConnectionException(ConnectionFailureType.UnableToConnect, "Redis indisponible");
 
-        // Act: 3 fallos consecutivos
+        // 3 fallos consecutivos
         for (int i = 0; i < 3; i++)
         {
             await Assert.ThrowsAsync<RedisConnectionException>(() => _circuitBreaker.ExecuteRedisAsync(failingRedisOperation));
         }
 
-        // Assert: El circuito debe estar ABIERTO
+        // El circuito debe estar ABIERTO
         Assert.True(_circuitBreaker.IsRedisCircuitOpen);
         Assert.Equal(CircuitState.Open, _circuitBreaker.RedisCircuitState);
 
@@ -58,16 +57,15 @@ public class DependencyCircuitBreakerTests
     [Fact]
     public async Task Postgres_ThreeConsecutiveFailures_ShouldOpenCircuit()
     {
-        // Arrange
         Func<Task<string>> failingPostgresOperation = () => throw new NpgsqlException("PostgreSQL no responde");
 
-        // Act: 3 fallos consecutivos
+        // 3 fallos consecutivos
         for (int i = 0; i < 3; i++)
         {
             await Assert.ThrowsAsync<NpgsqlException>(() => _circuitBreaker.ExecutePostgresAsync(failingPostgresOperation));
         }
 
-        // Assert: El circuito debe estar ABIERTO
+        // El circuito debe estar ABIERTO
         Assert.True(_circuitBreaker.IsPostgresCircuitOpen);
         Assert.Equal(CircuitState.Open, _circuitBreaker.PostgresCircuitState);
 
@@ -78,10 +76,8 @@ public class DependencyCircuitBreakerTests
     [Fact]
     public async Task Redis_SuccessfulOperation_KeepsCircuitClosed()
     {
-        // Act
         var result = await _circuitBreaker.ExecuteRedisAsync(async () => "test_data");
 
-        // Assert
         Assert.Equal("test_data", result);
         Assert.False(_circuitBreaker.IsRedisCircuitOpen);
     }

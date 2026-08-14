@@ -37,12 +37,10 @@ public sealed class GatewayTokenService : IGatewayTokenService
 
         var claims = new[]
         {
-            // Claims requeridos por HU-019
             new Claim(JwtRegisteredClaimNames.Sub, user.Id.Value.ToString()),
             new Claim(JwtRegisteredClaimNames.Jti, jti.ToString()),
             new Claim("username", user.Username),
             new Claim("user_type", user.Type.ToString()),
-            // Claims estándar
             new Claim(JwtRegisteredClaimNames.Iat,
                 now.ToUnixTimeSeconds().ToString(),
                 ClaimValueTypes.Integer64),
@@ -66,9 +64,8 @@ public sealed class GatewayTokenService : IGatewayTokenService
     /// <inheritdoc/>
     public string GenerateRefreshTokenRaw()
     {
-        // T-039: UUID v4 opaco → valor plano enviado en la cookie HttpOnly.
-        // Solo el hash SHA-256 se persiste en PostgreSQL (nunca el valor plano).
-        return Guid.NewGuid().ToString("N"); // 32 hex chars, sin guiones
+        // UUID v4 opaco: valor plano solo va en la cookie HttpOnly; en PostgreSQL se persiste su hash SHA-256.
+        return Guid.NewGuid().ToString("N");
     }
 
     /// <inheritdoc/>

@@ -7,9 +7,7 @@ using Xunit;
 
 namespace OG.Application.UnitTests;
 
-/// <summary>
-/// Pruebas del cifrado en reposo del secreto TOTP (HU-046 / T-102).
-/// </summary>
+// Pruebas del cifrado en reposo del secreto TOTP (HU-046 / T-102).
 public class AesGcmTotpSecretProtectorTests
 {
     private static AesGcmTotpSecretProtector CreateSut(string? keyBase64 = null)

@@ -16,7 +16,6 @@ namespace Infrastructure.Persistence;
 /// </summary>
 public sealed class TypedIdConvention : IPropertyAddedConvention
 {
-    // The open generic interface type used for detection.
     private static readonly Type _typedIdInterface = typeof(ITypedId<>);
 
     public void ProcessPropertyAdded(
@@ -25,11 +24,9 @@ public sealed class TypedIdConvention : IPropertyAddedConvention
     {
         var clrType = propertyBuilder.Metadata.ClrType;
 
-        // Check whether this property's type implements ITypedId<TSelf>
         if (!ImplementsTypedIdInterface(clrType))
             return;
 
-        // Build TypedIdValueConverter<TId> for the concrete type
         var converterType = typeof(TypedIdValueConverter<>).MakeGenericType(clrType);
         var converter = (ValueConverter)Activator.CreateInstance(converterType)!;
 

@@ -68,7 +68,6 @@ public sealed class ProfileUpdateWorker : BackgroundService
         }
         catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
         {
-            // Apagado limpio.
         }
 
         _logger.LogInformation("[ProfileUpdateWorker] Detenido.");
@@ -118,7 +117,7 @@ public sealed class ProfileUpdateWorker : BackgroundService
             TimeSpan.FromMinutes(_options.ProfileCacheTtlMinutes));
     }
 
-    /// <summary>Agrega un elemento a una ventana rodante, conservando a lo sumo <paramref name="max"/> (los más recientes).</summary>
+    // Agrega un elemento a una ventana rodante, conservando a lo sumo max (los más recientes).
     private static IReadOnlyList<T> Append<T>(IReadOnlyList<T> source, T item, int max)
     {
         var list = new List<T>(source) { item };

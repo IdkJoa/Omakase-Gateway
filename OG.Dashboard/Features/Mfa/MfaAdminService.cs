@@ -5,18 +5,12 @@ using Microsoft.Extensions.Options;
 
 namespace OG.Dashboard.Features.Mfa;
 
-/// <summary>
-/// Lógica de administración de MFA (TOTP) del Dashboard (HU-047 / T-108): enrolamiento iniciado
-/// por un administrador sobre un client user objetivo, confirmación del primer OTP y reset del
-/// segundo factor. Reutiliza los primitivos de HU-046 (<see cref="ITotpService"/>,
-/// <see cref="ITotpSecretProtector"/>) — no reimplementa criptografía.
-/// <para>
+/// <remarks>
 /// A diferencia del enrolamiento self-service del Gateway (usuario resuelto por su propio JWT),
 /// aquí el actor es un administrador y el sujeto llega por la ruta. El servicio MUTA la entidad
 /// <see cref="User"/> que recibe pero NO persiste: la escritura (<c>SaveChanges</c>) y las
-/// respuestas HTTP son responsabilidad del endpoint (SRP). Sin estado mutable → registrable como Scoped.
-/// </para>
-/// </summary>
+/// respuestas HTTP son responsabilidad del endpoint.
+/// </remarks>
 public sealed class MfaAdminService
 {
     private readonly ITotpService _totp;
@@ -31,15 +25,8 @@ public sealed class MfaAdminService
     }
 
     /// <summary>
-    /// Inicia el enrolamiento: genera un secreto TOTP nuevo, lo cifra en reposo sobre la entidad
-    /// (<c>MfaEnabled = false</c> hasta confirmar) y devuelve el provisioning URI que la app
-    /// autenticadora consume vía QR (T-109). El secreto en claro no se persiste ni se expone
-    /// fuera del URI.
-    /// <para>
-    /// <b>NO es idempotente:</b> cada llamada genera un secreto DISTINTO y descarta el pendiente
-    /// anterior. Llamar dos veces invalida el QR de la primera, y el OTP derivado de aquel devolverá
-    /// 422 al confirmar. Enrolar una sola vez y confirmar con el URI de esa misma llamada.
-    /// </para>
+    /// NO es idempotente: cada llamada genera un secreto DISTINTO y descarta el pendiente anterior.
+    /// Llamar dos veces invalida el QR de la primera, y el OTP derivado de aquel fallará al confirmar.
     /// </summary>
     public string BeginEnrollment(User user)
     {
@@ -51,12 +38,7 @@ public sealed class MfaAdminService
         return _totp.BuildProvisioningUri(_options.Issuer, user.Username, secret);
     }
 
-    /// <summary>
-    /// Confirma el enrolamiento validando el primer OTP contra el secreto pendiente (ventana ±1 paso).
-    /// Al éxito activa <c>MfaEnabled</c>. Devuelve <c>false</c> —sin mutar el estado— si no hay
-    /// secreto, si el texto cifrado es ilegible (clave rotada/corrupto) o si el OTP no valida
-    /// (fail-closed, SRS §9.4).
-    /// </summary>
+    /// <summary>Devuelve <c>false</c> sin mutar el estado si no hay secreto, si es ilegible o si el OTP no valida (fail-closed, SRS §9.4).</summary>
     public bool ConfirmEnrollment(User user, string otp, DateTimeOffset utcNow)
     {
         if (user.TotpSecret is null || string.IsNullOrWhiteSpace(otp))
@@ -71,11 +53,7 @@ public sealed class MfaAdminService
         return true;
     }
 
-    /// <summary>
-    /// Resetea el segundo factor: elimina el secreto TOTP y desactiva <c>MfaEnabled</c>; el usuario
-    /// deberá re-enrolar. No toca el lockout de la cuenta (<c>LockedUntil</c>/<c>FailedAttempts</c>):
-    /// es un concern aparte del bloqueo por intentos (HU-046).
-    /// </summary>
+    /// <summary>No toca el lockout de la cuenta: es un concern aparte del bloqueo por intentos.</summary>
     public void Reset(User user)
     {
         user.TotpSecret = null;
@@ -83,11 +61,7 @@ public sealed class MfaAdminService
         user.UpdatedAt = DateTimeOffset.UtcNow;
     }
 
-    /// <summary>
-    /// Descifra el secreto tolerando un texto cifrado ilegible (clave rotada, dato corrupto o
-    /// migrado con otra clave): devuelve <c>null</c> en vez de propagar la excepción criptográfica,
-    /// para que el consumidor deniegue en vez de exponer un 500.
-    /// </summary>
+    /// <summary>Devuelve <c>null</c> en vez de propagar la excepción criptográfica, para que el consumidor deniegue en vez de exponer un 500.</summary>
     private string? TryUnprotect(string ciphertext)
     {
         try

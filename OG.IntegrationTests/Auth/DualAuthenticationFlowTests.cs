@@ -27,7 +27,6 @@ public class DualAuthenticationFlowTests
     [Fact]
     public async Task ProtectedService_WithRequiresAuthTrue_WithoutJwt_ShouldReturn401Unauthorized()
     {
-        // Arrange - Registrar un servicio en la BD PostgreSQL efímera que exija autenticación
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<OmakaseDbContext>();
@@ -48,10 +47,9 @@ public class DualAuthenticationFlowTests
             }
         }
 
-        // Act - Intentar acceder al servicio que requiere autenticación sin token JWT
         var response = await _client.GetAsync("/auth-service/headers");
 
-        // Assert - SRS §7.5 / HU-024: Debe retornar 401 Unauthorized (AUTHENTICATION_REQUIRED)
+        // SRS §7.5 / HU-024: sin JWT debe responder 401 (AUTHENTICATION_REQUIRED).
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 }

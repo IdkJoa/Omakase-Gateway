@@ -3,21 +3,16 @@ using System.Security.Cryptography;
 
 namespace Application.Common.Security.Mfa;
 
-/// <summary>
-/// Implementación de <see cref="ITotpService"/> conforme a RFC 6238 (TOTP)
-/// sobre RFC 4226 (HOTP) con HMAC-SHA1, paso de 30 s y 6 dígitos — el perfil
-/// que consumen las apps autenticadoras estándar (Google/Microsoft Authenticator).
-/// Sin estado mutable: registrar como Singleton.
-/// </summary>
+// HMAC-SHA1, paso de 30s y 6 dígitos: el perfil que consumen las apps autenticadoras estándar
+// (Google/Microsoft Authenticator). Sin estado mutable: registrar como Singleton.
 public sealed class TotpService : ITotpService
 {
-    private const int SecretSizeBytes = 20;   // 160 bits (RFC 4226 §4 recomendado)
+    private const int SecretSizeBytes = 20;   // 160 bits, recomendado por RFC 4226 §4
     private const int StepSeconds = 30;
     private const int Digits = 6;
 
     private const string Base32Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 
-    /// <inheritdoc/>
     public string GenerateSecret()
     {
         Span<byte> buffer = stackalloc byte[SecretSizeBytes];
@@ -25,7 +20,6 @@ public sealed class TotpService : ITotpService
         return Base32Encode(buffer);
     }
 
-    /// <inheritdoc/>
     public bool ValidateCode(string base32Secret, string otp, DateTimeOffset utcNow, int windowSteps = 1)
     {
         if (string.IsNullOrWhiteSpace(base32Secret) || string.IsNullOrWhiteSpace(otp))
@@ -63,7 +57,6 @@ public sealed class TotpService : ITotpService
         return match;
     }
 
-    /// <inheritdoc/>
     public string BuildProvisioningUri(string issuer, string username, string base32Secret)
     {
         var label = Uri.EscapeDataString($"{issuer}:{username}");
@@ -71,7 +64,7 @@ public sealed class TotpService : ITotpService
         return $"otpauth://totp/{label}?secret={base32Secret}&issuer={issuerParam}&algorithm=SHA1&digits={Digits}&period={StepSeconds}";
     }
 
-    /// <summary>HOTP (RFC 4226 §5.3): HMAC-SHA1 + truncamiento dinámico a 6 dígitos.</summary>
+    // HOTP (RFC 4226 §5.3): HMAC-SHA1 + truncamiento dinámico a 6 dígitos.
     private static string ComputeCode(byte[] key, long timeStep)
     {
         Span<byte> counter = stackalloc byte[8];

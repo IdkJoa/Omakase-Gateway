@@ -4,10 +4,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Persistence;
 
-/// <summary>
-/// Reads the single global risk_score_config row (T-029).
-/// The seeder (HU-006) guarantees exactly one row exists.
-/// </summary>
 public sealed class RiskConfigProvider : IRiskConfigProvider
 {
     private readonly OmakaseDbContext _db;
@@ -16,8 +12,7 @@ public sealed class RiskConfigProvider : IRiskConfigProvider
 
     public async Task<RiskScoreConfig> GetAsync(CancellationToken cancellationToken = default)
     {
-        // Fila única (singleton): OrderBy explícito para una lectura determinista y silenciar
-        // la advertencia de EF sobre FirstOrDefault sin orden (esta consulta corre en cada evaluación).
+        // OrderBy explícito: lectura determinista y silencia la advertencia de EF por FirstOrDefault sin orden.
         var config = await _db.RiskScoreConfigs.AsNoTracking()
             .OrderBy(r => r.UpdatedAt).FirstOrDefaultAsync(cancellationToken)
             ?? throw new InvalidOperationException(

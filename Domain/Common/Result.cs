@@ -8,7 +8,6 @@ public class Result
 {
     protected Result(bool isSuccess, Error error)
     {
-        // Invariantes: un éxito nunca lleva error; un fallo siempre lleva uno.
         if (isSuccess && error != Error.None)
             throw new InvalidOperationException("Un resultado exitoso no puede llevar un error.");
         if (!isSuccess && error == Error.None)
@@ -29,10 +28,6 @@ public class Result
     public static Result<TValue> Failure<TValue>(Error error) => new(default, false, error);
 }
 
-/// <summary>
-/// <see cref="Result"/> that carries a value on success.
-/// </summary>
-/// <typeparam name="TValue">Type of the value produced on success.</typeparam>
 public class Result<TValue> : Result
 {
     private readonly TValue? _value;
@@ -40,7 +35,6 @@ public class Result<TValue> : Result
     protected internal Result(TValue? value, bool isSuccess, Error error)
         : base(isSuccess, error) => _value = value;
 
-    /// <summary>The value; throws if the result is a failure.</summary>
     public TValue Value => IsSuccess
         ? _value!
         : throw new InvalidOperationException("No se puede acceder al valor de un resultado fallido.");

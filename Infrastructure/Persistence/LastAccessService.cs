@@ -27,24 +27,13 @@ public sealed class LastAccessService : ILastAccessService
         if (string.IsNullOrWhiteSpace(userId))
             return null;
 
-        // Parsear el string ID a UserId (Typed ID del Dominio)
         if (!Guid.TryParse(userId, out var userGuid))
             return null;
 
         var domainUserId = new UserId(userGuid);
 
-        // Último acceso CONCEDIDO con geolocalización registrada.
-        //
-        // El filtro por Verdict.Allow es de seguridad, no cosmético: este punto es el ancla contra la
-        // que se mide el Viaje Imposible. Si un intento denegado sirviera de ancla, un atacante podría
-        // neutralizar la regla con una petición desechable — la primera desde su ubicación se bloquea
-        // pero reubica el ancla, y la segunda ya parece plausible (distancia ~0). Además, un intento
-        // rechazado no es evidencia de dónde estuvo el usuario, así que tomarlo como referencia genera
-        // falsos positivos contra el usuario legítimo cuando vuelve desde su ubicación habitual.
-        //
-        // Mismo criterio que HU-017 para el perfil de comportamiento: solo los accesos efectivamente
-        // concedidos describen al usuario. Los concedidos tras step-up MFA se auditan ya como Allow
-        // (el veredicto se persiste después del ajuste), así que el tráfico legítimo no se pierde.
+        // Solo accesos con Verdict.Allow: es el ancla del Viaje Imposible, y un intento denegado permitiría
+        // a un atacante reubicar el ancla con una petición desechable (o generaría falsos positivos legítimos).
         var lastLog = await _dbContext.AuditLogs
             .Where(a => a.UserId == domainUserId && a.Geo != null && a.Verdict == Verdict.Allow)
             .OrderByDescending(a => a.EvaluatedAt)
@@ -59,7 +48,6 @@ public sealed class LastAccessService : ILastAccessService
             double? lat = null;
             double? lon = null;
 
-            // Soportar búsquedas de propiedades tanto en PascalCase como en camelCase / lowercase
             if (root.TryGetProperty("Latitude", out var latProp) || root.TryGetProperty("latitude", out latProp))
             {
                 lat = latProp.GetDouble();

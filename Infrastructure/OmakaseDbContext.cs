@@ -30,14 +30,7 @@ public class OmakaseDbContext(DbContextOptions<OmakaseDbContext> options) : DbCo
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(OmakaseDbContext).Assembly);
     }
 
-    /// <summary>
-    /// Sella <c>updated_at</c> en toda entidad <see cref="IAuditableEntity"/> modificada.
-    /// <para>
-    /// Centralizarlo aquí evita que cada manejador tenga que acordarse de asignarlo —la causa
-    /// habitual de que la columna quede desfasada— y hace que incorporar una entidad auditable
-    /// nueva no requiera tocar ningún caso de uso existente.
-    /// </para>
-    /// </summary>
+    // Sella updated_at aquí para toda IAuditableEntity modificada, evitando que cada handler tenga que recordarlo.
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         StampAuditableEntities();

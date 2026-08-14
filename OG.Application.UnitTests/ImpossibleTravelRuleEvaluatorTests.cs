@@ -14,11 +14,7 @@ using Xunit;
 
 namespace OG.Application.UnitTests;
 
-/// <summary>
-/// Pruebas unitarias para verificar el comportamiento de la regla Viaje Imposible (HU-014).
-/// Cubre la precisión de la fórmula Haversine, casos de viaje posible y viaje imposible,
-/// así como comportamiento de arranque en frío (cold start) y fallos de geolocalización.
-/// </summary>
+// Regla Viaje Imposible (HU-014): precisión de Haversine, viaje posible/imposible, cold start y fallos de geolocalización.
 public class ImpossibleTravelRuleEvaluatorTests
 {
     private readonly IGeoLocationService _geoMock;
@@ -64,17 +60,14 @@ public class ImpossibleTravelRuleEvaluatorTests
     [Fact]
     public async Task EvaluateAsync_AnonymousUser_ReturnsCoherentScore()
     {
-        // Arrange
         var context = new RequestContext
         {
             SourceIp = "127.0.0.1",
             UserId = null // Usuario anónimo
         };
 
-        // Act
         var result = await CreateSut().EvaluateAsync(context, Policy);
 
-        // Assert
         Assert.Equal(0m, result.Score);
         Assert.False(result.Triggered);
         Assert.Equal("anonymous_user", result.Detail);
@@ -83,7 +76,6 @@ public class ImpossibleTravelRuleEvaluatorTests
     [Fact]
     public async Task EvaluateAsync_CurrentGeoUnavailable_ReturnsCoherentScore_FailSafe()
     {
-        // Arrange
         var context = new RequestContext
         {
             SourceIp = "8.8.8.8",
@@ -94,10 +86,8 @@ public class ImpossibleTravelRuleEvaluatorTests
         _geoMock.ResolveAsync("8.8.8.8", Arg.Any<CancellationToken>())
             .Returns(Result.Failure<GeoResult>(GeoErrors.Unavailable));
 
-        // Act
         var result = await CreateSut().EvaluateAsync(context, Policy);
 
-        // Assert
         Assert.Equal(0m, result.Score); // Se omite la regla para evitar falsos positivos
         Assert.False(result.Triggered);
         Assert.Equal("current_geo_unavailable", result.Detail);
@@ -106,7 +96,6 @@ public class ImpossibleTravelRuleEvaluatorTests
     [Fact]
     public async Task EvaluateAsync_NoHistory_ReturnsCoherentScore_ColdStart()
     {
-        // Arrange
         var context = new RequestContext
         {
             SourceIp = "8.8.8.8",
@@ -121,10 +110,8 @@ public class ImpossibleTravelRuleEvaluatorTests
         _lastAccessMock.GetLastAccessAsync("user-123", Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<LastAccessResult?>(null));
 
-        // Act
         var result = await CreateSut().EvaluateAsync(context, Policy);
 
-        // Assert
         Assert.Equal(0m, result.Score);
         Assert.False(result.Triggered);
         Assert.Equal("no_history", result.Detail);
@@ -133,7 +120,6 @@ public class ImpossibleTravelRuleEvaluatorTests
     [Fact]
     public async Task EvaluateAsync_TravelPlausible_ReturnsCoherentScore()
     {
-        // Arrange
         var requestTime = DateTimeOffset.UtcNow;
         var context = new RequestContext
         {
@@ -155,10 +141,8 @@ public class ImpossibleTravelRuleEvaluatorTests
         _lastAccessMock.GetLastAccessAsync("user-123", Arg.Any<CancellationToken>())
             .Returns(lastAccess);
 
-        // Act
         var result = await CreateSut().EvaluateAsync(context, Policy);
 
-        // Assert
         Assert.Equal(0m, result.Score);
         Assert.False(result.Triggered);
         Assert.StartsWith("travel_plausible", result.Detail);
@@ -167,7 +151,6 @@ public class ImpossibleTravelRuleEvaluatorTests
     [Fact]
     public async Task EvaluateAsync_ImpossibleTravel_ReturnsSevereScore()
     {
-        // Arrange
         var requestTime = DateTimeOffset.UtcNow;
         var context = new RequestContext
         {
@@ -191,10 +174,8 @@ public class ImpossibleTravelRuleEvaluatorTests
         _lastAccessMock.GetLastAccessAsync("user-123", Arg.Any<CancellationToken>())
             .Returns(lastAccess);
 
-        // Act
         var result = await CreateSut().EvaluateAsync(context, Policy);
 
-        // Assert
         Assert.Equal(100m, result.Score);
         Assert.True(result.Triggered);
         Assert.StartsWith("impossible_travel_detected", result.Detail);

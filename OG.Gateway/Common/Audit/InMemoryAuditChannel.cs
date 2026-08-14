@@ -5,16 +5,9 @@ using Microsoft.Extensions.Options;
 
 namespace Application.Common.Audit;
 
-/// <summary>
-/// Implementación del canal de auditoría usando <see cref="System.Threading.Channels"/>.
-/// Registrar como <b>Singleton</b>: el canal debe vivir toda la vida de la aplicación.
-/// </summary>
-/// <remarks>
-/// La capacidad se configura vía <see cref="AuditChannelOptions.Capacity"/> en <c>appsettings.json</c>.<br/>
-/// <b>FullMode</b>: <see cref="BoundedChannelFullMode.DropWrite"/> — nunca bloquea al escritor.<br/>
-/// <b>SingleReader</b>: <c>true</c> — solo el <c>AuditPersistenceWorker</c> lee.<br/>
-/// <b>SingleWriter</b>: <c>false</c> — múltiples peticiones concurrentes escriben.
-/// </remarks>
+// Registrar como Singleton: el canal debe vivir toda la vida de la aplicación.
+// DropWrite en vez de bloquear al escritor; SingleReader=true porque solo el worker de persistencia lee;
+// SingleWriter=false porque múltiples peticiones concurrentes escriben.
 public sealed class InMemoryAuditChannel : IAuditChannel
 {
     private readonly Channel<AuditEvent> _channel;
@@ -40,7 +33,6 @@ public sealed class InMemoryAuditChannel : IAuditChannel
             "[AuditChannel] Inicializado con capacidad={Capacity}.", capacity);
     }
 
-    /// <inheritdoc/>
     public bool TryWrite(AuditEvent auditEvent)
     {
         var written = _channel.Writer.TryWrite(auditEvent);

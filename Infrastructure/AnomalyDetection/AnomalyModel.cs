@@ -30,12 +30,8 @@ public sealed class AnomalyModel
         _baselineScoresAscending = baselineScoresAscending;
     }
 
-    /// <summary>Número de muestras de baseline con que se calibró el modelo.</summary>
     public int BaselineSize => _baselineScoresAscending.Length;
 
-    /// <summary>
-    /// Puntúa una petición devolviendo el Anomaly Score calibrado en <c>[0,100]</c>.
-    /// </summary>
     public double Score(AnomalyFeatureVector features)
     {
         var row = AnomalyFeatureRow.From(features);
@@ -49,11 +45,8 @@ public sealed class AnomalyModel
         return Calibrate(raw);
     }
 
-    /// <summary>
-    /// Mapea el score crudo a percentil dentro del baseline: <c>100 · P(baseline ≤ raw)</c>.
-    /// Sin baseline (no debería ocurrir) devuelve 50 — máxima incertidumbre, alineado con el
-    /// fallback de RF-M9.
-    /// </summary>
+    // Mapea el score crudo a percentil dentro del baseline: 100 · P(baseline ≤ raw). Sin baseline
+    // (no debería ocurrir) devuelve 50 — máxima incertidumbre, alineado con el fallback de RF-M9.
     private double Calibrate(float raw)
     {
         var n = _baselineScoresAscending.Length;

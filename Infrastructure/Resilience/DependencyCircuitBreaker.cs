@@ -9,9 +9,7 @@ using StackExchange.Redis;
 
 namespace Infrastructure.Resilience;
 
-/// <summary>
-/// Implementación de Circuit Breaker para Redis y PostgreSQL usando Polly v8 (T-067 / HU-031).
-/// </summary>
+// Circuit Breaker para Redis y PostgreSQL usando Polly v8 (T-067 / HU-031).
 public sealed class DependencyCircuitBreaker : IDependencyCircuitBreaker
 {
     private readonly ResiliencePipeline _redisPipeline;
@@ -60,10 +58,10 @@ public sealed class DependencyCircuitBreaker : IDependencyCircuitBreaker
         return new ResiliencePipelineBuilder()
             .AddCircuitBreaker(new CircuitBreakerStrategyOptions
             {
-                FailureRatio = 1.0,               // 100% de fallos en el período de muestreo (3 fallos consecutivos)
-                MinimumThroughput = 3,            // Mínimo 3 peticiones fallidas consecutivas para abrir
+                FailureRatio = 1.0,               // Abre solo si el 100% de las peticiones falla en la ventana (evita falsos positivos por fallos aislados)
+                MinimumThroughput = 3,             // Exige 3 fallos consecutivos como mínimo antes de evaluar el ratio
                 SamplingDuration = TimeSpan.FromSeconds(30),
-                BreakDuration = TimeSpan.FromSeconds(30), // Recuperación tras 30 segundos (Half-Open)
+                BreakDuration = TimeSpan.FromSeconds(30), // Ventana de recuperación antes de pasar a Half-Open
                 ShouldHandle = shouldHandle,
                 OnOpened = args =>
                 {

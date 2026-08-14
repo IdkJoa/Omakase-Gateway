@@ -38,14 +38,11 @@ public class ResilientRedisServiceTests
     [Fact]
     public async Task GetCachedProfileAsync_ShouldExecuteThroughCircuitBreaker()
     {
-        // Arrange
         var expectedProfile = "{\"score\": 12}";
         _innerMock.GetCachedProfileAsync("user_1").Returns(expectedProfile);
 
-        // Act
         var result = await _resilientRedis.GetCachedProfileAsync("user_1");
 
-        // Assert
         Assert.Equal(expectedProfile, result);
         await _circuitBreakerMock.Received(1).ExecuteRedisAsync(Arg.Any<Func<Task<string?>>>(), Arg.Any<CancellationToken>());
         await _innerMock.Received(1).GetCachedProfileAsync("user_1");
@@ -54,13 +51,10 @@ public class ResilientRedisServiceTests
     [Fact]
     public async Task IsBlacklistedAsync_ShouldExecuteThroughCircuitBreaker()
     {
-        // Arrange
         _innerMock.IsBlacklistedAsync("jti_revoked").Returns(true);
 
-        // Act
         var result = await _resilientRedis.IsBlacklistedAsync("jti_revoked");
 
-        // Assert
         Assert.True(result);
         await _circuitBreakerMock.Received(1).ExecuteRedisAsync(Arg.Any<Func<Task<bool>>>(), Arg.Any<CancellationToken>());
         await _innerMock.Received(1).IsBlacklistedAsync("jti_revoked");

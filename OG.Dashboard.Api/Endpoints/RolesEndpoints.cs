@@ -26,20 +26,17 @@ public static class RolesEndpoints
             .WithTags("Roles")
             .WithOpenApi();
 
-        // GET /api/v1/roles
         rolesGroup.MapGet("/", GetAll)
             .RequireAuthorization("ReadAccess")
             .WithName("GetRoles")
             .WithSummary("Listar roles del sistema")
             .WithDescription("Devuelve el catálogo RBAC de roles con número de usuarios asignados.");
 
-        // GET /api/v1/roles/{id}
         rolesGroup.MapGet("/{id:guid}", GetById)
             .RequireAuthorization("ReadAccess")
             .WithName("GetRoleById")
             .WithSummary("Obtener un rol por ID");
 
-        // POST /api/v1/roles
         rolesGroup.MapPost("/", Create)
             .RequireAuthorization("AdminOnly")
             .WithName("CreateRole")
@@ -47,14 +44,12 @@ public static class RolesEndpoints
             .Produces<RoleDto>(StatusCodes.Status201Created)
             .ProducesValidationProblem();
 
-        // DELETE /api/v1/roles/{id}
         rolesGroup.MapDelete("/{id:guid}", Delete)
             .RequireAuthorization("AdminOnly")
             .WithName("DeleteRole")
             .WithSummary("Eliminar un rol (solo si no tiene usuarios asignados)")
             .Produces(StatusCodes.Status204NoContent);
 
-        // PUT /api/v1/roles/{id}
         rolesGroup.MapPut("/{id:guid}", Update)
             .RequireAuthorization("AdminOnly")
             .WithName("UpdateRole")
@@ -62,20 +57,17 @@ public static class RolesEndpoints
             .Produces(StatusCodes.Status204NoContent)
             .ProducesValidationProblem();
 
-        // Endpoints de asignación bajo /api/v1/users/{userId}/roles (T-056)
         var userRolesGroup = app
             .MapGroup("/api/v1/users/{userId:guid}/roles")
             .WithTags("User Roles")
             .WithOpenApi();
 
-        // GET /api/v1/users/{userId}/roles
         userRolesGroup.MapGet("/", GetRolesForUser)
             .RequireAuthorization("ReadAccess")
             .WithName("GetRolesForUser")
             .WithSummary("Listar roles de un usuario")
             .WithDescription("Devuelve los roles asignados a un usuario específico.");
 
-        // POST /api/v1/users/{userId}/roles
         userRolesGroup.MapPost("/", AssignRoleToUser)
             .RequireAuthorization("AdminOnly")
             .WithName("AssignRoleToUser")
@@ -83,7 +75,6 @@ public static class RolesEndpoints
             .Produces(StatusCodes.Status204NoContent)
             .ProducesValidationProblem();
 
-        // DELETE /api/v1/users/{userId}/roles/{roleId}
         userRolesGroup.MapDelete("/{roleId:guid}", RevokeRoleFromUser)
             .RequireAuthorization("AdminOnly")
             .WithName("RevokeRoleFromUser")
@@ -160,8 +151,6 @@ public static class RolesEndpoints
         }
 
         var r = result.Value;
-        // Output-encoding consistente con GetAll/GetById y con los Create de policies/services:
-        // se sanitiza el nombre/descripcion en la respuesta (defensa en profundidad).
         var dto = new RoleDto(
             r.Id.Value,
             enc.Sanitize(r.Name),

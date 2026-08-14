@@ -2,14 +2,7 @@ using Application.Common.RiskEngine.AnomalyDetection;
 
 namespace Infrastructure.AnomalyDetection;
 
-/// <summary>
-/// Perfil de comportamiento sintético de un usuario "de oficina" (HU-016 / T-089).
-/// </summary>
-/// <param name="OfficeStart">Inicio de la jornada.</param>
-/// <param name="OfficeEnd">Fin de la jornada.</param>
-/// <param name="MeanRequestsPerWorkday">Media de peticiones en un día laboral.</param>
-/// <param name="WeekendActivityFactor">Fracción (0–1) de la actividad laboral que ocurre en fin de semana.</param>
-/// <param name="Endpoints">Endpoints posibles (los primeros se visitan más → diversidad baja y realista).</param>
+/// <summary>Perfil de comportamiento sintético de un usuario "de oficina" (HU-016 / T-089).</summary>
 public sealed record SyntheticTrafficProfile(
     TimeSpan OfficeStart,
     TimeSpan OfficeEnd,
@@ -38,7 +31,7 @@ public sealed class SyntheticTrafficGenerator
 
     public SyntheticTrafficGenerator(int? seed = null) => _rng = seed is int s ? new Random(s) : new Random();
 
-    /// <summary>Genera los accesos de <paramref name="days"/> días a partir de <paramref name="start"/> (orden cronológico).</summary>
+    // Genera los accesos de "days" días a partir de "start", en orden cronológico.
     public IReadOnlyList<UserAccessSample> Generate(DateTimeOffset start, int days, SyntheticTrafficProfile profile)
     {
         var samples = new List<UserAccessSample>();
@@ -63,7 +56,7 @@ public sealed class SyntheticTrafficGenerator
         return samples;
     }
 
-    /// <summary>Hora del día bimodal (pico de mañana y de tarde) con pausa de almuerzo, acotada a la jornada.</summary>
+    // Hora del día bimodal (pico de mañana y de tarde) con pausa de almuerzo, acotada a la jornada.
     private TimeSpan SampleOfficeTime(TimeSpan start, TimeSpan end)
     {
         var mid = (start + end) / 2;
@@ -90,7 +83,7 @@ public sealed class SyntheticTrafficGenerator
         return mid; // fallback si el rechazo no converge
     }
 
-    /// <summary>Elige un endpoint sesgado hacia los primeros (distribución tipo Zipf → diversidad realista baja).</summary>
+    // Elige un endpoint sesgado hacia los primeros (distribución tipo Zipf → diversidad realista baja).
     private string PickEndpoint(IReadOnlyList<string> endpoints)
     {
         var skewed = _rng.NextDouble() * _rng.NextDouble(); // sesga hacia 0
@@ -98,7 +91,7 @@ public sealed class SyntheticTrafficGenerator
         return endpoints[index];
     }
 
-    /// <summary>Muestra gaussiana (Box–Muller) para introducir variación humana.</summary>
+    // Muestra gaussiana (Box–Muller) para introducir variación humana.
     private double Gaussian(double mean, double stdDev)
     {
         var u1 = 1.0 - _rng.NextDouble();

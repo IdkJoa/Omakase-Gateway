@@ -26,7 +26,6 @@ public sealed class TypedIdValueConverter<TId> : ValueConverter<TId, Guid>
     {
     }
 
-    // CLR → DB: id.Value
     // Built as an expression tree so EF Core can translate it to SQL when needed.
     private static Expression<Func<TId, Guid>> BuildToGuid()
     {
@@ -35,9 +34,8 @@ public sealed class TypedIdValueConverter<TId> : ValueConverter<TId, Guid>
         return Expression.Lambda<Func<TId, Guid>>(body, param);
     }
 
-    // DB → CLR: TId.From(guid)
-    // Calls the static From() method via MethodInfo, compiled into a delegate once.
-    // This avoids the CS8927 restriction on static abstract members in expression trees.
+    // Calls the static From() method via MethodInfo since CS8927 forbids referencing static abstract
+    // interface members directly inside expression trees.
     private static Expression<Func<Guid, TId>> BuildFromGuid()
     {
         var fromMethod = typeof(TId).GetMethod(

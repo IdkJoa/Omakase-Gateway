@@ -66,7 +66,6 @@ public sealed class RbacAuthorizationMiddleware
         {
             var db = context.RequestServices.GetRequiredService<OmakaseDbContext>();
 
-            // Proyección directa: solo los nombres de rol, sin cargar entidades completas.
             var roleNames = await db.Users
                 .AsNoTracking()
                 .Where(u => u.KeycloakSub == sub && u.IsActive)
@@ -75,7 +74,6 @@ public sealed class RbacAuthorizationMiddleware
                 .Select(ur => ur.Role!.Name)
                 .ToListAsync(context.RequestAborted);
 
-            // Reemplazar los Role claims del JWT por los de la BD.
             var existingRoleClaims = identity.FindAll(ClaimTypes.Role).ToList();
             foreach (var claim in existingRoleClaims)
             {
@@ -97,8 +95,7 @@ public sealed class RbacAuthorizationMiddleware
         }
         catch (Exception ex)
         {
-            // Fail-closed: si no podemos consultar la BD, el usuario queda sin roles.
-            // Las policies de autorización rechazarán la petición con 403.
+            // Fail-closed: si no podemos consultar la BD, el usuario queda sin roles y las policies rechazan con 403.
             _logger.LogError(ex,
                 "AUDIT RBAC-002: Error consultando roles en BD para sub={Sub}. " +
                 "Fail-closed: usuario queda sin Role claims.",

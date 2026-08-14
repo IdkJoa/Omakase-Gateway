@@ -5,11 +5,7 @@ using Xunit;
 
 namespace OG.Application.UnitTests;
 
-/// <summary>
-/// Tests de HU-026 T-054 — proyección del feature_vector a un resumen visualizable
-/// (<see cref="BehaviorProfileProjection"/>): promedio del centroide y decodificación de la
-/// hora habitual respetando la continuidad cíclica seno/coseno.
-/// </summary>
+// HU-026 T-054: proyección del feature_vector a un resumen visualizable, respetando la continuidad cíclica seno/coseno de la hora.
 public class BehaviorProfileProjectionTests
 {
     /// <summary>Codifica una hora igual que FeatureExtractor: (sin/cos + 1) / 2, en [0,1].</summary>

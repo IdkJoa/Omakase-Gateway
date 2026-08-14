@@ -56,10 +56,8 @@ public class GetMetricsSummaryHandlerTests : IDisposable
     [Fact]
     public async Task Empty_Database_Returns_Zero_Metrics_Safely()
     {
-        // Act
         var result = await _sut.GetMetricsSummaryAsync();
 
-        // Assert
         Assert.True(result.IsSuccess, result.IsFailure ? result.Error.Description : string.Empty);
         var m = result.Value;
         Assert.Equal(0, m.TotalEvaluations);
@@ -77,7 +75,7 @@ public class GetMetricsSummaryHandlerTests : IDisposable
     [Fact]
     public async Task Calculates_Correct_Metrics_And_Percentages()
     {
-        // Arrange: 5 ALLOW, 3 CHALLENGE, 2 BLOCK (Total 10)
+        // 5 ALLOW, 3 CHALLENGE, 2 BLOCK (Total 10)
         var user1 = UserId.New();
         var user2 = UserId.New();
         SeedUser(user1, "user1");
@@ -99,10 +97,8 @@ public class GetMetricsSummaryHandlerTests : IDisposable
         }
         await _db.SaveChangesAsync();
 
-        // Act
         var result = await _sut.GetMetricsSummaryAsync(from: baseTime.AddHours(-1), to: baseTime.AddHours(1));
 
-        // Assert
         Assert.True(result.IsSuccess);
         var m = result.Value;
         Assert.Equal(10, m.TotalEvaluations);
@@ -121,7 +117,6 @@ public class GetMetricsSummaryHandlerTests : IDisposable
     [Fact]
     public async Task Filters_By_Date_Range()
     {
-        // Arrange
         var user = UserId.New();
         SeedUser(user, "testuser");
         var now = DateTimeOffset.UtcNow;
@@ -133,10 +128,9 @@ public class GetMetricsSummaryHandlerTests : IDisposable
 
         await _db.SaveChangesAsync();
 
-        // Act (rango de las últimas 12 horas)
+        // (rango de las últimas 12 horas)
         var result = await _sut.GetMetricsSummaryAsync(from: now.AddHours(-12), to: now);
 
-        // Assert
         Assert.True(result.IsSuccess);
         var m = result.Value;
         Assert.Equal(1, m.TotalEvaluations);
@@ -147,7 +141,7 @@ public class GetMetricsSummaryHandlerTests : IDisposable
     [Fact]
     public async Task Groups_RiskScoreSeries_By_Hour()
     {
-        // Arrange: 2 logs en Hora A, 1 log en Hora B
+        // 2 logs en Hora A, 1 log en Hora B
         var user = UserId.New();
         SeedUser(user, "seriesuser");
         var timeHourA = new DateTimeOffset(2026, 7, 27, 10, 15, 0, TimeSpan.Zero);
@@ -158,10 +152,8 @@ public class GetMetricsSummaryHandlerTests : IDisposable
         _db.AuditLogs.Add(CreateAuditLog(user, Verdict.Block, 80m, timeHourB));
         await _db.SaveChangesAsync();
 
-        // Act
         var result = await _sut.GetMetricsSummaryAsync(from: timeHourA.AddHours(-1), to: timeHourB.AddHours(1));
 
-        // Assert
         Assert.True(result.IsSuccess);
         var m = result.Value;
         Assert.Equal(2, m.RiskScoreSeries.Count);

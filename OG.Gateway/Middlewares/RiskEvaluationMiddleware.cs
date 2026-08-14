@@ -14,39 +14,18 @@ using static Application.Common.Telemetry.OmakaseActivity.Spans;
 namespace Application.Middlewares;
 
 /// <summary>
-/// Middleware de intercepción, evaluación de riesgo y despacho de veredicto (HU-008 / HU-037 / T-015 / T-016).
-/// Se posiciona en el pipeline de YARP inmediatamente antes de <c>MapReverseProxy()</c>,
-/// después del <see cref="RateLimitMiddleware"/>.
+/// Middleware de intercepción, evaluación de riesgo y despacho de veredicto. Se posiciona en el
+/// pipeline de YARP inmediatamente antes de <c>MapReverseProxy()</c>, después de <see cref="RateLimitMiddleware"/>.
 /// </summary>
-/// <remarks>
-/// Responsabilidades:
-/// <list type="number">
-///   <item>Extraer contexto de la petición (IP, User-Agent, cabeceras de fingerprint, UserId).</item>
-///   <item>Empaquetar en un <see cref="RequestContext"/> inmutable.</item>
-///   <item>Abrir el span OTel <c>gateway.request.intercept</c>.</item>
-///   <item>Despachar <see cref="EvaluateRiskCommand"/> al motor de riesgo vía <see cref="IMediator"/>.</item>
-///   <item>Actuar sobre el <see cref="Verdict"/> (Allow → upstream, Challenge → 401 MFA_REQUIRED + challengeId (HU-046/T-103), Block → 403 ACCESS_DENIED).</item>
-///   <item>Encolar un <see cref="AuditEvent"/> en <see cref="IAuditChannel"/> para persistencia asíncrona (T-100).</item>
-/// </list>
-/// </remarks>
 public sealed class RiskEvaluationMiddleware
 {
     /// <summary>
-    /// Rutas propias del Gateway que NO se evalúan ni se proxean: endpoints de
-    /// autenticación/MFA (HU-046), diagnóstico de Aspire y el cliente de demostración
-    /// (HU-048). Todo lo demás pasa por el motor de riesgo.
-    /// <para>
-    /// La lista se deriva de <see cref="ProtectedService.ReservedNames"/> para que no pueda
-    /// divergir de los nombres que el CRUD administrativo rechaza: son la misma regla vista
-    /// desde los dos lados.
-    /// </para>
+    /// Se deriva de <see cref="ProtectedService.ReservedNames"/> para que no pueda divergir de
+    /// los nombres que el CRUD administrativo rechaza: es la misma regla vista desde los dos lados.
     /// </summary>
     private static readonly string[] BypassPrefixes = ProtectedService.ReservedPathPrefixes;
 
-    /// <summary>
-    /// Presupuesto de rendimiento del requisito no funcional: el overhead de evaluación
-    /// (intercepción → veredicto) debe quedar en ≤50 ms en el percentil 95.
-    /// </summary>
+    /// <summary>Requisito no funcional: el overhead de evaluación debe quedar en ≤50 ms p95.</summary>
     private const double EvaluationBudgetMs = 50d;
 
     private readonly RequestDelegate _next;
@@ -69,7 +48,6 @@ public sealed class RiskEvaluationMiddleware
         IChallengeStore challengeStore,
         IOptions<MfaOptions> mfaOptions)
     {
-        // Endpoints propios del Gateway: fuera de la ruta de evaluación (T-103).
         if (IsBypassedPath(context.Request.Path))
         {
             await _next(context);
@@ -78,30 +56,24 @@ public sealed class RiskEvaluationMiddleware
 
         var evaluationId = Guid.NewGuid();
 
-        // IP de origen 
-        // UseForwardedHeaders() ya procesó X-Forwarded-For antes de llegar aquí (T-019).
+        // UseForwardedHeaders() ya procesó X-Forwarded-For antes de llegar aquí.
         var sourceIp = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
 
-        // User-Agent sanitizado 
         var userAgent = sanitizer.Sanitize(context.Request.Headers.UserAgent.ToString());
 
-        // Cabeceras de fingerprint 
         var acceptLanguage = context.Request.Headers.AcceptLanguage.ToString();
         var acceptEncoding = context.Request.Headers.AcceptEncoding.ToString();
 
-        // UserId del claim "sub" del JWT propio (HU-019), ya validado por UseAuthentication.
         // Fallback a ClaimTypes.NameIdentifier por si el mapeo de claims entrantes está activo.
         var userId = context.User.FindFirst("sub")?.Value
                   ?? context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
 
-        // Servicio destino: primer segmento del path (convención HU-009: /{name}/**).
+        // Servicio destino: primer segmento del path (convención /{name}/**).
         var serviceName = ExtractServiceName(context.Request.Path);
 
-        // Huella del dispositivo (HU-013): liga el desafío/step-up al dispositivo (HU-046)
-        // y completa el registro de auditoría (fingerprint_hash).
+        // Liga el desafío/step-up al dispositivo y completa el registro de auditoría.
         var fingerprintHash = fingerprintService.GenerateHash(userAgent, acceptLanguage, acceptEncoding);
 
-        // RequestContext inmutable
         var requestContext = new RequestContext
         {
             SourceIp       = sourceIp,
@@ -113,7 +85,6 @@ public sealed class RiskEvaluationMiddleware
             Timestamp      = DateTimeOffset.UtcNow
         };
 
-        // Span OTel
         using var span = Source.StartActivity(Interception);
         span?.SetTag(Tags.SourceIp, sourceIp);
         
@@ -121,8 +92,7 @@ public sealed class RiskEvaluationMiddleware
             span?.SetTag(Tags.UserId, userId);
 
         var sw = System.Diagnostics.Stopwatch.StartNew();
-        
-        // Evaluar riesgo 
+
         var result = await mediator.SendAsync(
             new EvaluateRiskCommand(requestContext),
             context.RequestAborted);
@@ -132,10 +102,9 @@ public sealed class RiskEvaluationMiddleware
         span?.SetTag(Tags.Verdict,   result.Verdict.ToString());
         span?.SetTag(Tags.RiskScore,  result.RiskScore.ToString("F2"));
 
-        // DurationMs es la métrica del requisito de rendimiento (overhead de evaluación ≤50 ms p95):
-        // el panel de Grafana la consume desde Loki. Va en decimales porque ElapsedMilliseconds
-        // trunca a entero, y con evaluaciones reales de 9–11 ms ese truncamiento se come hasta un
-        // 10% del valor justo en el rango que decide si se cumple el SLA.
+        // DurationMs va en decimales: ElapsedMilliseconds trunca a entero y con evaluaciones reales
+        // de 9–11 ms ese truncamiento se come hasta un 10% del valor, justo en el rango que decide
+        // si se cumple el SLA de overhead ≤50 ms p95.
         _logger.LogInformation("Evaluación completada {@Context}", new
         {
             UserId = userId ?? "anonymous",
@@ -146,12 +115,9 @@ public sealed class RiskEvaluationMiddleware
             DurationMs = Math.Round(sw.Elapsed.TotalMilliseconds, 2)
         });
 
-        // T-072: cuando una evaluación se sale del presupuesto de rendimiento, emitir el desglose
-        // por fase. Se registra SOLO en ese caso —coste cero en la ruta normal— y es justo la cola
-        // lenta la que interesa para localizar el cuello de botella: bajo carga sostenida hay al
-        // menos dos consultas a PostgreSQL sin caché por evaluación (políticas y config de riesgo),
-        // más el perfil en Redis y la inferencia de ML.NET. Sin este desglose, un p95 fuera de
-        // presupuesto solo dice que falla, no dónde.
+        // Desglose por fase solo cuando se excede el presupuesto —coste cero en la ruta normal—;
+        // es la cola lenta la que interesa para localizar el cuello de botella. Sin este desglose,
+        // un p95 fuera de presupuesto solo dice que falla, no dónde.
         if (result.Timings is not null && sw.Elapsed.TotalMilliseconds > EvaluationBudgetMs)
         {
             _logger.LogWarning("Presupuesto de evaluación excedido {@Budget}", new
@@ -170,7 +136,7 @@ public sealed class RiskEvaluationMiddleware
             });
         }
 
-        // Encolar AuditEvent (fire-and-forget — no bloquea el pipeline)
+        // fire-and-forget — no bloquea el pipeline
         var auditEvent = new AuditEvent(
             EvaluationId:    evaluationId,
             SourceIp:        sourceIp,
@@ -194,8 +160,8 @@ public sealed class RiskEvaluationMiddleware
                 evaluationId);
         }
 
-        // Precondición de autenticación (SRS §7.5 / HU-024): el servicio exige JWT (requires_auth) y
-        // la petición no trae identidad → 401 AUTHENTICATION_REQUIRED, antes del veredicto de riesgo.
+        // El servicio exige JWT (requires_auth) y la petición no trae identidad → 401, antes
+        // del veredicto de riesgo (SRS §7.5).
         if (result.AuthenticationRequired)
         {
             _logger.LogWarning(
@@ -214,19 +180,15 @@ public sealed class RiskEvaluationMiddleware
             return;
         }
 
-        // Despacho de veredicto
         switch (result.Verdict)
         {
             case Verdict.Allow:
-                // Score ≤ 40: reenviar al upstream via YARP de forma transparente.
                 await _next(context);
                 break;
 
             case Verdict.Challenge:
-                // Score en zona de desafío: HTTP 401 con descriptor MFA_REQUIRED y
-                // challengeId (HU-046 / T-103, contrato SRS §4.1). El desafío se
-                // persiste en Redis con el contexto de la petición original y el
-                // cliente lo completa en POST /auth/challenge/verify (T-104).
+                // El desafío se persiste en Redis con el contexto de la petición original;
+                // el cliente lo completa en POST /auth/challenge/verify (contrato SRS §4.1).
                 _logger.LogWarning(
                     "[RiskEvaluationMiddleware] CHALLENGE requerido. EvaluationId={EvaluationId} IP={SourceIp} Score={Score}",
                     evaluationId, sourceIp, result.RiskScore);
@@ -252,8 +214,8 @@ public sealed class RiskEvaluationMiddleware
                     }
                     catch (Exception ex)
                     {
-                        // Fail-closed (SRS §9.4 / RF-M9): sin store de step-up no hay
-                        // desafío completable → se deniega con 503, nunca se permite.
+                        // Fail-closed (SRS §9.4): sin store de step-up no hay desafío completable
+                        // → se deniega con 503, nunca se permite.
                         _logger.LogError(ex,
                             "[RiskEvaluationMiddleware] Redis no disponible al persistir el desafío. EvaluationId={EvaluationId}",
                             evaluationId);
@@ -285,7 +247,6 @@ public sealed class RiskEvaluationMiddleware
                 break;
 
             case Verdict.Block:
-                // Score > 75: acceso denegado sin posibilidad de desafío.
                 _logger.LogWarning(
                     "[RiskEvaluationMiddleware] Petición BLOQUEADA. EvaluationId={EvaluationId} IP={SourceIp} Score={Score}",
                     evaluationId, sourceIp, result.RiskScore);
@@ -303,7 +264,7 @@ public sealed class RiskEvaluationMiddleware
                 break;
 
             default:
-                // Guardia de seguridad: nunca debe alcanzarse con los valores actuales del enum.
+                // No debe alcanzarse con los valores actuales del enum; guardia de seguridad.
                 _logger.LogError(
                     "[RiskEvaluationMiddleware] Veredicto desconocido: {Verdict}. EvaluationId={EvaluationId}",
                     result.Verdict, evaluationId);
@@ -313,7 +274,6 @@ public sealed class RiskEvaluationMiddleware
         }
     }
 
-    /// <summary>True si el path es un endpoint propio del Gateway exento de evaluación.</summary>
     private static bool IsBypassedPath(PathString path)
     {
         foreach (var prefix in BypassPrefixes)
@@ -325,10 +285,7 @@ public sealed class RiskEvaluationMiddleware
         return false;
     }
 
-    /// <summary>
-    /// Extrae el nombre del servicio destino del primer segmento del path
-    /// (convención HU-009: <c>/{name}/**</c>). Devuelve null si no hay segmento.
-    /// </summary>
+    /// <summary>Primer segmento del path (convención <c>/{name}/**</c>); null si no hay segmento.</summary>
     private static string? ExtractServiceName(PathString path)
     {
         var value = path.Value;

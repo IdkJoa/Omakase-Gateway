@@ -11,6 +11,5 @@ namespace Domain.Common;
 /// </summary>
 public interface IAuditableEntity
 {
-    /// <summary>Marca temporal de la última modificación; null mientras no se haya modificado.</summary>
     DateTimeOffset? UpdatedAt { get; set; }
 }

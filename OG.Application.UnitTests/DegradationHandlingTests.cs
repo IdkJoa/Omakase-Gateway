@@ -20,10 +20,7 @@ using Xunit;
 
 namespace OG.Application.UnitTests;
 
-/// <summary>
-/// Pruebas unitarias para HU-032 (T-069 y T-070):
-/// Degradación controlada ante fallo de GeoLocation y ML.NET.
-/// </summary>
+// HU-032 (T-069, T-070): degradación controlada ante fallo de GeoLocation y ML.NET.
 public class DegradationHandlingTests
 {
     private readonly IServicePolicyProvider _policyProvider = Substitute.For<IServicePolicyProvider>();
@@ -80,8 +77,7 @@ public class DegradationHandlingTests
     [Fact]
     public async Task GeoLocationFailure_WithGeofenceRuleEvaluator_PolicyScoreIsExactly15()
     {
-        // Verifica que con GeoLocation en failure y GeofenceRuleEvaluator en evaluadores,
-        // PolicyScore es exactamente 15m (sin doble conteo +30).
+        // Con GeoLocation en failure y GeofenceRuleEvaluator activo, PolicyScore debe ser exactamente 15m (sin doble conteo +30).
         _geo.ResolveAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(Result.Failure<GeoResult>(GeoErrors.Unavailable)));
 

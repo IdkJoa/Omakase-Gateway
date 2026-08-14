@@ -18,11 +18,7 @@ using Xunit;
 
 namespace OG.Application.UnitTests;
 
-/// <summary>
-/// Pruebas del ajuste de veredicto por step-up MFA en el motor de riesgo
-/// (HU-046: degradación Challenge→Allow con step-up vigente T-105 y escalada
-/// Challenge→Block para clientes no interactivos T-106).
-/// </summary>
+// HU-046: ajuste de veredicto por step-up MFA (Challenge->Allow con step-up vigente T-105; Challenge->Block para clientes no interactivos T-106).
 public class EvaluateRiskHandlerStepUpTests
 {
     private const string UserGuid = "0198c9a2-0000-7000-8000-000000000001";

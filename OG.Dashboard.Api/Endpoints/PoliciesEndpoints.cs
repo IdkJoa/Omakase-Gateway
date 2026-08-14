@@ -72,8 +72,6 @@ public static class PoliciesEndpoints
         return app;
     }
 
-    // ── Handlers ──────────────────────────────────────────────────────────────
-
     private static async Task<IResult> GetAll(
         OmakaseDbContext db,
         IOutputSanitizer enc,
@@ -249,13 +247,6 @@ public static class PoliciesEndpoints
         return Results.NoContent();
     }
 
-    // ── Validación ────────────────────────────────────────────────────────────
-
-    /// <summary>
-    /// Validación común de POST/PUT: nombre, tipo, weight en [0,1] (T-047) y config
-    /// JSONB coherente con lo que parsea el evaluador del tipo. Devuelve el 400 listo
-    /// o null si el request es válido.
-    /// </summary>
     private static IResult? ValidateRequest(
         UpsertPolicyRequest request,
         IEnumerable<IPolicyConfigValidator> validators,
@@ -297,8 +288,6 @@ public static class PoliciesEndpoints
 
         return null;
     }
-
-    // ── Helpers ───────────────────────────────────────────────────────────────
 
     private static PolicyDto ToDto(AccessPolicy p, IOutputSanitizer enc) =>
         ToDto(p, enc, p.CreatedBy?.Username ?? string.Empty);

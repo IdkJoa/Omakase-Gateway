@@ -19,46 +19,23 @@ namespace Infrastructure;
 
 public static class DependencyInjection
 {
-    /// <summary>
-    /// Registra los servicios de Infrastructure que no son gestionados directamente por Aspire.
-    /// </summary>
-    /// <remarks>
-    /// DECISIÓN DE ARQUITECTURA — Sin repositorios:
-    ///   El <see cref="OmakaseDbContext"/> se inyecta directamente en los handlers de comandos
-    ///   y queries (CQRS). No existe capa de repositorio intermedia.
-    ///
-    /// NOTA: El propio DbContext es registrado por Aspire vía
-    ///   <c>builder.AddNpgsqlDbContext&lt;OmakaseDbContext&gt;("Omakase")</c>
-    ///   en el Program.cs de OG.Gateway.Api — no se registra aquí.
-    ///
-    /// Este método registra los servicios de infraestructura transversales:
-    ///   HU-006  → Seed data al arranque (IDbSeeder)
-    ///   HU-005  → Redis helpers con TTLs (IRedisSessionStore, IRateLimitStore, IBlacklistStore)
-    ///   HU-009  → GeoLocation HTTP client (IGeoLocationService)
-    ///   HU-017+ → Azure Key Vault client (ISecretProvider)
-    /// </remarks>
+    // Sin capa de repositorio: OmakaseDbContext se inyecta directo en los handlers CQRS.
+    // El propio DbContext lo registra Aspire en Program.cs (AddNpgsqlDbContext), no aquí.
     public static IServiceCollection AddInfrastructure(
         this IServiceCollection services)
     {
-        // HU-006 y HU-036 / T-077.
-        // El orden de registro es el orden de ejecución: OmakaseDbSeeder deja la configuración
-        // del motor, los roles y el administrador, de los que depende el material de
-        // demostración (access_policies.created_by, entre otros). DemoDataSeeder además se
-        // autoprotege y no hace nada si esa base no está.
+        // El orden de registro es el orden de ejecución: OmakaseDbSeeder deja config/roles/admin de los
+        // que depende DemoDataSeeder (access_policies.created_by, etc.); este último se autoprotege si esa base no está.
         services.AddScoped<IDbSeeder, OmakaseDbSeeder>();
         services.AddScoped<IDbSeeder, DemoDataSeeder>();
 
-        // HU-031 & T-067: Circuit Breaker para dependencias críticas (Redis & PostgreSQL)
         services.AddSingleton<IDependencyCircuitBreaker, DependencyCircuitBreaker>();
 
-        // HU-005, T-012 & T-067: Registro de Redis protegido por Circuit Breaker (Decorador)
         services.AddSingleton<RedisService>();
         services.AddSingleton<IRedisService>(sp => new ResilientRedisService(
             sp.GetRequiredService<RedisService>(),
             sp.GetRequiredService<IDependencyCircuitBreaker>()));
 
-        // HU-011 & T-021: GeoLocation (HTTP + caché en memoria, timeout -> fail-safe).
-        // Config (URL/timeout) vía options pattern (GeoLocationOptions), no hardcode.
         services.AddMemoryCache();
         services.AddHttpClient<IGeoLocationService, GeoLocationService>((sp, client) =>
         {
@@ -76,10 +53,8 @@ public static class DependencyInjection
         services.AddScoped<IRuleEvaluator, ImpossibleTravelRuleEvaluator>();
         services.AddSingleton<IPolicyScoreCalculator, PolicyScoreCalculator>();
         services.AddSingleton<IRiskScoreConsolidator, RiskScoreConsolidator>();
-        // Ruta caliente del motor (T-072). Se registran las implementaciones reales por su tipo
-        // concreto y los decoradores de caché por delante de la interfaz: ninguna clase existente
-        // cambia (Open/Closed) y con TTL 0 el decorador delega siempre, restaurando el
-        // comportamiento previo sin recompilar. Ver RiskEngineCacheOptions para las mediciones.
+        // Ruta caliente del motor: decoradores de caché registrados por delante de la interfaz (Open/Closed);
+        // con TTL 0 el decorador delega siempre, restaurando el comportamiento previo sin recompilar.
         services.AddOptions<Infrastructure.Persistence.Caching.RiskEngineCacheOptions>()
             .BindConfiguration(Infrastructure.Persistence.Caching.RiskEngineCacheOptions.SectionName);
 
@@ -96,9 +71,8 @@ public static class DependencyInjection
                 sp.GetRequiredService<RiskConfigProvider>(),
                 sp.GetRequiredService<Microsoft.Extensions.Caching.Memory.IMemoryCache>(),
                 sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<Infrastructure.Persistence.Caching.RiskEngineCacheOptions>>()));
-        // La seccion "AnomalyDetection" NO estaba enlazada: pese a documentarse como options pattern,
-        // los valores quedaban clavados a los defaults de la clase y no habia forma de calibrar el motor
-        // desde appsettings (necesario para HU-035). Se enlaza y se valida al arrancar.
+        // La sección "AnomalyDetection" no estaba enlazada: los valores quedaban en los defaults de la
+        // clase pese a documentarse como options pattern, sin forma de calibrar el motor desde appsettings.
         services.AddOptions<AnomalyDetectionOptions>()
             .BindConfiguration(AnomalyDetectionOptions.SectionName)
             .Validate(o => o.PcaRank >= 1 && o.PcaRank < AnomalyFeatureVector.Dimension,
@@ -123,8 +97,7 @@ public static class DependencyInjection
         services.AddSingleton(sp =>
             new AnomalyModelTrainer(sp.GetRequiredService<AnomalyDetectionOptions>()));
 
-        // T-089: baseline sintetico reproducible para que el modelo tenga historial que aprender
-        // sin esperar semanas de trafico real (ver BehaviorBaselineBootstrapper).
+        // Baseline sintético reproducible: le da al modelo historial sin esperar semanas de tráfico real.
         services.AddSingleton(sp => new BehaviorBaselineBootstrapper(
             sp.GetRequiredService<IFeatureExtractor>(),
             sp.GetRequiredService<AnomalyDetectionOptions>()));
@@ -133,16 +106,14 @@ public static class DependencyInjection
         services.AddSingleton<IProfileUpdateChannel, InMemoryProfileUpdateChannel>();
         services.AddHostedService<ProfileUpdateWorker>();
         services.AddHostedService<AnomalyRetrainWorker>();
-        // Memo por petición: el perfil se pedía dos veces en la misma evaluación (detector de
-        // anomalías + penalización de cold-start). Sin TTL ni ventana de obsolescencia — el memo
-        // muere con el ámbito de la petición.
+        // Memo por petición (sin TTL): el perfil se pedía dos veces en la misma evaluación (detector
+        // de anomalías + penalización de cold-start); muere con el ámbito de la petición.
         services.AddScoped<UserProfileStore>();
         services.AddScoped<IUserProfileStore>(sp =>
             new Infrastructure.Persistence.Caching.RequestScopedUserProfileStore(
                 sp.GetRequiredService<UserProfileStore>()));
         services.AddScoped<IAnomalyDetector, RandomizedPcaAnomalyDetector>();
 
-        // HU-017 & T-068: Registro de Azure Key Vault y Validador de Startup (HU-031)
         services.AddOptions<KeyVaultOptions>()
             .BindConfiguration(KeyVaultOptions.SectionName);
         services.AddSingleton<ISecretProvider, KeyVaultSecretProvider>();
@@ -151,17 +122,14 @@ public static class DependencyInjection
         services.AddScoped<IGatewayTokenService, GatewayTokenService>();
         services.AddScoped<ILoginService, LoginService>();
 
-        // HU-046: Step-up MFA (TOTP) para client users.
-        // TOTP y protector: puros/sin estado mutable -> Singleton. Stores Redis -> Singleton
-        // (mismo patrón que IRedisService). Puerto de estado MFA usa DbContext -> Scoped.
+        // TOTP y protector son puros/sin estado mutable -> Singleton; stores Redis -> Singleton (como IRedisService).
         services.AddSingleton<Application.Common.Security.Mfa.ITotpService,
                               Application.Common.Security.Mfa.TotpService>();
         services.AddSingleton<Application.Common.Security.Mfa.ITotpSecretProtector, AesGcmTotpSecretProtector>();
         services.AddSingleton<Application.Common.Security.Mfa.IChallengeStore, ChallengeStore>();
         services.AddSingleton<Application.Common.Security.Mfa.IStepUpStore, StepUpStore>();
         services.AddSingleton<Application.Common.Security.Mfa.IMfaAttemptStore, MfaAttemptStore>();
-        // Solo se consulta cuando el veredicto es CHALLENGE, así que un ataque por volumen —que por
-        // definición produce desafíos— amplificaba la carga contra PostgreSQL. Cacheado (T-072).
+        // Solo se consulta en veredicto CHALLENGE: sin caché, un ataque por volumen amplificaba la carga contra PostgreSQL.
         services.AddScoped<UserMfaInfoProvider>();
         services.AddScoped<Application.Common.Security.Mfa.IUserMfaInfoProvider>(sp =>
             new Infrastructure.Persistence.Caching.CachedUserMfaInfoProvider(

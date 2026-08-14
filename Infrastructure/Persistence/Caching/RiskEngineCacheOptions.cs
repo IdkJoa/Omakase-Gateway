@@ -1,25 +1,12 @@
 namespace Infrastructure.Persistence.Caching;
 
 /// <summary>
-/// Vigencia de las cachés de la ruta caliente del motor de riesgo (T-072).
+/// Vigencia de las cachés de la ruta caliente del motor de riesgo.
 /// </summary>
 /// <remarks>
-/// El motor resuelve en CADA evaluación datos que cambian con muy baja frecuencia: las políticas
-/// del servicio, la configuración de riesgo y el estado MFA del usuario. Medido con 1.000 muestras
-/// bajo 100 VUs sostenidos, ese I/O se llevaba el <b>83 %</b> del presupuesto de evaluación
-/// (políticas 27,4 %, step-up 25,7 %, perfil 16,8 %, config 12,9 %) y dejaba el p95 en ~96 ms
-/// frente a los 50 ms del requisito.
-/// <para>
-/// Cada TTL acota la ventana en la que un cambio administrativo tarda en verse. Con el valor por
-/// defecto de 5 s, un alta o baja de política surte efecto en la siguiente evaluación pasados como
-/// mucho 5 segundos, lo que sigue satisfaciendo el criterio de HU-023/HU-025 («las siguientes
-/// evaluaciones usan el nuevo valor») sin redespliegue ni invalidación explícita.
-/// </para>
-/// <para>
-/// <b>Válvula de seguridad:</b> un TTL de <c>0</c> desactiva por completo esa caché y el decorador
-/// delega siempre en la implementación real. Permite descartar la caché como causa de un
-/// comportamiento raro sin recompilar.
-/// </para>
+/// El motor resolvía en cada evaluación datos que cambian con muy baja frecuencia (políticas, config de riesgo, MFA),
+/// llevándose el 83% del presupuesto de evaluación. Cada TTL acota cuánto tarda en verse un cambio administrativo;
+/// TTL 0 desactiva la caché correspondiente sin recompilar, útil para descartarla como causa de un comportamiento raro.
 /// </remarks>
 public sealed class RiskEngineCacheOptions
 {

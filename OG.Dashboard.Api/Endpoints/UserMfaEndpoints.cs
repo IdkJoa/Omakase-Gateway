@@ -54,8 +54,6 @@ public static class UserMfaEndpoints
         return app;
     }
 
-    // ── Handlers ──────────────────────────────────────────────────────────────
-
     /// <summary>Estado MFA (solo indicadores; nunca el secreto). Lectura sin tracking.</summary>
     private static async Task<IResult> GetStatus(Guid id, OmakaseDbContext db, CancellationToken ct)
     {
@@ -149,8 +147,6 @@ public static class UserMfaEndpoints
 
         return Results.Ok(ToStatus(user));
     }
-
-    // ── Helpers ───────────────────────────────────────────────────────────────
 
     private static MfaStatusDto ToStatus(User user)
     {

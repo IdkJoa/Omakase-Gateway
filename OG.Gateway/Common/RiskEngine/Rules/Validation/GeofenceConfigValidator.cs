@@ -3,11 +3,7 @@ using Domain.Entities;
 
 namespace Application.Common.RiskEngine.Rules.Validation;
 
-/// <summary>
-/// Valida la config de <see cref="PolicyType.Geofence"/> en espejo con
-/// <c>GeofenceRuleEvaluator</c>: al menos una de <c>allowed_countries</c> /
-/// <c>denied_countries</c> como array no vacío de códigos ISO 3166-1 alpha-2.
-/// </summary>
+// Debe mantenerse en espejo con lo que parsea GeofenceRuleEvaluator.
 public sealed class GeofenceConfigValidator : IPolicyConfigValidator
 {
     public PolicyType Type => PolicyType.Geofence;
@@ -33,7 +29,6 @@ public sealed class GeofenceConfigValidator : IPolicyConfigValidator
         return errors;
     }
 
-    /// <summary>Devuelve true si la clave existe; acumula errores de forma.</summary>
     private static bool TryValidateCountryList(
         JsonDocument config, string property, List<string> errors, out int count)
     {

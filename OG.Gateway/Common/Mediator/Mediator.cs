@@ -13,14 +13,11 @@ public sealed class Mediator : IMediator
         IRequest<TResponse> request,
         CancellationToken cancellationToken = default)
     {
-        // Construye IRequestHandler<TConcreteRequest, TResponse> en tiempo de ejecución
         var handlerType = typeof(IRequestHandler<,>)
             .MakeGenericType(request.GetType(), typeof(TResponse));
 
-        // Lanza InvalidOperationException si no hay un handler registrado
         var handler = _serviceProvider.GetRequiredService(handlerType);
 
-        // invoca HandleAsync en la interfaz concreta resuelta.
         var handleMethod = handlerType.GetMethod(nameof(IRequestHandler<IRequest<TResponse>, TResponse>.HandleAsync))!;
         return (Task<TResponse>)handleMethod.Invoke(handler, [request, cancellationToken])!;
     }

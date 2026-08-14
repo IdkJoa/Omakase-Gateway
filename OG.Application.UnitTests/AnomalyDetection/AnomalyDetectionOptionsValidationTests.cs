@@ -9,12 +9,8 @@ using Xunit;
 
 namespace OG.Application.UnitTests.AnomalyDetection;
 
-/// <summary>
-/// Verifica que la sección <c>AnomalyDetection</c> de configuración se ENLAZA de verdad y que sus
-/// invariantes se validan al arrancar. Antes, <c>AddOptions&lt;AnomalyDetectionOptions&gt;()</c> se
-/// registraba sin <c>Bind</c>: los valores quedaban clavados a los defaults del código y calibrar el
-/// motor desde appsettings (necesario para HU-035) no tenía ningún efecto, en silencio.
-/// </summary>
+// Antes AddOptions<AnomalyDetectionOptions>() se registraba sin Bind: los valores quedaban en los
+// defaults del código y calibrar el motor desde appsettings (HU-035) no tenía efecto, en silencio.
 public class AnomalyDetectionOptionsValidationTests
 {
     private static ServiceProvider Build(params (string Key, string Value)[] settings)
@@ -57,10 +53,7 @@ public class AnomalyDetectionOptionsValidationTests
         Assert.Equal(3, options.PcaRank);
     }
 
-    /// <summary>
-    /// El rango del PCA debe ser menor que la dimensión del vector de features. Con un valor
-    /// inválido el arranque tiene que ABORTAR, no degradar en silencio a un modelo mal formado.
-    /// </summary>
+    // PcaRank debe ser menor que la dimensión del vector de features; si no, el arranque aborta en vez de degradar en silencio.
     [Theory]
     [InlineData("4")]   // == Dimension
     [InlineData("9")]   // > Dimension

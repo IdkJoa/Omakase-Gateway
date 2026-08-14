@@ -2,9 +2,6 @@ using Polly.CircuitBreaker;
 
 namespace Infrastructure.Resilience;
 
-/// <summary>
-/// Interfaz para consultar y ejecutar operaciones bajo los Circuit Breakers de Redis y PostgreSQL (T-067 / HU-031).
-/// </summary>
 public interface IDependencyCircuitBreaker
 {
     bool IsRedisCircuitOpen { get; }

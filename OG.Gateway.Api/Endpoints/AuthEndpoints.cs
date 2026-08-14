@@ -17,7 +17,6 @@ public static class AuthEndpoints
     {
         var group = app.MapGroup("/auth").WithTags("Auth");
 
-        // POST /auth/login
         group.MapPost("/login", async (
             LoginRequest request,
             ILoginService loginService,
@@ -72,7 +71,6 @@ public static class AuthEndpoints
         .Produces<AccountLockedResponse>(StatusCodes.Status423Locked)
         .AllowAnonymous();
 
-        // POST /auth/refresh
         group.MapPost("/refresh", async (
             ILoginService loginService,
             ILogSanitizer sanitizer,
@@ -93,7 +91,6 @@ public static class AuthEndpoints
             if (result.IsUnauthorized)
                 return Results.Unauthorized();
 
-            // Set new cookie
             ctx.Response.Cookies.Append(RefreshTokenCookieName, result.RefreshTokenRaw!, new CookieOptions
             {
                 HttpOnly = true,
@@ -110,9 +107,8 @@ public static class AuthEndpoints
         .WithDescription("Renueva el JWT usando un refresh token válido (T-041).")
         .Produces<LoginResponse>(StatusCodes.Status200OK)
         .Produces(StatusCodes.Status401Unauthorized)
-        .AllowAnonymous(); // The refresh token is in the cookie, no JWT needed here.
+        .AllowAnonymous(); // El refresh token viaja en la cookie; no requiere JWT.
 
-        // POST /auth/logout
         group.MapPost("/logout", async (
             ILoginService loginService,
             ILogSanitizer sanitizer,
@@ -159,7 +155,7 @@ public static class AuthEndpoints
         .WithSummary("Cierra sesión")
         .WithDescription("Revoca el refresh token y añade el access token a la blacklist (T-042).")
         .Produces(StatusCodes.Status204NoContent)
-        .RequireAuthorization(); // Requires valid JWT
+        .RequireAuthorization();
 
         return app;
     }

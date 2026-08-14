@@ -18,16 +18,9 @@ using Xunit;
 
 namespace OG.Application.UnitTests;
 
-/// <summary>
-/// Integridad del perfil de comportamiento frente al veredicto (fix HU-017).
-/// <para>
-/// Solo los accesos CONCEDIDOS alimentan <c>user_behavior_profiles</c>. De lo contrario, una cuenta
-/// nueva con credenciales robadas extingue la penalización de cold-start a base de peticiones
-/// rechazadas (30 → 27 → 24 → …) y acaba entrando sin completar el segundo factor, anulando el
-/// punto ciego que el SRS §9.3 cierra y el step-up de HU-046; además, el tráfico rechazado
-/// envenenaría el baseline que aprende RandomizedPCA (RF-M3).
-/// </para>
-/// </summary>
+// Fix HU-017: solo accesos CONCEDIDOS alimentan user_behavior_profiles. Si no, una cuenta nueva con
+// credenciales robadas podría extinguir la penalización de cold-start a base de peticiones rechazadas
+// (30 -> 27 -> 24 -> ...), entrar sin MFA (SRS §9.3, HU-046) y envenenar el baseline de RandomizedPCA (RF-M3).
 public class EvaluateRiskHandlerColdStartIntegrityTests
 {
     private const string UserGuid = "0198c9a2-0000-7000-8000-000000000002";

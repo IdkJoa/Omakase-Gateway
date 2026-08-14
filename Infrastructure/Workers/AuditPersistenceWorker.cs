@@ -58,11 +58,9 @@ public sealed class AuditPersistenceWorker : BackgroundService
         {
             try
             {
-                // 1. Esperar al menos un evento sin consumir CPU (no busy-wait).
                 if (!await _channel.WaitToReadAsync(stoppingToken))
                     break; // Canal cerrado — apagado limpio.
 
-                // 2. Drenar hasta _batchSize eventos de forma no-bloqueante.
                 var batch = DrainBatch();
 
                 if (batch.Count > 0)
@@ -85,9 +83,6 @@ public sealed class AuditPersistenceWorker : BackgroundService
         _logger.LogInformation("[AuditPersistenceWorker] Detenido.");
     }
 
-    /// <summary>
-    /// Drena hasta <see cref="_batchSize"/> eventos del canal de forma no-bloqueante.
-    /// </summary>
     private List<AuditEvent> DrainBatch()
     {
         var batch = new List<AuditEvent>(_batchSize);
@@ -96,10 +91,7 @@ public sealed class AuditPersistenceWorker : BackgroundService
         return batch;
     }
 
-    /// <summary>
-    /// Persiste un lote de eventos en <c>audit_logs</c>.
-    /// En caso de fallo, re-encola los eventos al canal para no perderlos.
-    /// </summary>
+    // Persiste el lote en audit_logs; si falla, reencola los eventos al canal para no perderlos.
     private async Task PersistBatchAsync(List<AuditEvent> batch, CancellationToken stoppingToken)
     {
         try
@@ -144,10 +136,7 @@ public sealed class AuditPersistenceWorker : BackgroundService
         }
     }
 
-    /// <summary>
-    /// Intenta re-encolar cada evento del batch fallido al canal.
-    /// Los eventos que no quepan (canal lleno) se descartan con log de advertencia.
-    /// </summary>
+    // Reencola cada evento del batch fallido; los que no quepan (canal lleno) se descartan.
     private void RequeueBatch(List<AuditEvent> batch)
     {
         var requeued  = 0;
@@ -164,17 +153,13 @@ public sealed class AuditPersistenceWorker : BackgroundService
             requeued, discarded);
     }
 
-    /// <summary>
-    /// Mapea un <see cref="AuditEvent"/> a la entidad <see cref="AuditLog"/> de dominio.
-    /// </summary>
     private static AuditLog MapToEntity(AuditEvent ev) => new()
     {
         Id           = AuditLogId.New(),       // UUID v7 — ordenado por tiempo para B-tree eficiente
         EvaluationId = ev.EvaluationId,
         SourceIp     = ev.SourceIp,
         UserAgent    = ev.UserAgent,
-        // UserId del JWT claim "sub" es un GUID formateado como string.
-        // Nulo si el actor no está autenticado (HU-auth no implementada aún).
+        // Nulo si el actor no está autenticado.
         UserId       = Guid.TryParse(ev.UserId, out var uid)
                            ? UserId.From(uid)
                            : null,
@@ -183,7 +168,7 @@ public sealed class AuditPersistenceWorker : BackgroundService
         PolicyScore  = ev.PolicyScore,
         AnomalyScore = ev.AnomalyScore,
         EvaluatedAt  = ev.EvaluatedAt,
-        // T-030 (HU-015): completados por el motor de riesgo real.
+        // Completados por el motor de riesgo real cuando esté implementado.
         Geo             = ev.Geo,
         TriggeredRules  = ev.TriggeredRules,
         FingerprintHash = ev.FingerprintHash,

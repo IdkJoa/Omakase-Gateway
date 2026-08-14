@@ -5,28 +5,20 @@ using Yarp.ReverseProxy.Configuration;
 namespace Infrastructure.Proxy;
 
 /// <summary>
-/// Proveedor de configuración de YARP hidratado desde <c>protected_services</c> (HU-009 / T-017).
-/// <para>
-/// Cada servicio activo (<see cref="ProtectedService.IsActive"/>) se mapea a un cluster con su
-/// <see cref="ProtectedService.UpstreamUrl"/> y a una ruta por convención de prefijo de path:
-/// <c>/{name}/{**catch-all}</c> → cluster <c>{name}</c>. protected_services no define el patrón de
-/// ruta, por lo que se usa el prefijo por nombre (estándar de gateways).
-/// </para>
-/// <para>
-/// El <see cref="ProxyConfigReloader"/> (T-018) llama a <see cref="Update"/> periódicamente; el
-/// intercambio del <see cref="IProxyConfig"/> y la señal del <see cref="IChangeToken"/> hacen que
-/// YARP recargue sin reiniciar el proceso.
-/// </para>
+/// Proveedor de configuración de YARP hidratado desde <c>protected_services</c>.
 /// </summary>
+/// <remarks>
+/// Cada servicio activo se mapea a una ruta por convención de prefijo de path (<c>/{name}/{**catch-all}</c>
+/// → cluster <c>{name}</c>) porque protected_services no define el patrón de ruta. <see cref="ProxyConfigReloader"/>
+/// llama a <see cref="Update"/> periódicamente; el intercambio del <see cref="IProxyConfig"/> y la señal del
+/// <see cref="IChangeToken"/> hacen que YARP recargue sin reiniciar el proceso.
+/// </remarks>
 public sealed class DatabaseProxyConfigProvider : IProxyConfigProvider
 {
     private volatile DatabaseProxyConfig _config = new([], []);
 
     public IProxyConfig GetConfig() => _config;
 
-    /// <summary>
-    /// Reconstruye rutas y clusters a partir de los servicios activos y activa la recarga de YARP.
-    /// </summary>
     public void Update(IReadOnlyList<ProtectedService> services)
     {
         var routes = new List<RouteConfig>(services.Count);

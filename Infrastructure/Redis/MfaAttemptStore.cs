@@ -6,10 +6,6 @@ using StackExchange.Redis;
 
 namespace Infrastructure.Redis;
 
-/// <summary>
-/// Implementación Redis de <see cref="IMfaAttemptStore"/> protegida por Circuit Breaker (HU-046 / T-104, T-107).
-/// Clave <c>mfaattempts:{userId}</c> → contador con TTL de ventana.
-/// </summary>
 public sealed class MfaAttemptStore : IMfaAttemptStore
 {
     private readonly IDatabase _db;

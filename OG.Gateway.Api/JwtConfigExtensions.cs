@@ -19,7 +19,7 @@ public static class JwtConfigExtensions
                 // nunca resolvería la identidad del client user.
                 options.MapInboundClaims = false;
 
-                // Defer the configuration to the execution time so we can resolve the registered JwtOptions
+                // Config diferida a tiempo de ejecución para poder resolver JwtOptions desde DI.
                 options.Events = new JwtBearerEvents
                 {
                     OnMessageReceived = context =>

@@ -9,18 +9,7 @@ using Domain.Entities;
 
 namespace Application.Common.RiskEngine.Commands;
 
-/// <summary>
-/// Handler del <see cref="EvaluateRiskCommand"/> — motor de riesgo (HU-015 / T-028, T-029, T-030).
-/// </summary>
-/// <remarks>
-/// Flujo: resuelve el servicio destino (nombre del path, HU-009) y sus políticas → corre las reglas
-/// aplicables (<see cref="IRuleEvaluator"/> por <c>PolicyType</c>) → Policy Score ponderado (T-028) →
-/// Anomaly Score (stub, Sprint 3 = ML.NET) → Risk Score + veredicto (T-029). Devuelve además el
-/// desglose de auditoría (geo, reglas disparadas, service_id) que el middleware persiste (T-030).
-/// <para>Open/Closed: agregar una regla nueva = registrar un <see cref="IRuleEvaluator"/>; este handler no cambia.</para>
-/// <para>Cold-start (T-034) fijo en 0 en Sprint 2: sin perfiles se evalúa con <c>access_count = N</c>
-/// (penalización 0). La fórmula queda completa y se activa cuando los perfiles existan en Sprint 3.</para>
-/// </remarks>
+// Open/Closed: agregar una regla nueva = registrar un IRuleEvaluator; este handler no cambia.
 public sealed class EvaluateRiskHandler
     : IRequestHandler<EvaluateRiskCommand, RiskEvaluationResult>
 {
@@ -65,7 +54,6 @@ public sealed class EvaluateRiskHandler
         _fingerprintService = fingerprintService;
     }
 
-    /// <inheritdoc/>
     public async Task<RiskEvaluationResult> HandleAsync(
         EvaluateRiskCommand request,
         CancellationToken cancellationToken = default)
@@ -80,7 +68,6 @@ public sealed class EvaluateRiskHandler
         var config = await _configProvider.GetAsync(cancellationToken);
         configMs = Lap(ref mark);
 
-        // 1. Resolver servicio destino (por nombre del path, HU-009) y correr sus reglas.
         Guid? serviceId = null;
         var ruleResults = new List<RuleEvaluationResult>();
 
@@ -114,7 +101,6 @@ public sealed class EvaluateRiskHandler
 
         mark = System.Diagnostics.Stopwatch.GetTimestamp();
 
-        // 1b. Verificar degradación de Geolocalización (HU-032 / T-069 / T-070)
         bool geoDegraded = false;
         try
         {
@@ -145,14 +131,13 @@ public sealed class EvaluateRiskHandler
 
         geoCheckMs = Lap(ref mark);
 
-        // 2. Policy Score ponderado (T-028) + degradación por GeoLocation (+15).
         var policyScore = _policyCalculator.Calculate(ruleResults);
         if (geoDegraded)
         {
+            // Degradación por dependencia caída (HU-032): penaliza en vez de fallar la evaluación.
             policyScore = Math.Min(100m, policyScore + 15m);
         }
 
-        // 3. Anomaly Score (modelo ML.NET real; 50 si sin identidad/cold-start o fallo HU-032).
         decimal anomalyScore;
         bool mlDegraded = false;
         try
@@ -175,21 +160,16 @@ public sealed class EvaluateRiskHandler
 
         anomalyMs = Lap(ref mark);
 
-        // 4. Risk Score + veredicto (T-029) con el access_count real del perfil (T-034 / HU-017).
         var accessCount = await ResolveAccessCountAsync(context, config, cancellationToken);
         var consolidated = _consolidator.Consolidate(policyScore, anomalyScore, accessCount, config);
         accessCountMs = Lap(ref mark);
 
-        // 4b. Step-up MFA (HU-046): degradación Challenge→Allow con step-up vigente (T-105)
-        //     y escalada Challenge→Block para clientes no interactivos (T-106).
         var (adjusted, mfaRules) = await ApplyStepUpPolicyAsync(context, consolidated, cancellationToken);
         consolidated = adjusted;
         stepUpMs = Lap(ref mark);
 
-        // 5. Alimentar el perfil de forma asíncrona (T-033 + base_risk_penalty T-034): fuera de la ruta crítica.
         EnqueueProfileUpdate(context, consolidated, config);
 
-        // 6. Desglose de auditoría (T-030): geo + reglas disparadas (incluyendo degradaciones HU-032).
         var geoJson = await BuildGeoAsync(context.SourceIp, cancellationToken);
         var triggeredJson = BuildTriggeredRules(ruleResults, mfaRules, geoDegraded, mlDegraded);
         auditBuildMs = Lap(ref mark);
@@ -208,10 +188,7 @@ public sealed class EvaluateRiskHandler
                 anomalyMs, accessCountMs, stepUpMs, auditBuildMs));
     }
 
-    /// <summary>
-    /// Milisegundos transcurridos desde <paramref name="mark"/> y reinicio de la marca.
-    /// Usa timestamps crudos para no asignar un <c>Stopwatch</c> por fase en la ruta caliente.
-    /// </summary>
+    // Usa timestamps crudos para no asignar un Stopwatch por fase en la ruta caliente.
     private static double Lap(ref long mark)
     {
         var now = System.Diagnostics.Stopwatch.GetTimestamp();
@@ -220,11 +197,7 @@ public sealed class EvaluateRiskHandler
         return ms;
     }
 
-    /// <summary>
-    /// Precondición fallida (SRS §7.5): el servicio exige <c>requires_auth</c> y la petición llegó sin
-    /// identidad. Se corta antes de evaluar reglas/ML. Verdict=Block + score máximo para la auditoría;
-    /// la bandera <c>AuthenticationRequired</c> hace que el middleware responda 401, no 403.
-    /// </summary>
+    // AuthenticationRequired hace que el middleware responda 401 en vez del 403 de Block.
     private static RiskEvaluationResult AuthenticationRequiredResult(Guid? serviceId)
     {
         var triggered = JsonSerializer.SerializeToDocument(new[]
@@ -248,10 +221,8 @@ public sealed class EvaluateRiskHandler
             AuthenticationRequired: true);
     }
 
-    /// <summary>
-    /// access_count real para la penalización de cold-start (T-034 / HU-017): del perfil si hay identidad
-    /// (0 si el usuario es nuevo → penalización máxima); sin identidad, N (penalización 0, no aplica por usuario).
-    /// </summary>
+    // Sin identidad se usa config.ColdStartN (penalización 0, no aplica por usuario); con identidad,
+    // 0 accesos significa usuario nuevo -> penalización máxima de cold-start.
     private async Task<int> ResolveAccessCountAsync(RequestContext context, RiskScoreConfig config, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(context.UserId))
@@ -261,9 +232,6 @@ public sealed class EvaluateRiskHandler
         return profile?.AccessCount ?? 0;
     }
 
-    /// <summary>
-    /// Encola la actualización del perfil (T-033 + base_risk_penalty T-034). Solo con identidad; fire-and-forget.
-    /// </summary>
     private void EnqueueProfileUpdate(RequestContext context, ConsolidatedRisk consolidated, RiskScoreConfig config)
     {
         if (string.IsNullOrWhiteSpace(context.UserId))
@@ -280,7 +248,6 @@ public sealed class EvaluateRiskHandler
             config.ColdStartN));
     }
 
-    /// <summary>Resuelve la geolocalización y la serializa a JSON para el audit (clave para HU-014).</summary>
     private async Task<JsonDocument?> BuildGeoAsync(string sourceIp, CancellationToken cancellationToken)
     {
         var geo = await _geoLocation.ResolveAsync(sourceIp, cancellationToken);
@@ -296,11 +263,8 @@ public sealed class EvaluateRiskHandler
         });
     }
 
-    /// <summary>
-    /// Ajusta el veredicto Challenge según el flujo de step-up MFA (SRS §3.6):
-    /// no interactivo → Block (fail-closed, T-106); step-up vigente ligado al mismo
-    /// dispositivo → Allow (T-105).
-    /// </summary>
+    // Clientes no interactivos no pueden completar el desafío MFA, así que se escala a Block
+    // (fail-closed) en vez de dejarlos atascados en Challenge.
     private async Task<(ConsolidatedRisk Risk, IReadOnlyList<(string Rule, string Detail)> MfaRules)> ApplyStepUpPolicyAsync(
         RequestContext context, ConsolidatedRisk consolidated, CancellationToken cancellationToken)
     {
@@ -333,7 +297,8 @@ public sealed class EvaluateRiskHandler
         return (consolidated, []);
     }
 
-    /// <summary>El step-up queda ligado a la huella del dispositivo que completó el desafío (SRS §3.6).</summary>
+    // El step-up queda ligado a la huella del dispositivo que completó el desafío, para que otro
+    // dispositivo no pueda reutilizarlo.
     private bool StepUpMatchesDevice(StepUpData stepUp, RequestContext context)
     {
         if (string.IsNullOrEmpty(stepUp.FingerprintHash))
@@ -345,7 +310,6 @@ public sealed class EvaluateRiskHandler
         return string.Equals(stepUp.FingerprintHash, currentHash, StringComparison.Ordinal);
     }
 
-    /// <summary>Serializa las reglas disparadas con su score parcial y degradaciones (triggered_rules JSONB).</summary>
     private static JsonDocument BuildTriggeredRules(
         IReadOnlyList<RuleEvaluationResult> ruleResults,
         IReadOnlyList<(string Rule, string Detail)> mfaRules,

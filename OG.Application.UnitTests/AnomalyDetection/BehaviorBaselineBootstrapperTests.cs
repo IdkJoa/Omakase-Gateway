@@ -9,11 +9,8 @@ using Xunit.Abstractions;
 
 namespace OG.Application.UnitTests.AnomalyDetection;
 
-/// <summary>
-/// Pruebas del baseline sintético (HU-016 / T-089) que alimenta al modelo de anomalías antes de que
-/// exista tráfico real. Lo que se valida no es solo que genere datos, sino que el modelo entrenado
-/// sobre ellos SEPARE el comportamiento normal del anómalo — que es lo único que hace útil a HU-034.
-/// </summary>
+// Baseline sintético (HU-016 / T-089): lo que importa no es solo que genere datos, sino que el
+// modelo entrenado sobre ellos separe comportamiento normal de anómalo — lo que hace útil a HU-034.
 public class BehaviorBaselineBootstrapperTests
 {
     private const int Seed = 20260731;
@@ -77,11 +74,8 @@ public class BehaviorBaselineBootstrapperTests
         Assert.Throws<ArgumentOutOfRangeException>(() => Sut(Options()).Build(EndingAt, days: 0, seed: Seed));
     }
 
-    /// <summary>
-    /// La prueba que justifica todo el mecanismo: entrenado sobre el baseline sintético de oficina,
-    /// el modelo debe puntuar MUY por encima una ráfaga nocturna que un acceso de jornada normal.
-    /// Es el Escenario 2 de HU-034 reducido a laboratorio.
-    /// </summary>
+    // La prueba que justifica todo el mecanismo: entrenado sobre el baseline de oficina, el modelo debe
+    // puntuar muy por encima una ráfaga nocturna que un acceso normal (Escenario 2 de HU-034 en laboratorio).
     [Fact]
     public void ModeloEntrenadoConElBaseline_SeparaRafagaNocturnaDeAccesoNormal()
     {
@@ -119,18 +113,9 @@ public class BehaviorBaselineBootstrapperTests
             $"la ráfaga nocturna ({attackScore:F1}) no puntuó por encima del acceso normal ({normalScore:F1})");
     }
 
-    /// <summary>
-    /// La ventana horaria del perfil DEFINE qué considera normal el modelo, porque la hora es una de
-    /// las cuatro features. Verificado en vivo (2026-07-31): con el baseline por defecto (9–18) y
-    /// peticiones legítimas a las 00:30 UTC, el score se clavaba en ~99 — el modelo tenía razón, el
-    /// acceso estaba fuera de la jornada modelada. Este test fija esa relación: el MISMO acceso puntúa
-    /// bajo si cae dentro de la jornada del perfil y alto si cae fuera.
-    /// <para>
-    /// Consecuencia para HU-034: el motor evalúa con <c>DateTimeOffset.UtcNow</c>, así que la jornada
-    /// se configura en UTC (13–22 UTC = 9–18 en Santo Domingo), y los casos legítimos del banco deben
-    /// ejecutarse DENTRO de esa ventana o la tasa de falsos positivos mide la hora, no el ataque.
-    /// </para>
-    /// </summary>
+    // La ventana horaria del perfil define qué es "normal" (la hora es una de las 4 features). Verificado en
+    // vivo (2026-07-31): con baseline 9-18 y peticiones legítimas a 00:30 UTC el score se clavaba en ~99. Por
+    // eso HU-034 configura la jornada en UTC (13-22 UTC = 9-18 en Santo Domingo) para los casos del banco.
     [Fact]
     public void LaVentanaHorariaDelPerfil_DefineQueEsNormal()
     {
@@ -166,12 +151,8 @@ public class BehaviorBaselineBootstrapperTests
             + $"que contra uno diurno que lo contiene ({conJornadaDiurna:F1})");
     }
 
-    /// <summary>
-    /// Caso realista y peligroso para la tasa de falsos positivos: la PRIMERA petición tras un rato
-    /// de inactividad llega con frecuencia y diversidad en 0, valores que casi no aparecen en el
-    /// baseline. Si el modelo la puntuara como anomalía extrema, todo caso legítimo del banco de
-    /// HU-034 arrancaría penalizado. Se mide explícitamente.
-    /// </summary>
+    // La primera petición tras inactividad llega con frecuencia/diversidad en 0, valores raros en el
+    // baseline; si el modelo la puntuara como anomalía extrema, todo caso legítimo del banco (HU-034) arrancaría penalizado.
     [Fact]
     public void AccesoLegitimoTrasInactividad_NoPuntuaComoAnomaliaExtrema()
     {
