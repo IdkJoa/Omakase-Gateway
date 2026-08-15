@@ -1,0 +1,307 @@
+using Application.Common.Audit;
+using Application.Common.Security;
+using Application.Common.Security.Mfa;
+using Domain.Entities;
+using Infrastructure;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using System.Security.Cryptography;
+using System.Text.Json;
+
+namespace OG.Gateway.Api.Endpoints;
+
+/// <remarks>
+/// Estos paths están exentos de la evaluación de riesgo (bypass en RiskEvaluationMiddleware) y no
+/// los consume el Dashboard: son para la aplicación del usuario interceptado (SRS §4.1). El
+/// enrolamiento identifica al usuario por el claim <c>sub</c> de su sesión, nunca por un username
+/// arbitrario del body. La verificación del desafío es anónima por diseño: el challengeId es la credencial.
+/// </remarks>
+public static class MfaEndpoints
+{
+    public sealed record EnrollConfirmRequest(string Otp);
+    public sealed record VerifyChallengeRequest(Guid ChallengeId, string Otp);
+
+    public static IEndpointRouteBuilder MapMfaEndpoints(this IEndpointRouteBuilder app)
+    {
+        var group = app.MapGroup("/auth");
+
+        group.MapPost("/mfa/enroll", EnrollAsync).RequireAuthorization();
+        group.MapPost("/mfa/enroll/confirm", ConfirmEnrollAsync).RequireAuthorization();
+
+        // Anónima: el challengeId es la credencial.
+        group.MapPost("/challenge/verify", VerifyChallengeAsync).AllowAnonymous();
+
+        return app;
+    }
+
+    /// <summary>Resuelve el usuario CLIENT_USER autenticado desde el claim <c>sub</c> del JWT.</summary>
+    private static async Task<User?> GetAuthenticatedClientUserAsync(
+        HttpContext http, OmakaseDbContext db, CancellationToken ct)
+    {
+        var sub = http.User.FindFirst("sub")?.Value
+               ?? http.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+        if (!Guid.TryParse(sub, out var guid))
+            return null;
+
+        var id = Domain.ValueObjects.UserId.From(guid);
+        var user = await db.Users.FirstOrDefaultAsync(u => u.Id == id, ct);
+
+        return user is { IsActive: true, Type: UserType.Client } ? user : null;
+    }
+
+    private static async Task<IResult> EnrollAsync(
+        OmakaseDbContext db,
+        ITotpService totp,
+        ITotpSecretProtector protector,
+        IOptions<MfaOptions> options,
+        HttpContext http,
+        CancellationToken ct)
+    {
+        var user = await GetAuthenticatedClientUserAsync(http, db, ct);
+        if (user is null)
+            return Results.Json(
+                new { errorCode = GatewayErrorCodes.MfaInvalid, traceId = http.TraceIdentifier },
+                statusCode: StatusCodes.Status401Unauthorized);
+
+        if (user.MfaEnabled)
+            return Results.Json(
+                new { errorCode = GatewayErrorCodes.MfaInvalid, message = "La cuenta ya tiene MFA activo; use el reset del Dashboard.", traceId = http.TraceIdentifier },
+                statusCode: StatusCodes.Status409Conflict);
+
+        var secret = totp.GenerateSecret();
+        user.TotpSecret = protector.Protect(secret);
+        user.MfaEnabled = false; // se activa al confirmar con el primer OTP válido
+        user.UpdatedAt = DateTimeOffset.UtcNow;
+        await db.SaveChangesAsync(ct);
+
+        var uri = totp.BuildProvisioningUri(options.Value.Issuer, user.Username, secret);
+        return Results.Ok(new { provisioningUri = uri });
+    }
+
+    private static async Task<IResult> ConfirmEnrollAsync(
+        EnrollConfirmRequest request,
+        OmakaseDbContext db,
+        ITotpService totp,
+        ITotpSecretProtector protector,
+        ILoggerFactory loggerFactory,
+        HttpContext http,
+        CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(request.Otp))
+            return ValidationProblem(http, "otp es requerido.");
+
+        var logger = loggerFactory.CreateLogger(nameof(MfaEndpoints));
+
+        var user = await GetAuthenticatedClientUserAsync(http, db, ct);
+        if (user is null || user.TotpSecret is null)
+            return Results.Json(
+                new { errorCode = GatewayErrorCodes.MfaInvalid, traceId = http.TraceIdentifier },
+                statusCode: StatusCodes.Status401Unauthorized);
+
+        var secret = TryUnprotect(protector, user.TotpSecret, logger);
+        if (secret is null || !totp.ValidateCode(secret, request.Otp, DateTimeOffset.UtcNow))
+            return Results.Json(
+                new { errorCode = GatewayErrorCodes.MfaInvalid, traceId = http.TraceIdentifier },
+                statusCode: StatusCodes.Status401Unauthorized);
+
+        user.MfaEnabled = true;
+        user.UpdatedAt = DateTimeOffset.UtcNow;
+        await db.SaveChangesAsync(ct);
+
+        return Results.Ok(new { status = "enrolled" });
+    }
+
+    /// <summary>Contrato de respuestas: SRS §4.1 (200 verified / 401 MFA_INVALID|MFA_EXPIRED / 423 ACCOUNT_LOCKED).</summary>
+    private static async Task<IResult> VerifyChallengeAsync(
+        VerifyChallengeRequest request,
+        OmakaseDbContext db,
+        IChallengeStore challenges,
+        IStepUpStore stepUps,
+        IMfaAttemptStore attempts,
+        ITotpService totp,
+        ITotpSecretProtector protector,
+        IAuditChannel audit,
+        IOptions<MfaOptions> options,
+        ILogSanitizer sanitizer,
+        ILoggerFactory loggerFactory,
+        HttpContext http,
+        CancellationToken ct)
+    {
+        var cfg = options.Value;
+        var logger = loggerFactory.CreateLogger(nameof(MfaEndpoints));
+
+        if (request.ChallengeId == Guid.Empty || string.IsNullOrWhiteSpace(request.Otp))
+            return ValidationProblem(http, "challengeId y otp son requeridos.");
+
+        try
+        {
+            var challenge = await challenges.GetAsync(request.ChallengeId);
+            if (challenge is null)
+                return Results.Json(
+                    new { errorCode = GatewayErrorCodes.MfaExpired, traceId = http.TraceIdentifier },
+                    statusCode: StatusCodes.Status401Unauthorized);
+
+            if (!Guid.TryParse(challenge.UserId, out var userGuid))
+                return Results.Json(
+                    new { errorCode = GatewayErrorCodes.MfaInvalid, traceId = http.TraceIdentifier },
+                    statusCode: StatusCodes.Status401Unauthorized);
+
+            var userId = Domain.ValueObjects.UserId.From(userGuid);
+            var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId, ct);
+
+            if (user is null || !user.IsActive)
+                return Results.Json(
+                    new { errorCode = GatewayErrorCodes.MfaInvalid, traceId = http.TraceIdentifier },
+                    statusCode: StatusCodes.Status401Unauthorized);
+
+            var now = DateTimeOffset.UtcNow;
+
+            if (user.LockedUntil is { } locked && locked > now)
+                return AccountLocked(http, locked, now);
+
+            // Rate-limit anti fuerza bruta: el intento se cuenta ANTES de validar.
+            var attemptCount = await attempts.IncrementAsync(challenge.UserId, TimeSpan.FromMinutes(cfg.AttemptWindowMinutes));
+            if (attemptCount > cfg.MaxAttempts)
+            {
+                user.LockedUntil = now.AddMinutes(cfg.LockoutMinutes);
+                user.UpdatedAt = now;
+                await db.SaveChangesAsync(ct);
+
+                EnqueueMfaAudit(audit, challenge, http, sanitizer, MfaRuleNames.Failed, Verdict.Block,
+                    detail: "cuenta bloqueada por exceso de intentos MFA");
+
+                return AccountLocked(http, user.LockedUntil.Value, now);
+            }
+
+            if (!user.MfaEnabled || user.TotpSecret is null)
+            {
+                EnqueueMfaAudit(audit, challenge, http, sanitizer, MfaRuleNames.Failed, Verdict.Block,
+                    detail: "cuenta sin TOTP enrolado");
+                return Results.Json(
+                    new { errorCode = GatewayErrorCodes.MfaInvalid, traceId = http.TraceIdentifier },
+                    statusCode: StatusCodes.Status401Unauthorized);
+            }
+
+            var secret = TryUnprotect(protector, user.TotpSecret, logger);
+            if (secret is null || !totp.ValidateCode(secret, request.Otp, now))
+            {
+                if (attemptCount >= cfg.MaxAttempts)
+                {
+                    user.LockedUntil = now.AddMinutes(cfg.LockoutMinutes);
+                    user.UpdatedAt = now;
+                    await db.SaveChangesAsync(ct);
+
+                    EnqueueMfaAudit(audit, challenge, http, sanitizer, MfaRuleNames.Failed, Verdict.Block,
+                        detail: $"cuenta bloqueada al intento MFA fallido nº {attemptCount}");
+
+                    return AccountLocked(http, user.LockedUntil.Value, now);
+                }
+
+                EnqueueMfaAudit(audit, challenge, http, sanitizer, MfaRuleNames.Failed, Verdict.Block,
+                    detail: "OTP inválido");
+                return Results.Json(
+                    new { errorCode = GatewayErrorCodes.MfaInvalid, traceId = http.TraceIdentifier },
+                    statusCode: StatusCodes.Status401Unauthorized);
+            }
+
+            // Uso único: consumir el desafío y ligar la ventana de step-up al fingerprint que lo originó.
+            await challenges.RemoveAsync(request.ChallengeId);
+            await attempts.ResetAsync(challenge.UserId);
+            await stepUps.SetAsync(
+                challenge.UserId,
+                new StepUpData(challenge.FingerprintHash, now),
+                TimeSpan.FromMinutes(cfg.StepUpTtlMinutes));
+
+            EnqueueMfaAudit(audit, challenge, http, sanitizer, MfaRuleNames.Verified, Verdict.Allow,
+                detail: "step-up TOTP verificado");
+
+            return Results.Ok(new { status = "verified" });
+        }
+        catch (Exception ex) when (ex is Polly.CircuitBreaker.BrokenCircuitException or StackExchange.Redis.RedisException or TimeoutException or System.Net.Sockets.SocketException)
+        {
+            logger.LogCritical(ex,
+                "[FailClosed] Error crítico en Redis al verificar el desafío Step-Up MFA (T-107). ChallengeId={ChallengeId}",
+                request.ChallengeId);
+
+            System.Diagnostics.Activity.Current?.AddEvent(new System.Diagnostics.ActivityEvent("MfaStepUp_FailClosed_503"));
+
+            return Results.Json(
+                new
+                {
+                    errorCode = GatewayErrorCodes.ServiceUnavailable,
+                    message = "El servicio de autenticación MFA no está disponible debido a fallas en dependencias críticas (Fail-Closed).",
+                    traceId = http.TraceIdentifier
+                },
+                statusCode: StatusCodes.Status503ServiceUnavailable);
+        }
+    }
+
+    /// <summary>
+    /// Descifra el secreto TOTP tolerando un texto cifrado ilegible (clave rotada en Key Vault,
+    /// dato corrupto o migrado con otra clave): devuelve null en vez de propagar la excepción
+    /// criptográfica. Fail-closed (SRS §9.4): si el secreto no se puede leer, no se puede verificar
+    /// el segundo factor, así que se deniega — nunca un 500 que exponga el fallo interno.
+    /// </summary>
+    private static string? TryUnprotect(ITotpSecretProtector protector, string ciphertext, ILogger logger)
+    {
+        try
+        {
+            return protector.Unprotect(ciphertext);
+        }
+        catch (Exception ex) when (ex is CryptographicException or FormatException)
+        {
+            logger.LogError(ex,
+                "[MFA] El secreto TOTP almacenado no se pudo descifrar; se deniega la verificación. " +
+                "Revise la clave Mfa:TotpEncryptionKey (¿rotada?) y re-enrole la cuenta.");
+            return null;
+        }
+    }
+
+    private static IResult AccountLocked(HttpContext http, DateTimeOffset lockedUntil, DateTimeOffset now)
+        => Results.Json(
+            new
+            {
+                errorCode = GatewayErrorCodes.AccountLocked,
+                retryAfterSeconds = (int)Math.Max(0, (lockedUntil - now).TotalSeconds),
+                traceId = http.TraceIdentifier
+            },
+            statusCode: StatusCodes.Status423Locked);
+
+    private static IResult ValidationProblem(HttpContext http, string message)
+        => Results.Json(
+            new { errorCode = "VALIDATION_ERROR", message, traceId = http.TraceIdentifier },
+            statusCode: StatusCodes.Status400BadRequest);
+
+    /// <summary>Escritura vía canal asíncrono: nunca bloquea la respuesta (SRS §9.8).</summary>
+    private static void EnqueueMfaAudit(
+        IAuditChannel audit,
+        ChallengeData challenge,
+        HttpContext http,
+        ILogSanitizer sanitizer,
+        string rule,
+        Verdict verdict,
+        string detail)
+    {
+        var triggered = JsonSerializer.SerializeToDocument(new[]
+        {
+            new { rule, score = 0m, detail = (string?)detail }
+        });
+
+        var userAgent = sanitizer.Sanitize(http.Request.Headers.UserAgent.ToString());
+
+        audit.TryWrite(new AuditEvent(
+            EvaluationId:    Guid.NewGuid(),
+            SourceIp:        http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            UserAgent:       string.IsNullOrEmpty(userAgent) ? null : userAgent,
+            UserId:          challenge.UserId,
+            Verdict:         verdict,
+            RiskScore:       0m,
+            PolicyScore:     0m,
+            AnomalyScore:    0m,
+            TraceId:         http.TraceIdentifier,
+            EvaluatedAt:     DateTimeOffset.UtcNow,
+            TriggeredRules:  triggered,
+            FingerprintHash: challenge.FingerprintHash));
+    }
+}

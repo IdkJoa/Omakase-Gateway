@@ -37,7 +37,10 @@ public sealed class RoleConfiguration : IEntityTypeConfiguration<Role>
                .HasColumnType("timestamptz")
                .IsRequired();
 
-        // Relationships 
+        builder.Property(r => r.UpdatedAt)
+               .HasColumnName("updated_at")
+               .HasColumnType("timestamptz")
+               .IsRequired(false);
 
         builder.HasMany(r => r.UserRoles)
                .WithOne(ur => ur.Role)

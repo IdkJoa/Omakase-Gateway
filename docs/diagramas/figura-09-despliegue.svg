@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 940" width="1400" height="940">
+<rect width="1400" height="940" fill="#FFFFFF"/>
+<text x="700.0" y="46" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="30" font-weight="600" fill="#1F3864" text-anchor="middle">Vista de despliegue</text>
+<rect x="40" y="96" width="900" height="700" fill="#FAFCFF" stroke="#1F3864" stroke-width="2" rx="5" stroke-dasharray="8 5"/>
+<text x="490" y="132" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="23" font-weight="600" fill="#1F3864" text-anchor="middle">Host de ejecucion  ·  Docker Engine</text>
+<text x="490" y="158" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="middle" font-style="italic">orquestado por el AppHost de .NET Aspire</text>
+<text x="64" y="200" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1F3864" text-anchor="start">Aplicaciones</text>
+<rect x="64" y="214" width="262" height="118" fill="#FFFFFF" stroke="#4472A8" stroke-width="2" rx="5"/>
+<text x="195.0" y="246" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="middle">dashboard-spa</text>
+<text x="195.0" y="272" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="middle">nginx:alpine</text>
+<rect x="348" y="214" width="262" height="118" fill="#FFFFFF" stroke="#4472A8" stroke-width="2" rx="5"/>
+<text x="479.0" y="246" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="middle">dashboard-api</text>
+<text x="479.0" y="272" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="middle">.NET 10</text>
+<rect x="656" y="238" width="262" height="118" fill="#FFFFFF" stroke="#4472A8" stroke-width="2" rx="5"/>
+<rect x="646" y="226" width="262" height="118" fill="#FFFFFF" stroke="#4472A8" stroke-width="2" rx="5"/>
+<rect x="636" y="214" width="262" height="118" fill="#DCE6F1" stroke="#4472A8" stroke-width="2" rx="5"/>
+<text x="767.0" y="246" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="middle">gateway-api</text>
+<text x="767.0" y="272" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="middle">YARP + motor + ML.NET</text>
+<text x="767" y="372" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="16" font-weight="400" fill="#4A5568" text-anchor="middle" font-style="italic">replicable: sin estado en proceso</text>
+<text x="64" y="430" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1F3864" text-anchor="start">Datos e identidad</text>
+<rect x="64" y="444" width="262" height="118" fill="#FFFFFF" stroke="#4472A8" stroke-width="2" rx="5"/>
+<text x="195.0" y="476" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="middle">postgres:16</text>
+<text x="195.0" y="502" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="middle">volumen persistente</text>
+<rect x="348" y="444" width="262" height="118" fill="#FFFFFF" stroke="#4472A8" stroke-width="2" rx="5"/>
+<text x="479.0" y="476" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="middle">redis:7</text>
+<text x="479.0" y="502" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="middle">en memoria</text>
+<rect x="632" y="444" width="262" height="118" fill="#FFFFFF" stroke="#4472A8" stroke-width="2" rx="5"/>
+<text x="763.0" y="476" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="middle">keycloak</text>
+<text x="763.0" y="502" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="middle">realm versionado</text>
+<text x="64" y="634" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="600" fill="#1F3864" text-anchor="start">Observabilidad</text>
+<rect x="64" y="648" width="194" height="72" fill="#F2F6FB" stroke="#4472A8" stroke-width="2" rx="5"/>
+<text x="161.0" y="692" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="middle">otel-collector</text>
+<rect x="276" y="648" width="194" height="72" fill="#F2F6FB" stroke="#4472A8" stroke-width="2" rx="5"/>
+<text x="373.0" y="692" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="middle">grafana</text>
+<rect x="488" y="648" width="194" height="72" fill="#F2F6FB" stroke="#4472A8" stroke-width="2" rx="5"/>
+<text x="585.0" y="692" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="middle">loki</text>
+<rect x="700" y="648" width="194" height="72" fill="#F2F6FB" stroke="#4472A8" stroke-width="2" rx="5"/>
+<text x="797.0" y="692" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="middle">tempo</text>
+<rect x="1000" y="214" width="360" height="118" fill="#F2F6FB" stroke="#4472A8" stroke-width="2" rx="5"/>
+<text x="1180.0" y="246" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="middle">Clientes</text>
+<text x="1180.0" y="272" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="middle">unico punto de entrada</text>
+<rect x="1000" y="380" width="360" height="118" fill="#E3F1E9" stroke="#1F6B45" stroke-width="2" rx="5"/>
+<text x="1180.0" y="412" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F6B45" text-anchor="middle">Servicios protegidos</text>
+<text x="1180.0" y="438" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="middle">inaccesibles sin la pasarela</text>
+<rect x="1000" y="546" width="360" height="118" fill="#FFFFFF" stroke="#4472A8" stroke-width="2" rx="5"/>
+<text x="1180.0" y="578" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="middle">Servicios gestionados</text>
+<text x="1180.0" y="604" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="middle">Key Vault · geolocalizacion</text>
+<rect x="1000" y="700" width="360" height="96" fill="#F2F6FB" stroke="#4472A8" stroke-width="2" rx="5"/>
+<text x="1180.0" y="732" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="middle">GitHub + Azure Pipelines</text>
+<text x="1180.0" y="758" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="middle">build, pruebas y SAST</text>
+<path d="M 1000 262 L 898 262" fill="none" stroke="#4A6D94" stroke-width="3" stroke-linejoin="round"/>
+<path d="M 898 262 L 911.0 256.15 L 911.0 267.85 z" fill="#4A6D94" stroke="none"/>
+<text x="949" y="250" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="16" font-weight="400" text-anchor="middle" stroke="#FFFFFF" stroke-width="5" paint-order="stroke" fill="#4A5568">HTTPS</text>
+<path d="M 898 300 L 960 300 L 960 428 L 1000 428" fill="none" stroke="#1F6B45" stroke-width="3" stroke-linejoin="round"/>
+<path d="M 1000 428 L 987.0 433.85 L 987.0 422.15 z" fill="#1F6B45" stroke="none"/>
+<text x="898" y="418" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="16" font-weight="400" text-anchor="end" stroke="#FFFFFF" stroke-width="5" paint-order="stroke" fill="#1F6B45">tras ALLOW</text>
+<path d="M 1000 594 L 960 594 L 960 340 L 767 340" fill="none" stroke="#4A6D94" stroke-width="2.4" stroke-dasharray="8 5" stroke-linejoin="round"/>
+<path d="M 767 340 L 780.0 334.15 L 780.0 345.85 z" fill="#4A6D94" stroke="none"/>
+<path d="M 326 262 L 348 262" fill="none" stroke="#4A6D94" stroke-width="2.4" stroke-linejoin="round"/>
+<path d="M 348 262 L 335.0 267.85 L 335.0 256.15 z" fill="#4A6D94" stroke="none"/>
+<path d="M 195 332 L 195 400" fill="none" stroke="#4A6D94" stroke-width="2.4" stroke-dasharray="8 5" stroke-linejoin="round"/>
+<path d="M 479 332 L 479 400" fill="none" stroke="#4A6D94" stroke-width="2.4" stroke-dasharray="8 5" stroke-linejoin="round"/>
+<path d="M 195 400 L 763 400" fill="none" stroke="#4A6D94" stroke-width="2.4" stroke-dasharray="8 5" stroke-linejoin="round"/>
+<path d="M 195 400 L 195 444" fill="none" stroke="#4A6D94" stroke-width="2.4" stroke-dasharray="8 5" stroke-linejoin="round"/>
+<path d="M 195 444 L 189.15 431.0 L 200.85 431.0 z" fill="#4A6D94" stroke="none"/>
+<path d="M 479 400 L 479 444" fill="none" stroke="#4A6D94" stroke-width="2.4" stroke-dasharray="8 5" stroke-linejoin="round"/>
+<path d="M 479 444 L 473.15 431.0 L 484.85 431.0 z" fill="#4A6D94" stroke="none"/>
+<path d="M 763 400 L 763 444" fill="none" stroke="#4A6D94" stroke-width="2.4" stroke-dasharray="8 5" stroke-linejoin="round"/>
+<path d="M 763 444 L 757.15 431.0 L 768.85 431.0 z" fill="#4A6D94" stroke="none"/>
+<path d="M 898 332 L 898 606" fill="none" stroke="#4A6D94" stroke-width="2.4" stroke-dasharray="8 5" stroke-linejoin="round"/>
+<path d="M 898 606 L 161 606" fill="none" stroke="#4A6D94" stroke-width="2.4" stroke-dasharray="8 5" stroke-linejoin="round"/>
+<path d="M 161 606 L 161 648" fill="none" stroke="#4A6D94" stroke-width="2.4" stroke-dasharray="8 5" stroke-linejoin="round"/>
+<path d="M 161 648 L 155.15 635.0 L 166.85 635.0 z" fill="#4A6D94" stroke="none"/>
+<path d="M 373 606 L 373 648" fill="none" stroke="#4A6D94" stroke-width="2.4" stroke-dasharray="8 5" stroke-linejoin="round"/>
+<path d="M 373 648 L 367.15 635.0 L 378.85 635.0 z" fill="#4A6D94" stroke="none"/>
+<path d="M 585 606 L 585 648" fill="none" stroke="#4A6D94" stroke-width="2.4" stroke-dasharray="8 5" stroke-linejoin="round"/>
+<path d="M 585 648 L 579.15 635.0 L 590.85 635.0 z" fill="#4A6D94" stroke="none"/>
+<path d="M 797 606 L 797 648" fill="none" stroke="#4A6D94" stroke-width="2.4" stroke-dasharray="8 5" stroke-linejoin="round"/>
+<path d="M 797 648 L 791.15 635.0 L 802.85 635.0 z" fill="#4A6D94" stroke="none"/>
+<text x="700" y="596" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="16" font-weight="400" text-anchor="middle" stroke="#FFFFFF" stroke-width="5" paint-order="stroke" font-style="italic" fill="#4A5568">telemetria OTLP</text>
+<rect x="40" y="826" width="1320" height="94" fill="#DCE6F1" stroke="#4472A8" stroke-width="2" rx="5"/>
+<text x="70" y="858" font-family="'Consolas', 'Cascadia Mono', monospace" font-size="21" font-weight="600" fill="#1F3864" text-anchor="start">aspire run</text>
+<text x="230" y="858" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">levanta el ecosistema con sus volumenes y datos semilla</text>
+<text x="70" y="896" font-family="'Consolas', 'Cascadia Mono', monospace" font-size="21" font-weight="600" fill="#1F3864" text-anchor="start">aspire publish</text>
+<text x="280" y="896" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="start">genera el docker-compose desde los manifiestos: no se escribe a mano</text>
+</svg>

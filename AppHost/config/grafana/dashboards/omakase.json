@@ -1,0 +1,220 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+
+    {
+      "title": "Peticiones por Segundo",
+      "description": "Tráfico total procesado por el Gateway en tiempo real.",
+      "type": "timeseries",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "loki" },
+          "expr": "sum(rate({service_name=~\"(.*Api|unknown_service)\"} |= \"Evaluaci\" | json | Context_Verdict != \"\" [1m]))",
+          "legendFormat": "Peticiones/seg",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10 },
+          "unit": "reqps"
+        }
+      },
+      "options": {
+        "tooltip": { "mode": "single", "sort": "none" },
+        "legend": { "displayMode": "list", "placement": "bottom" }
+      }
+    },
+
+    {
+      "title": "Tasa de Veredictos",
+      "description": "Proporción de decisiones Allow / Challenge / Block en el período seleccionado.",
+      "type": "piechart",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "loki" },
+          "expr": "sum by (Context_Verdict) (count_over_time({service_name=~\"(.*Api|unknown_service)\"} |= \"Evaluaci\" | json | Context_Verdict != \"\" [$__range]))",
+          "legendFormat": "{{Context_Verdict}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Allow" },   "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "green" } }] },
+          { "matcher": { "id": "byName", "options": "Challenge" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } }] },
+          { "matcher": { "id": "byName", "options": "Block" },   "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }] }
+        ]
+      },
+      "options": {
+        "pieType": "pie",
+        "tooltip": { "mode": "single", "sort": "none" },
+        "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] },
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }
+      }
+    },
+
+    {
+      "title": "Distribución del Risk Score por Nivel de Riesgo",
+      "description": "Total de peticiones en el período por nivel de peligrosidad. Bajo=Allow esperado, Bloqueado=Block activo.",
+      "type": "stat",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "loki" },
+          "expr": "sum(count_over_time({service_name=~\"(.*Api|unknown_service)\"} |= \"Evaluaci\" | json | Context_RiskScore >= 0 | Context_RiskScore < 26 [$__range]))",
+          "legendFormat": "Bajo (0–25)",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "loki", "uid": "loki" },
+          "expr": "sum(count_over_time({service_name=~\"(.*Api|unknown_service)\"} |= \"Evaluaci\" | json | Context_RiskScore >= 26 | Context_RiskScore < 51 [$__range]))",
+          "legendFormat": "Moderado (26–50)",
+          "refId": "B"
+        },
+        {
+          "datasource": { "type": "loki", "uid": "loki" },
+          "expr": "sum(count_over_time({service_name=~\"(.*Api|unknown_service)\"} |= \"Evaluaci\" | json | Context_RiskScore >= 51 | Context_RiskScore < 76 [$__range]))",
+          "legendFormat": "Alto (51–75)",
+          "refId": "C"
+        },
+        {
+          "datasource": { "type": "loki", "uid": "loki" },
+          "expr": "sum(count_over_time({service_name=~\"(.*Api|unknown_service)\"} |= \"Evaluaci\" | json | Context_RiskScore >= 76 [$__range]))",
+          "legendFormat": "Bloqueado (76–100)",
+          "refId": "D"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "blue", "value": null }] }
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Bajo (0–25)" },      "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "green" } }, { "id": "thresholds", "value": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] } }] },
+          { "matcher": { "id": "byName", "options": "Moderado (26–50)" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "yellow" } }, { "id": "thresholds", "value": { "mode": "absolute", "steps": [{ "color": "yellow", "value": null }] } }] },
+          { "matcher": { "id": "byName", "options": "Alto (51–75)" },     "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } }, { "id": "thresholds", "value": { "mode": "absolute", "steps": [{ "color": "orange", "value": null }] } }] },
+          { "matcher": { "id": "byName", "options": "Bloqueado (76–100)" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }, { "id": "thresholds", "value": { "mode": "absolute", "steps": [{ "color": "red", "value": null }] } }] }
+        ]
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
+      }
+    },
+
+    {
+      "title": "Peticiones Bloqueadas por Minuto",
+      "description": "Serie temporal de Blocks detectados. Un pico repentino puede indicar un ataque activo.",
+      "type": "timeseries",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "loki" },
+          "expr": "sum(rate({service_name=~\"(.*Api|unknown_service)\"} |= \"Evaluaci\" | json | Context_Verdict = \"Block\" [1m]))",
+          "legendFormat": "Blocks/seg",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "loki", "uid": "loki" },
+          "expr": "sum(rate({service_name=~\"(.*Api|unknown_service)\"} |= \"Evaluaci\" | json | Context_Verdict = \"Challenge\" [1m]))",
+          "legendFormat": "Challenges/seg",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "lineWidth": 2, "fillOpacity": 15 }
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Blocks/seg" },     "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }] },
+          { "matcher": { "id": "byName", "options": "Challenges/seg" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } }] }
+        ]
+      },
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "none" },
+        "legend": { "displayMode": "list", "placement": "bottom" }
+      }
+    },
+
+    {
+      "title": "Latencia de Evaluación — SLA: p95 ≤ 50 ms",
+      "description": "Overhead del motor de riesgo por petición. El SRS exige p95 ≤ 50 ms. La línea roja marca ese umbral.",
+      "type": "timeseries",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "loki" },
+          "expr": "quantile_over_time(0.99, {service_name=~\"(.*Api|unknown_service)\"} |= \"Evaluaci\" | json | Context_DurationMs != \"\" | unwrap Context_DurationMs [1m]) by ()",
+          "legendFormat": "p99",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "loki", "uid": "loki" },
+          "expr": "quantile_over_time(0.95, {service_name=~\"(.*Api|unknown_service)\"} |= \"Evaluaci\" | json | Context_DurationMs != \"\" | unwrap Context_DurationMs [1m]) by ()",
+          "legendFormat": "p95",
+          "refId": "B"
+        },
+        {
+          "datasource": { "type": "loki", "uid": "loki" },
+          "expr": "quantile_over_time(0.50, {service_name=~\"(.*Api|unknown_service)\"} |= \"Evaluaci\" | json | Context_DurationMs != \"\" | unwrap Context_DurationMs [1m]) by ()",
+          "legendFormat": "p50",
+          "refId": "C"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "thresholdsStyle": { "mode": "line" }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red",   "value": 50 }
+            ]
+          }
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "p99" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "purple" } }] },
+          { "matcher": { "id": "byName", "options": "p95" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } }] },
+          { "matcher": { "id": "byName", "options": "p50" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "blue" } }] }
+        ]
+      },
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": { "displayMode": "list", "placement": "bottom" }
+      }
+    }
+
+  ],
+  "refresh": "10s",
+  "schemaVersion": 39,
+  "tags": ["omakase", "security", "logs", "loki"],
+  "templating": { "list": [] },
+  "time": { "from": "now-3h", "to": "now" },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Omakase Security Dashboard",
+  "uid": "omakase-dashboard",
+  "version": 2
+}

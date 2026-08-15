@@ -1,0 +1,93 @@
+{
+  "realm": "omakase-gateway",
+  "enabled": true,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 36000,
+  "accessTokenLifespan": 300,
+  "users": [
+    {
+      "username": "admin",
+      "enabled": true,
+      "email": "admin@omakase.local",
+      "emailVerified": true,
+      "firstName": "Security",
+      "lastName": "Admin",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin",
+          "temporary": false
+        }
+      ],
+      "requiredActions": [],
+      "realmRoles": [ "ADMIN" ]
+    },
+    {
+      "username": "joel",
+      "enabled": true,
+      "email" : "joelg@gmail.com",
+      "emailVerified": true,
+      "firstName": "Joel",
+      "lastName": "Guerra",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "1234",
+          "temporary": false
+        }
+      ],
+      "requiredActions": [],
+      "realmRoles": [ "ADMIN" ]
+    },
+    {
+      "username": "viewer",
+      "enabled": true,
+      "email": "viewer@omakase.local",
+      "emailVerified": true,
+      "firstName": "Read",
+      "lastName": "Only",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "viewer",
+          "temporary": false
+        }
+      ],
+      "requiredActions": [],
+      "realmRoles": [ "VIEWER" ]
+    }
+  ],
+  "roles": {
+    "realm": [
+      {
+        "name": "ADMIN",
+        "description": "Administrator role"
+      },
+      {
+        "name": "VIEWER",
+        "description": "Read-only viewer role"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "omakase-dashboard",
+      "enabled": true,
+      "publicClient": true,
+      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "rootUrl": "http://localhost:4200",
+      "adminUrl": "http://localhost:4200",
+      "redirectUris": [
+        "http://localhost:4200/*"
+      ],
+      "webOrigins": [
+        "+"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      }
+    }
+  ]
+}

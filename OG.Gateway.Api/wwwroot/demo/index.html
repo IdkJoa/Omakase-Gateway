@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Omakase-Gateway · Cliente de demostración</title>
+<!--
+  El estilo y el guion van en archivos aparte, no en línea, porque la pasarela envía
+  Content-Security-Policy: default-src 'self'; script-src 'self' (SRS §3.8). Un <script>
+  en línea quedaría bloqueado por el navegador, y relajar la política para que este cliente
+  funcione sería desactivar una defensa del sistema para acomodar su demostración.
+-->
+<link rel="stylesheet" href="estilo.css">
+</head>
+<body>
+<main>
+  <h1>Omakase-Gateway · Cliente de demostración</h1>
+  <p class="sub">
+    Recorre el flujo completo de confianza cero: inicio de sesión, petición interceptada,
+    desafío de segundo factor, verificación y acceso.
+  </p>
+
+  <section id="seccion-login">
+    <h2>1 · Inicio de sesión</h2>
+    <label for="usuario">Usuario</label>
+    <input id="usuario" value="demo.cliente" autocomplete="username">
+    <label for="clave">Contraseña</label>
+    <input id="clave" type="password" value="Demo.Omakase-2026!" autocomplete="current-password">
+    <div class="fila">
+      <button id="btn-login">Iniciar sesión</button>
+      <span id="estado-login" class="sesion"></span>
+    </div>
+  </section>
+
+  <section id="seccion-sesion" hidden>
+    <h2>Sesión activa</h2>
+    <p class="sesion">
+      Usuario <b id="sesion-usuario"></b> <span id="sesion-exp"></span>
+    </p>
+    <div class="fila espaciada">
+      <button id="btn-refresh" class="secundario">Renovar token</button>
+      <button id="btn-logout" class="secundario">Cerrar sesión</button>
+    </div>
+  </section>
+
+  <section id="seccion-peticion" hidden>
+    <h2>2 · Petición a un servicio protegido</h2>
+    <label for="servicio">Servicio</label>
+    <select id="servicio">
+      <option value="/httpbin/get">/httpbin/get · sin políticas asociadas</option>
+      <option value="/reportes/get">/reportes/get · geofencing y huella</option>
+      <option value="/nomina/get">/nomina/get · las cuatro reglas, exige autenticación</option>
+    </select>
+    <label for="ip">IP de origen simulada (cabecera X-Forwarded-For)</label>
+    <select id="ip">
+      <option value="">Sin simular (usa la IP real)</option>
+      <option value="190.166.12.45">190.166.12.45 · Santo Domingo, RD</option>
+      <option value="80.30.15.4">80.30.15.4 · España</option>
+      <option value="153.121.36.1">153.121.36.1 · Tokio, Japón (país denegado)</option>
+    </select>
+
+    <label class="casilla">
+      <input type="checkbox" id="dispositivo-desconocido">
+      Simular un dispositivo desconocido
+    </label>
+    <p class="pista">
+      Altera la huella del navegador enviando otro <code>Accept-Language</code>. La primera
+      petición registra la huella; con la casilla marcada, la siguiente llega desde un
+      dispositivo que el sistema no reconoce.
+    </p>
+
+    <div class="fila">
+      <button id="btn-peticion">Enviar petición</button>
+      <span id="estado-peticion" class="sesion"></span>
+    </div>
+  </section>
+
+  <section id="seccion-desafio" hidden>
+    <h2>3 · Verificación de segundo factor</h2>
+    <p class="sesion">
+      El motor situó la petición en la zona de desafío. Introduzca el código temporal de
+      seis dígitos para continuar; al verificarlo, la petición original se reintenta sola.
+    </p>
+    <label for="otp">Código TOTP</label>
+    <input id="otp" inputmode="numeric" maxlength="6" placeholder="000000" autocomplete="one-time-code">
+    <div class="fila">
+      <button id="btn-verificar">Verificar y reintentar</button>
+      <span id="estado-desafio" class="sesion"></span>
+    </div>
+  </section>
+
+  <section id="seccion-resultado" hidden>
+    <h2>Resultado de la evaluación</h2>
+    <div id="veredicto" class="veredicto neutro">
+      <h3 id="veredicto-titulo"></h3>
+      <p id="veredicto-texto"></p>
+    </div>
+    <pre id="respuesta"></pre>
+    <p class="aviso">
+      El desglose del puntaje, las reglas disparadas y el contexto de cada evaluación quedan
+      en el registro de auditoría, consultable desde el panel de administración.
+    </p>
+  </section>
+</main>
+<script src="cliente.js"></script>
+</body>
+</html>

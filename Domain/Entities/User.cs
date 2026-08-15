@@ -1,8 +1,9 @@
+using Domain.Common;
 using Domain.ValueObjects;
 
 namespace Domain.Entities;
 
-public class User
+public class User : IAuditableEntity
 {
     public UserId Id { get; init; }
     public string Username { get; init; }
@@ -15,7 +16,14 @@ public class User
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? UpdatedAt { get; set; }
 
-    // Navigation Properties
+    /// <summary>TOTP cifrado en reposo; solo CLIENT_USER interactivos, null en el resto (HU-046 T-102).</summary>
+    public string? TotpSecret { get; set; }
+
+    public bool MfaEnabled { get; set; }
+
+    /// <summary>Service accounts (no interactivas) no pueden completar el step-up TOTP: su Challenge escala a Block (HU-046 T-106).</summary>
+    public bool IsInteractive { get; set; } = true;
+
     public UserBehaviorProfile? BehaviorProfile { get; set; }
     public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
     public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();

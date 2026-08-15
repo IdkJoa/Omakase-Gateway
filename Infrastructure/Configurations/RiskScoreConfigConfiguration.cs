@@ -29,6 +29,11 @@ public sealed class RiskScoreConfigConfiguration : IEntityTypeConfiguration<Risk
                .HasColumnType("numeric(5,2)")
                .IsRequired();
 
+        builder.Property(r => r.ColdStartN)
+               .HasColumnName("cold_start_n")
+               .HasColumnType("integer")
+               .IsRequired();
+
         builder.Property(r => r.BlockThreshold)
                .HasColumnName("block_threshold")
                .HasColumnType("numeric(5,2)")

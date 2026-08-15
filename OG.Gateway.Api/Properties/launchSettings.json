@@ -8,7 +8,8 @@
       "applicationUrl": "http://localhost:5219",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
-      }
+      },
+      "AZURE_KEYVAULT_URL": ""
     },
     "https": {
       "commandName": "Project",

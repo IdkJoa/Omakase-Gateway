@@ -8,13 +8,19 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Folder Include="Common\RiskEngine\AnomalyDetection\" />
-      <Folder Include="Common\RiskEngine\Rules\" />
-      <Folder Include="Common\RiskEngine\Scoring\" />
-      <Folder Include="Common\Security\" />
-      <Folder Include="Features\" />
-      <Folder Include="Middlewares\" />
-      <Folder Include="Proxy\" />
+        <ProjectReference Include="..\Domain\Domain.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Folder Include="Common\RiskEngine\Rules\" />
+        <Folder Include="Common\RiskEngine\Scoring\" />
+        <Folder Include="Common\Security\" />
+        <Folder Include="Features\" />
+        <Folder Include="Proxy\" />
     </ItemGroup>
 
 </Project>

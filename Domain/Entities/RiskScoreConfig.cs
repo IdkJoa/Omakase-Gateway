@@ -15,34 +15,20 @@ public class RiskScoreConfig
 {
     public RiskScoreConfigId Id { get; init; }
 
-    /// <summary>
-    /// Weight (0–1) applied to the deterministic Policy Score in the final risk calculation.
-    /// </summary>
+    /// <summary><c>PolicyWeight + AnomalyWeight</c> should equal 1.</summary>
     public decimal PolicyWeight { get; set; }
-
-    /// <summary>
-    /// Weight (0–1) applied to the AI Anomaly Score in the final risk calculation.
-    /// <c>PolicyWeight + AnomalyWeight</c> should equal 1.
-    /// </summary>
     public decimal AnomalyWeight { get; set; }
 
-    /// <summary>
-    /// Base risk penalty added for users in cold-start (insufficient training data).
-    /// Decreases as <c>UserBehaviorProfile.AccessCount</c> grows.
-    /// </summary>
+    /// <summary>Decays linearly to 0 as <c>UserBehaviorProfile.AccessCount</c> approaches <see cref="ColdStartN"/>.</summary>
     public decimal ColdStartPenalty { get; set; }
 
-    /// <summary>
-    /// Risk score threshold above which the verdict is <see cref="Verdict.Block"/>.
-    /// </summary>
+    /// <summary>Access-count threshold at which the cold-start penalty is fully extinguished (SRS §7.6 default: 10).</summary>
+    public int ColdStartN { get; set; }
+
     public decimal BlockThreshold { get; set; }
 
-    /// <summary>
-    /// Risk score threshold above which the verdict is <see cref="Verdict.Challenge"/>.
-    /// Scores below this value result in <see cref="Verdict.Allow"/>.
-    /// </summary>
+    /// <summary>Scores below this result in <see cref="Verdict.Allow"/>; above, <see cref="Verdict.Block"/> takes precedence via <see cref="BlockThreshold"/>.</summary>
     public decimal ChallengeThreshold { get; set; }
 
-    /// <summary>Timestamp of the last configuration change.</summary>
     public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
 }

@@ -31,8 +31,6 @@ public sealed class ServicePolicyConfiguration : IEntityTypeConfiguration<Servic
                .HasColumnName("is_enabled")
                .IsRequired();
 
-        // Relationships 
-
         builder.HasOne(sp => sp.AccessPolicy)
                .WithMany(p => p.ServicePolicies)
                .HasForeignKey(sp => sp.PolicyId)

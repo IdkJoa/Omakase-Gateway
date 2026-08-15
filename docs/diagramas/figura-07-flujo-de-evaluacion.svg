@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 960" width="1400" height="960">
+<rect width="1400" height="960" fill="#FFFFFF"/>
+<text x="700.0" y="46" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="30" font-weight="600" fill="#1F3864" text-anchor="middle">Flujo de evaluacion de una peticion</text>
+<rect x="60" y="96" width="410" height="62" fill="#F2F6FB" stroke="#4472A8" stroke-width="2" rx="5"/>
+<text x="265.0" y="128" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="middle">Peticion HTTP entrante</text>
+<rect x="60" y="186" width="410" height="76" fill="#FFFFFF" stroke="#4472A8" stroke-width="2" rx="5"/>
+<text x="265.0" y="218" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="middle">1 · Intercepcion y contexto</text>
+<text x="265.0" y="244" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="middle">IP, agente, hora, huella</text>
+<rect x="60" y="290" width="410" height="76" fill="#FFFFFF" stroke="#4472A8" stroke-width="2" rx="5"/>
+<text x="265.0" y="322" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="middle">2 · Autenticacion del actor</text>
+<text x="265.0" y="348" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="middle">firma del JWT y lista negra</text>
+<rect x="60" y="394" width="410" height="62" fill="#DCE6F1" stroke="#4472A8" stroke-width="2" rx="5"/>
+<text x="265.0" y="426" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="middle">3 · Despacho de la evaluacion</text>
+<rect x="60" y="502" width="195" height="124" fill="#FFFFFF" stroke="#4472A8" stroke-width="2" rx="5"/>
+<text x="157.5" y="534" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="middle">4a · Deterministas</text>
+<text x="157.5" y="560" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="middle">4 reglas de politica</text>
+<text x="157.5" y="583" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="middle">→ Policy Score</text>
+<rect x="275" y="502" width="195" height="124" fill="#FFFFFF" stroke="#4472A8" stroke-width="2" rx="5"/>
+<text x="372.5" y="534" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="middle">4b · Anomalias</text>
+<text x="372.5" y="560" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="middle">RandomizedPCA</text>
+<text x="372.5" y="583" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="middle">→ Anomaly Score</text>
+<text x="265" y="648" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="16" font-weight="400" fill="#4A5568" text-anchor="middle" font-style="italic">en paralelo: el coste es el maximo</text>
+<rect x="60" y="664" width="410" height="96" fill="#DCE6F1" stroke="#4472A8" stroke-width="2" rx="5"/>
+<text x="265.0" y="696" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="middle">5 · Risk Score consolidado</text>
+<text x="265.0" y="722" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="middle">Wp·politica + Wa·anomalia</text>
+<text x="265.0" y="745" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="middle">+ penalizacion de arranque en frio</text>
+<rect x="60" y="812" width="265" height="90" fill="#E3F1E9" stroke="#1F6B45" stroke-width="2" rx="5"/>
+<text x="192.5" y="844" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F6B45" text-anchor="middle">ALLOW</text>
+<text x="192.5" y="870" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="middle">≤ 33  ·  reenvia al upstream</text>
+<rect x="345" y="812" width="265" height="90" fill="#FBF0DC" stroke="#96610A" stroke-width="2" rx="5"/>
+<text x="477.5" y="844" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#96610A" text-anchor="middle">CHALLENGE</text>
+<text x="477.5" y="870" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="middle">≤ 70  ·  401 MFA_REQUIRED</text>
+<rect x="630" y="812" width="265" height="90" fill="#F9E6E3" stroke="#A02015" stroke-width="2" rx="5"/>
+<text x="762.5" y="844" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#A02015" text-anchor="middle">BLOCK</text>
+<text x="762.5" y="870" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="middle">&gt; 70  ·  corta la conexion</text>
+<rect x="940" y="130" width="420" height="396" fill="#FFFCF4" stroke="#96610A" stroke-width="2" rx="5" stroke-dasharray="8 5"/>
+<text x="1150" y="172" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#96610A" text-anchor="middle">Step-up MFA  ·  fuera de banda</text>
+<text x="1150" y="198" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="middle" font-style="italic">no cuenta en el presupuesto de latencia</text>
+<rect x="972" y="220" width="356" height="82" fill="#FFFFFF" stroke="#96610A" stroke-width="2" rx="5"/>
+<text x="1150.0" y="252" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="middle">Desafio en Redis</text>
+<text x="1150.0" y="278" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="middle">TTL 2-5 min, un solo uso</text>
+<rect x="972" y="320" width="356" height="82" fill="#FFFFFF" stroke="#96610A" stroke-width="2" rx="5"/>
+<text x="1150.0" y="352" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="middle">Verificacion del TOTP</text>
+<text x="1150.0" y="378" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="middle">maximo 5 intentos</text>
+<rect x="972" y="420" width="356" height="82" fill="#FFFFFF" stroke="#96610A" stroke-width="2" rx="5"/>
+<text x="1150.0" y="452" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="middle">Reintento de la peticion</text>
+<text x="1150.0" y="478" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="middle">CHALLENGE degrada a ALLOW</text>
+<rect x="940" y="566" width="420" height="96" fill="#F9E6E3" stroke="#A02015" stroke-width="2" rx="5"/>
+<text x="1150.0" y="598" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#A02015" text-anchor="middle">Escalan a BLOCK</text>
+<text x="1150.0" y="624" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="middle">cliente no interactivo · Redis caido</text>
+<rect x="940" y="700" width="420" height="96" fill="#F2F6FB" stroke="#4472A8" stroke-width="2" rx="5"/>
+<text x="1150.0" y="732" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="21" font-weight="600" fill="#1F3864" text-anchor="middle">Auditoria asincrona</text>
+<text x="1150.0" y="758" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="17" font-weight="400" fill="#4A5568" text-anchor="middle">fuera de la ruta critica</text>
+<path d="M 265 158 L 265 186" fill="none" stroke="#4A6D94" stroke-width="2.4" stroke-linejoin="round"/>
+<path d="M 265 186 L 259.15 173.0 L 270.85 173.0 z" fill="#4A6D94" stroke="none"/>
+<path d="M 265 262 L 265 290" fill="none" stroke="#4A6D94" stroke-width="2.4" stroke-linejoin="round"/>
+<path d="M 265 290 L 259.15 277.0 L 270.85 277.0 z" fill="#4A6D94" stroke="none"/>
+<path d="M 265 366 L 265 394" fill="none" stroke="#4A6D94" stroke-width="2.4" stroke-linejoin="round"/>
+<path d="M 265 394 L 259.15 381.0 L 270.85 381.0 z" fill="#4A6D94" stroke="none"/>
+<path d="M 265 456 L 265 480 L 157 480 L 157 502" fill="none" stroke="#4A6D94" stroke-width="2.4" stroke-linejoin="round"/>
+<path d="M 157 502 L 151.15 489.0 L 162.85 489.0 z" fill="#4A6D94" stroke="none"/>
+<path d="M 265 456 L 265 480 L 372 480 L 372 502" fill="none" stroke="#4A6D94" stroke-width="2.4" stroke-linejoin="round"/>
+<path d="M 372 502 L 366.15 489.0 L 377.85 489.0 z" fill="#4A6D94" stroke="none"/>
+<path d="M 157 626 L 157 652 L 265 652 L 265 664" fill="none" stroke="#4A6D94" stroke-width="2.4" stroke-linejoin="round"/>
+<path d="M 265 664 L 259.15 651.0 L 270.85 651.0 z" fill="#4A6D94" stroke="none"/>
+<path d="M 372 626 L 372 652 L 265 652 L 265 664" fill="none" stroke="#4A6D94" stroke-width="2.4" stroke-linejoin="round"/>
+<path d="M 265 664 L 259.15 651.0 L 270.85 651.0 z" fill="#4A6D94" stroke="none"/>
+<path d="M 265 760 L 265 786 L 192 786 L 192 812" fill="none" stroke="#1F6B45" stroke-width="2.4" stroke-linejoin="round"/>
+<path d="M 192 812 L 186.15 799.0 L 197.85 799.0 z" fill="#1F6B45" stroke="none"/>
+<path d="M 265 760 L 265 786 L 477 786 L 477 812" fill="none" stroke="#96610A" stroke-width="2.4" stroke-linejoin="round"/>
+<path d="M 477 812 L 471.15 799.0 L 482.85 799.0 z" fill="#96610A" stroke="none"/>
+<path d="M 265 760 L 265 786 L 762 786 L 762 812" fill="none" stroke="#A02015" stroke-width="2.4" stroke-linejoin="round"/>
+<path d="M 762 812 L 756.15 799.0 L 767.85 799.0 z" fill="#A02015" stroke="none"/>
+<path d="M 477 902 L 477 930 L 905 930 L 905 261 L 972 261" fill="none" stroke="#96610A" stroke-width="2.4" stroke-linejoin="round"/>
+<path d="M 972 261 L 959.0 266.85 L 959.0 255.15 z" fill="#96610A" stroke="none"/>
+<text x="690" y="922" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="16" font-weight="400" text-anchor="middle" stroke="#FFFFFF" stroke-width="5" paint-order="stroke" fill="#96610A">emite el desafio</text>
+<path d="M 1150 302 L 1150 320" fill="none" stroke="#96610A" stroke-width="2.4" stroke-linejoin="round"/>
+<path d="M 1150 320 L 1144.15 307.0 L 1155.85 307.0 z" fill="#96610A" stroke="none"/>
+<path d="M 1150 402 L 1150 420" fill="none" stroke="#96610A" stroke-width="2.4" stroke-linejoin="round"/>
+<path d="M 1150 420 L 1144.15 407.0 L 1155.85 407.0 z" fill="#96610A" stroke="none"/>
+<path d="M 972 461 L 868 461 L 868 74 L 265 74 L 265 96" fill="none" stroke="#1F6B45" stroke-width="2.4" stroke-dasharray="8 5" stroke-linejoin="round"/>
+<path d="M 265 96 L 259.15 83.0 L 270.85 83.0 z" fill="#1F6B45" stroke="none"/>
+<text x="660" y="66" font-family="'Segoe UI', 'Calibri', Arial, sans-serif" font-size="16" font-weight="400" text-anchor="middle" stroke="#FFFFFF" stroke-width="5" paint-order="stroke" fill="#1F6B45">el cliente reintenta la peticion original</text>
+<path d="M 1150 502 L 1150 566" fill="none" stroke="#A02015" stroke-width="2.4" stroke-dasharray="8 5" stroke-linejoin="round"/>
+<path d="M 1150 566 L 1144.15 553.0 L 1155.85 553.0 z" fill="#A02015" stroke="none"/>
+<path d="M 470 712 L 860 712 L 860 748 L 940 748" fill="none" stroke="#4A6D94" stroke-width="2.4" stroke-dasharray="8 5" stroke-linejoin="round"/>
+<path d="M 940 748 L 927.0 753.85 L 927.0 742.15 z" fill="#4A6D94" stroke="none"/>
+</svg>

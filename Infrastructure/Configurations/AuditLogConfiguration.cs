@@ -44,7 +44,7 @@ public sealed class AuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
                .IsUnique()
                .HasDatabaseName("ix_audit_logs_evaluation_id");
 
-        // Nullable FKs (ON DELETE SET NULL per document) 
+        // Nullable FKs (ON DELETE SET NULL per document)
 
         builder.Property(a => a.UserId)
                .HasColumnName("user_id")

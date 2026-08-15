@@ -18,5 +18,6 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="OG.Application.UnitTests/OG.Application.UnitTests.csproj" />
+    <Project Path="OG.IntegrationTests/OG.IntegrationTests.csproj" />
   </Folder>
 </Solution>

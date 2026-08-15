@@ -1,0 +1,37 @@
+trigger:
+  branches: { include: [ main, dev ] }
+pr:
+  branches: { include: [ main, dev ] }
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  buildConfiguration: Release
+  dotnetVersion: 10.0.x
+
+stages:
+  - stage: CI
+    displayName: Build, Test & SAST
+    jobs:
+      - job: dotnet
+        displayName: .NET Gateway
+        steps:
+          - task: UseDotNet@2
+            displayName: Install .NET 10 SDK
+            inputs: { packageType: sdk, version: $(dotnetVersion) }
+          - script: dotnet restore
+            displayName: Restore packages
+          - script: dotnet build --configuration $(buildConfiguration) --no-restore
+            displayName: Build (Roslyn SAST)
+          - script: >
+              dotnet test --no-build --configuration $(buildConfiguration)
+              --logger trx --results-directory $(Agent.TempDirectory)/TestResults
+              --collect:"XPlat Code Coverage"
+            displayName: Run unit tests
+          - task: PublishTestResults@2
+            condition: always()
+            inputs: { testResultsFormat: VSTest, testResultsFiles: $(Agent.TempDirectory)/TestResults/**/*.trx }
+          - task: PublishCodeCoverageResults@2
+            condition: always()
+            inputs: { summaryFileLocation: $(Agent.TempDirectory)/TestResults/**/coverage.cobertura.xml }

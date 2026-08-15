@@ -1,6 +1,46 @@
-bin/
-obj/
+[Bb]in/
+[Oo]bj/
 /packages/
+
+## Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## Rider / ReSharper
 riderModule.iml
 /_ReSharper.Caches/
 .idea/
+**/bin*/
+**/Debug*/
+
+## .NET
+*.nupkg
+*.snupkg
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+## Logs
+*.log
+
+## docs/ es local (notas y contexto de trabajo), EXCEPTO los entregables de una historia:
+## T-073 exige que los escenarios de ataque queden documentados y versionados.
+## Nota: hay que excluir con docs/* (no docs/) para que la negacion siguiente surta efecto.
+docs/*
+!docs/HU-*.md
+## T-076 exige el diagrama ER visual: los generadores y sus SVG son entregables.
+!docs/diagramas/
+## Los ADR se citan desde la memoria (Apendice G) y desde el SRS §11: deben viajar con el repo.
+!docs/adr/
+## Lista de arreglos previos a la defensa: la comparte todo el equipo, no es una nota local.
+!docs/PENDIENTES-PRE-DEFENSA.md
+PLANIFICACION_HU.md
+evidencia-*.txt
+
+## Claude Code (local, no versionar)
+.claude/
+## Python (generadores de diagramas)
+__pycache__/
